@@ -1,0 +1,176 @@
+// Prisma Schema for Alenna SaaS
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Multi-tenancy: Each school is a tenant
+model School {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  users     User[]
+  students  Student[]
+  
+  @@map("schools")
+}
+
+// Users belong to a school and are authenticated via Clerk
+model User {
+  id            String   @id @default(cuid())
+  clerkId       String   @unique // Clerk user ID
+  email         String   @unique
+  firstName     String?
+  lastName      String?
+  role          UserRole @default(TEACHER)
+  
+  schoolId      String
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([schoolId])
+  @@index([clerkId])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN          // School administrator
+  TEACHER        // Regular teacher
+  SUPERVISOR     // Can view all students
+}
+
+// Students belong to a school
+model Student {
+  id                String   @id @default(cuid())
+  firstName         String
+  lastName          String
+  age               Int
+  birthDate         DateTime
+  certificationType String   // "INEA" | "Grace Christian" | "Home Life" | "Lighthouse" | "Otro"
+  graduationDate    DateTime
+  contactPhone      String?
+  isLeveled         Boolean  @default(false)
+  expectedLevel     String?
+  address           String?
+  
+  schoolId          String
+  school            School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  parents           Parent[]
+  paces             Pace[]
+  dailyGoals        DailyGoal[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([schoolId])
+  @@map("students")
+}
+
+// Parents are linked to students
+model Parent {
+  id        String   @id @default(cuid())
+  name      String
+  
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([studentId])
+  @@map("parents")
+}
+
+// PACE tracking (Packet of Accelerated Christian Education)
+model Pace {
+  id          String   @id @default(cuid())
+  number      String   // PACE number
+  subject     String   // Math, English, Science, etc.
+  quarter     String   // Q1, Q2, Q3, Q4
+  week        Int      // 1-9
+  grade       Int?     // 0-100, null if not graded
+  isCompleted Boolean  @default(false)
+  isFailed    Boolean  @default(false)
+  
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  gradeHistory GradeHistory[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([studentId])
+  @@index([studentId, quarter, week])
+  @@map("paces")
+}
+
+// Grade history for each PACE
+model GradeHistory {
+  id        String   @id @default(cuid())
+  grade     Int
+  date      DateTime @default(now())
+  note      String?
+  
+  paceId    String
+  pace      Pace     @relation(fields: [paceId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([paceId])
+  @@map("grade_history")
+}
+
+// Daily Goals
+model DailyGoal {
+  id            String   @id @default(cuid())
+  subject       String   // Math, English, Science, etc.
+  quarter       String   // Q1, Q2, Q3, Q4
+  week          Int      // 1-9
+  dayOfWeek     Int      // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri
+  text          String
+  isCompleted   Boolean  @default(false)
+  notes         String?
+  notesCompleted Boolean @default(false)
+  
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  notesHistory  NoteHistory[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([studentId])
+  @@index([studentId, quarter, week])
+  @@map("daily_goals")
+}
+
+// Notes history for daily goals
+model NoteHistory {
+  id              String    @id @default(cuid())
+  text            String
+  completedDate   DateTime  @default(now())
+  
+  dailyGoalId     String
+  dailyGoal       DailyGoal @relation(fields: [dailyGoalId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime  @default(now())
+  
+  @@index([dailyGoalId])
+  @@map("note_history")
+}
+

@@ -1,0 +1,44 @@
+{
+  "name": "alenna-api",
+  "version": "1.0.0",
+  "description": "Alenna SaaS Backend API with Clean Architecture",
+  "main": "dist/server.js",
+  "scripts": {
+    "setup": "node -e \"console.log('Run ./setup.sh to initialize the project')\"",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:reset": "docker-compose down -v && docker-compose up -d",
+    "test": "echo \"Tests coming soon\"",
+    "lint": "eslint src --ext .ts"
+  },
+  "keywords": ["express", "typescript", "prisma", "postgresql", "clean-architecture"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@clerk/express": "^1.4.4",
+    "@prisma/client": "^6.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.10.5",
+    "prisma": "^6.3.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

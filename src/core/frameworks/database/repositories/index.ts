@@ -1,0 +1,4 @@
+export * from './SchoolRepository';
+export * from './UserRepository';
+export * from './StudentRepository';
+
