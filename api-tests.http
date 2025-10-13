@@ -1,27 +1,21 @@
 ### Alenna API - HTTP Tests
 ### Use REST Client extension in VS Code to run these tests
 
-@baseUrl = http://localhost:3000/api
+@baseUrl = http://localhost:3000/api/v1
 @authToken = your-clerk-token-here
 
-### Health Check
-GET {{baseUrl}}/health
+### Health Check (no versioning)
+GET http://localhost:3000/api/health
 
 ### ==========================================
 ### AUTH ENDPOINTS
 ### ==========================================
 
-### Sync User (First time login)
+### Sync/Validate User (validates user exists in database)
+### NOTE: Replace {{authToken}} with your actual Clerk token
+### Get token from browser console after signing in
 POST {{baseUrl}}/auth/sync
-Content-Type: application/json
-
-{
-  "clerkId": "user_2xxxxxxxxxxxxx",
-  "email": "teacher@school.com",
-  "firstName": "John",
-  "lastName": "Doe",
-  "schoolId": "demo-school"
-}
+Authorization: Bearer {{authToken}}
 
 ### Get Current User
 GET {{baseUrl}}/auth/me

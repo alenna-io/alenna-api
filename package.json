@@ -18,7 +18,13 @@
     "test": "echo \"Tests coming soon\"",
     "lint": "eslint src --ext .ts"
   },
-  "keywords": ["express", "typescript", "prisma", "postgresql", "clean-architecture"],
+  "keywords": [
+    "express",
+    "typescript",
+    "prisma",
+    "postgresql",
+    "clean-architecture"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -35,7 +41,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/morgan": "^1.9.9",
-    "@types/node": "^22.10.5",
+    "@types/node": "^22.18.10",
     "prisma": "^6.3.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"

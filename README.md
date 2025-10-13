@@ -325,38 +325,40 @@ export class CourseController { /* ... */ }
 
 ## 📚 API Endpoints
 
-Base URL: `http://localhost:3000/api`
+Base URL: `http://localhost:3000/api/v1`
 
 All endpoints (except `/auth/sync` and `/schools` POST) require Clerk authentication.
 
+**Health Check** (no versioning): `GET /api/health`
+
 ### Authentication
-| Method | Endpoint     | Description          | Auth Required |
-| ------ | ------------ | -------------------- | ------------- |
-| POST   | `/auth/sync` | Sync user from Clerk | No            |
-| GET    | `/auth/me`   | Get current user     | Yes           |
+| Method | Endpoint        | Description          | Auth Required |
+| ------ | --------------- | -------------------- | ------------- |
+| POST   | `/v1/auth/sync` | Sync user from Clerk | No            |
+| GET    | `/v1/auth/me`   | Get current user     | Yes           |
 
 ### Schools
-| Method | Endpoint      | Description        | Auth Required | Role  |
-| ------ | ------------- | ------------------ | ------------- | ----- |
-| POST   | `/schools`    | Create school      | No            | -     |
-| GET    | `/schools/me` | Get current school | Yes           | All   |
-| PUT    | `/schools/me` | Update school      | Yes           | ADMIN |
+| Method | Endpoint         | Description        | Auth Required | Role  |
+| ------ | ---------------- | ------------------ | ------------- | ----- |
+| POST   | `/v1/schools`    | Create school      | No            | -     |
+| GET    | `/v1/schools/me` | Get current school | Yes           | All   |
+| PUT    | `/v1/schools/me` | Update school      | Yes           | ADMIN |
 
 ### Users
-| Method | Endpoint     | Description   | Auth Required | Role          |
-| ------ | ------------ | ------------- | ------------- | ------------- |
-| GET    | `/users`     | Get all users | Yes           | All           |
-| PUT    | `/users/:id` | Update user   | Yes           | ADMIN or Self |
-| DELETE | `/users/:id` | Delete user   | Yes           | ADMIN         |
+| Method | Endpoint        | Description   | Auth Required | Role          |
+| ------ | --------------- | ------------- | ------------- | ------------- |
+| GET    | `/v1/users`     | Get all users | Yes           | All           |
+| PUT    | `/v1/users/:id` | Update user   | Yes           | ADMIN or Self |
+| DELETE | `/v1/users/:id` | Delete user   | Yes           | ADMIN         |
 
 ### Students
-| Method | Endpoint        | Description      | Auth Required | Role  |
-| ------ | --------------- | ---------------- | ------------- | ----- |
-| GET    | `/students`     | Get all students | Yes           | All   |
-| GET    | `/students/:id` | Get student      | Yes           | All   |
-| POST   | `/students`     | Create student   | Yes           | All   |
-| PUT    | `/students/:id` | Update student   | Yes           | All   |
-| DELETE | `/students/:id` | Delete student   | Yes           | ADMIN |
+| Method | Endpoint           | Description      | Auth Required | Role  |
+| ------ | ------------------ | ---------------- | ------------- | ----- |
+| GET    | `/v1/students`     | Get all students | Yes           | All   |
+| GET    | `/v1/students/:id` | Get student      | Yes           | All   |
+| POST   | `/v1/students`     | Create student   | Yes           | All   |
+| PUT    | `/v1/students/:id` | Update student   | Yes           | All   |
+| DELETE | `/v1/students/:id` | Delete student   | Yes           | ADMIN |
 
 ### Health Check
 | Method | Endpoint  | Description | Auth Required |
@@ -523,12 +525,12 @@ Use `api-tests.http` file with [REST Client](https://marketplace.visualstudio.co
 Or use curl:
 ```bash
 # Create school
-curl -X POST http://localhost:3000/api/schools \
+curl -X POST http://localhost:3000/api/v1/schools \
   -H "Content-Type: application/json" \
   -d '{"name": "Grace Christian Academy", "address": "123 Main St"}'
 
 # Sync user (after Clerk login)
-curl -X POST http://localhost:3000/api/auth/sync \
+curl -X POST http://localhost:3000/api/v1/auth/sync \
   -H "Content-Type: application/json" \
   -d '{
     "clerkId": "user_xxx",
@@ -537,7 +539,7 @@ curl -X POST http://localhost:3000/api/auth/sync \
   }'
 
 # Get students (with auth)
-curl http://localhost:3000/api/students \
+curl http://localhost:3000/api/v1/students \
   -H "Authorization: Bearer YOUR_CLERK_TOKEN"
 ```
 
@@ -547,7 +549,7 @@ curl http://localhost:3000/api/students \
 // Example: React + Clerk
 import { useAuth } from '@clerk/clerk-react';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:3000/api/v1';
 
 function useStudents() {
   const { getToken } = useAuth();

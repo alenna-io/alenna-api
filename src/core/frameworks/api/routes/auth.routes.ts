@@ -1,9 +1,9 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { AuthController } from '../controllers';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
 import { attachUserContext } from '../middleware';
 
-const router = Router();
+const router: ExpressRouter = Router();
 const authController = new AuthController();
 
 // Apply Clerk middleware to all routes
@@ -12,8 +12,8 @@ router.use(clerkMiddleware({
   secretKey: process.env.CLERK_SECRET_KEY!,
 }));
 
-// Sync user from Clerk (public - for initial registration)
-router.post('/sync', authController.syncUser.bind(authController));
+// Sync/validate user from Clerk (protected - validates user exists in database)
+router.post('/sync', requireAuth(), authController.syncUser.bind(authController));
 
 // Get current authenticated user (protected)
 router.get('/me', requireAuth(), attachUserContext, authController.getCurrentUser.bind(authController));

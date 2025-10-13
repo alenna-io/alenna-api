@@ -43,7 +43,7 @@ importers:
         specifier: ^1.9.9
         version: 1.9.10
       '@types/node':
-        specifier: ^22.10.5
+        specifier: ^22.18.10
         version: 22.18.10
       prisma:
         specifier: ^6.3.0

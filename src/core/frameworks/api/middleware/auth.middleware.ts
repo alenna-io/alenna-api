@@ -21,12 +21,13 @@ export const attachUserContext = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
-    const { userId: clerkId } = req.auth || {};
+    const { userId: clerkId } = (req as any).auth || {};
 
     if (!clerkId) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
 
     // Find user in database
@@ -36,9 +37,10 @@ export const attachUserContext = async (
     });
 
     if (!user) {
-      return res.status(404).json({ 
+      res.status(404).json({ 
         error: 'User not found in system. Please complete registration.' 
       });
+      return;
     }
 
     // Attach user context to request
@@ -58,15 +60,17 @@ export const attachUserContext = async (
  * Middleware to check if user has required role
  */
 export const requireRole = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.userRole) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
 
     if (!roles.includes(req.userRole)) {
-      return res.status(403).json({ 
+      res.status(403).json({ 
         error: 'Forbidden: Insufficient permissions' 
       });
+      return;
     }
 
     next();

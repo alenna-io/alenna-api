@@ -1,9 +1,9 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { StudentController } from '../controllers';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
 import { attachUserContext, ensureTenantIsolation } from '../middleware';
 
-const router = Router();
+const router: ExpressRouter = Router();
 const studentController = new StudentController();
 
 // Apply Clerk middleware and authentication

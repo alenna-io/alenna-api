@@ -1,13 +1,18 @@
 import { Request, Response } from 'express';
 import { container } from '../../di/container';
-import { SyncUserDTO } from '../../../app/dtos';
 
 export class AuthController {
   async syncUser(req: Request, res: Response): Promise<void> {
     try {
-      const validatedData = SyncUserDTO.parse(req.body);
+      // Get clerkId from authenticated request
+      const { userId: clerkId } = (req as any).auth || {};
       
-      const user = await container.syncUserUseCase.execute(validatedData);
+      if (!clerkId) {
+        res.status(401).json({ error: 'Unauthorized: No Clerk user ID found' });
+        return;
+      }
+      
+      const user = await container.syncUserUseCase.execute(clerkId);
 
       res.json({
         id: user.id,
@@ -21,8 +26,9 @@ export class AuthController {
     } catch (error: any) {
       console.error('Error syncing user:', error);
       
-      if (error.name === 'ZodError') {
-        res.status(400).json({ error: error.errors });
+      // User not found in database
+      if (error.message.includes('User not found')) {
+        res.status(404).json({ error: error.message });
         return;
       }
       
