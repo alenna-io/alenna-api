@@ -9,9 +9,10 @@ export class StudentRepository implements IStudentRepository {
       where: { 
         id,
         schoolId, // Ensure tenant isolation
+        deletedAt: null, // Soft delete filter
       },
       include: {
-        parents: true,
+        parents: { where: { deletedAt: null } },
         certificationType: true,
       },
     });
@@ -21,9 +22,12 @@ export class StudentRepository implements IStudentRepository {
 
   async findBySchoolId(schoolId: string): Promise<Student[]> {
     const students = await prisma.student.findMany({
-      where: { schoolId },
+      where: { 
+        schoolId,
+        deletedAt: null, // Soft delete filter
+      },
       include: {
-        parents: true,
+        parents: { where: { deletedAt: null } },
         certificationType: true,
       },
       orderBy: { lastName: 'asc' },
@@ -96,8 +100,10 @@ export class StudentRepository implements IStudentRepository {
       throw new Error('Student not found');
     }
 
-    await prisma.student.delete({
+    // Soft delete
+    await prisma.student.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 }

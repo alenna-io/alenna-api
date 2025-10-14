@@ -39,246 +39,163 @@ async function main() {
   console.log('   Clerk ID:', user.clerkId);
   console.log('   ⚠️  Replace this with your actual Clerk user ID!');
 
+  // Clear existing students first (cascade deletes projections, paces, daily goals, parents)
+  await prisma.student.deleteMany({ where: { schoolId: school.id } });
+
+  // Clear existing certification types
+  await prisma.certificationType.deleteMany({ where: { schoolId: school.id } });
+
+  // Create certification types for the school
+  const certificationTypesData = [
+    { name: 'INEA', description: 'Instituto Nacional para la Educación de los Adultos' },
+    { name: 'Grace Christian', description: 'Grace Christian School Program' },
+    { name: 'Home Life', description: 'Home Life Academy Program' },
+    { name: 'Lighthouse', description: 'Lighthouse Christian Academy' },
+    { name: 'Otro', description: 'Other certification programs' },
+  ];
+
+  const certificationTypes = await Promise.all(
+    certificationTypesData.map(async (certType) =>
+      prisma.certificationType.create({
+        data: {
+          id: randomUUID(),
+          name: certType.name,
+          description: certType.description,
+          schoolId: school.id,
+          isActive: true,
+        },
+      })
+    )
+  );
+
+  console.log('✅ Created certification types:', certificationTypes.map(c => c.name).join(', '));
+
+  // Helper to find certification type by name
+  const getCertTypeId = (name: string) => {
+    const certType = certificationTypes.find(c => c.name === name);
+    if (!certType) throw new Error(`Certification type ${name} not found`);
+    return certType.id;
+  };
+
   // Create demo students
-  const students = [
+  const studentsData = [
     {
       firstName: 'María',
       lastName: 'González López',
       age: 15,
       birthDate: new Date('2009-03-15'),
-      certificationType: 'INEA',
+      certificationTypeName: 'INEA',
       graduationDate: new Date('2025-06-15'),
       contactPhone: '+52 555 123 4567',
       isLeveled: true,
       expectedLevel: 'Secundaria',
       address: 'Calle Principal 123, Colonia Centro, Ciudad de México',
-      schoolId: school.id,
+      parents: ['Carlos González', 'Ana López'],
     },
     {
       firstName: 'José Antonio',
       lastName: 'Rodríguez',
       age: 14,
       birthDate: new Date('2010-07-22'),
-      certificationType: 'Grace Christian',
+      certificationTypeName: 'Grace Christian',
       graduationDate: new Date('2025-06-15'),
       contactPhone: '+52 555 987 6543',
       isLeveled: false,
       address: 'Av. Libertad 456, Colonia Norte, Guadalajara',
-      schoolId: school.id,
+      parents: ['María Rodríguez'],
     },
     {
       firstName: 'Sofía',
       lastName: 'Hernández Martínez',
       age: 16,
       birthDate: new Date('2008-11-08'),
-      certificationType: 'Home Life',
+      certificationTypeName: 'Home Life',
       graduationDate: new Date('2025-06-15'),
       contactPhone: '+52 555 456 7890',
       isLeveled: true,
       expectedLevel: 'Preparatoria',
       address: 'Calle Reforma 789, Colonia Sur, Monterrey',
-      schoolId: school.id,
+      parents: ['Roberto Hernández', 'Carmen Martínez'],
     },
     {
       firstName: 'Diego Fernando',
       lastName: 'Silva',
       age: 13,
       birthDate: new Date('2011-01-30'),
-      certificationType: 'Lighthouse',
+      certificationTypeName: 'Lighthouse',
       graduationDate: new Date('2026-06-15'),
       contactPhone: '+52 555 321 0987',
       isLeveled: true,
       expectedLevel: 'Primaria',
       address: 'Blvd. Universidad 321, Colonia Este, Puebla',
-      schoolId: school.id,
-    },
-    {
-      firstName: 'Valentina',
-      lastName: 'Cruz Morales',
-      age: 15,
-      birthDate: new Date('2009-05-14'),
-      certificationType: 'Otro',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 654 3210',
-      isLeveled: false,
-      address: 'Calle Independencia 654, Colonia Oeste, Tijuana',
-      schoolId: school.id,
-    },
-    {
-      firstName: 'Andrés',
-      lastName: 'Ramírez Torres',
-      age: 14,
-      birthDate: new Date('2010-09-20'),
-      certificationType: 'INEA',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 789 0123',
-      isLeveled: true,
-      expectedLevel: 'Secundaria',
-      address: 'Av. Juárez 890, Colonia Centro, Querétaro',
-      schoolId: school.id,
+      parents: ['Patricia Silva'],
     },
     {
       firstName: 'Camila',
       lastName: 'Jiménez Flores',
       age: 16,
       birthDate: new Date('2008-02-14'),
-      certificationType: 'Grace Christian',
+      certificationTypeName: 'Grace Christian',
       graduationDate: new Date('2025-06-15'),
       contactPhone: '+52 555 234 5678',
       isLeveled: true,
       expectedLevel: 'Preparatoria',
       address: 'Calle Morelos 234, Colonia Sur, Mérida',
-      schoolId: school.id,
-    },
-    {
-      firstName: 'Mateo',
-      lastName: 'García Mendoza',
-      age: 13,
-      birthDate: new Date('2011-06-18'),
-      certificationType: 'Lighthouse',
-      graduationDate: new Date('2026-06-15'),
-      contactPhone: '+52 555 345 6789',
-      isLeveled: false,
-      address: 'Blvd. Insurgentes 345, Colonia Norte, León',
-      schoolId: school.id,
-    },
-    {
-      firstName: 'Isabella',
-      lastName: 'Vargas Sánchez',
-      age: 15,
-      birthDate: new Date('2009-11-25'),
-      certificationType: 'Home Life',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 456 7890',
-      isLeveled: true,
-      expectedLevel: 'Secundaria',
-      address: 'Calle Hidalgo 456, Colonia Centro, Toluca',
-      schoolId: school.id,
-    },
-    {
-      firstName: 'Santiago',
-      lastName: 'Ortiz Ruiz',
-      age: 14,
-      birthDate: new Date('2010-04-30'),
-      certificationType: 'INEA',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 567 8901',
-      isLeveled: false,
-      address: 'Av. Constitución 567, Colonia Este, Aguascalientes',
-      schoolId: school.id,
-    },
-    {
-      firstName: 'Lucía',
-      lastName: 'Morales Castro',
-      age: 16,
-      birthDate: new Date('2008-08-12'),
-      certificationType: 'Grace Christian',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 678 9012',
-      isLeveled: true,
-      expectedLevel: 'Preparatoria',
-      address: 'Calle Zaragoza 678, Colonia Oeste, Chihuahua',
-      schoolId: school.id,
-    },
-    {
-      firstName: 'Sebastián',
-      lastName: 'López Reyes',
-      age: 13,
-      birthDate: new Date('2011-12-05'),
-      certificationType: 'Otro',
-      graduationDate: new Date('2026-06-15'),
-      contactPhone: '+52 555 789 0123',
-      isLeveled: true,
-      expectedLevel: 'Primaria',
-      address: 'Av. Revolución 789, Colonia Sur, Culiacán',
-      schoolId: school.id,
-    },
-    {
-      firstName: 'Emilia',
-      lastName: 'Fernández Guzmán',
-      age: 15,
-      birthDate: new Date('2009-03-22'),
-      certificationType: 'Lighthouse',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 890 1234',
-      isLeveled: false,
-      address: 'Calle Madero 890, Colonia Centro, Morelia',
-      schoolId: school.id,
-    },
-    {
-      firstName: 'Nicolás',
-      lastName: 'Pérez Navarro',
-      age: 14,
-      birthDate: new Date('2010-10-08'),
-      certificationType: 'Home Life',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 901 2345',
-      isLeveled: true,
-      expectedLevel: 'Secundaria',
-      address: 'Blvd. López Mateos 901, Colonia Norte, Hermosillo',
-      schoolId: school.id,
-    },
-    {
-      firstName: 'Valeria',
-      lastName: 'Romero Delgado',
-      age: 16,
-      birthDate: new Date('2008-05-17'),
-      certificationType: 'INEA',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 012 3456',
-      isLeveled: true,
-      expectedLevel: 'Preparatoria',
-      address: 'Calle Allende 012, Colonia Este, Saltillo',
-      schoolId: school.id,
+      parents: ['Sandra Jiménez', 'Roberto Flores'],
     },
   ];
 
-  // Clear existing students and parents for clean seed
-  await prisma.parent.deleteMany({ where: { student: { schoolId: school.id } } });
-  await prisma.student.deleteMany({ where: { schoolId: school.id } });
-
-  for (const studentData of students) {
+  for (const studentData of studentsData) {
+    const { certificationTypeName, parents, ...restData } = studentData;
     const studentId = randomUUID();
+    
     const student = await prisma.student.create({
       data: {
         id: studentId,
-        ...studentData,
+        ...restData,
+        certificationTypeId: getCertTypeId(certificationTypeName),
+        schoolId: school.id,
       },
     });
+    
     console.log('✅ Created student:', student.firstName, student.lastName);
 
-    // Add parents for specific students
-    if (student.firstName === 'María' && student.lastName === 'González López') {
+    // Add parents
+    if (parents && parents.length > 0) {
       await prisma.parent.createMany({
-        data: [
-          { id: randomUUID(), name: 'Carlos González', studentId: student.id },
-          { id: randomUUID(), name: 'Ana López', studentId: student.id },
-        ],
+        data: parents.map(name => ({
+          id: randomUUID(),
+          name,
+          studentId: student.id,
+        })),
       });
-      console.log('   ✅ Added parents for María');
-    } else if (student.firstName === 'Sofía' && student.lastName === 'Hernández Martínez') {
-      await prisma.parent.createMany({
-        data: [
-          { id: randomUUID(), name: 'Roberto Hernández', studentId: student.id },
-          { id: randomUUID(), name: 'Carmen Martínez', studentId: student.id },
-        ],
-      });
-      console.log('   ✅ Added parents for Sofía');
-    } else if (student.firstName === 'Camila' && student.lastName === 'Jiménez Flores') {
-      await prisma.parent.createMany({
-        data: [
-          { id: randomUUID(), name: 'Sandra Jiménez', studentId: student.id },
-          { id: randomUUID(), name: 'Roberto Flores', studentId: student.id },
-        ],
-      });
-      console.log('   ✅ Added parents for Camila');
+      console.log(`   ✅ Added ${parents.length} parent(s)`);
     }
+
+    // Create a projection for this student (2024-2025 school year)
+    const projection = await prisma.projection.create({
+      data: {
+        id: randomUUID(),
+        studentId: student.id,
+        schoolYear: '2024-2025',
+        startDate: new Date('2024-08-01'),
+        endDate: new Date('2025-06-30'),
+        isActive: true,
+        notes: 'Initial projection for 2024-2025 school year',
+      },
+    });
+    console.log(`   ✅ Created projection: ${projection.schoolYear}`);
   }
 
   console.log('✅ Seeding completed!');
   console.log('');
   console.log('📝 Demo school ID:', school.id);
   console.log('   Use this ID when syncing users from Clerk');
+  console.log('');
+  console.log('📊 Database Summary:');
+  console.log(`   - ${certificationTypes.length} certification types`);
+  console.log(`   - ${studentsData.length} students`);
+  console.log(`   - ${studentsData.length} projections`);
 }
 
 main()
@@ -289,4 +206,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

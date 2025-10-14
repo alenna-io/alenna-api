@@ -1,7 +1,12 @@
 // Dependency Injection Container
 // This is where we wire up all dependencies following Clean Architecture
 
-import { SchoolRepository, UserRepository, StudentRepository } from '../database/repositories';
+import {
+  SchoolRepository,
+  UserRepository,
+  StudentRepository,
+  ProjectionRepository
+} from '../database/repositories';
 import {
   SyncUserUseCase,
   GetCurrentUserUseCase,
@@ -16,6 +21,11 @@ import {
   GetStudentByIdUseCase,
   UpdateStudentUseCase,
   DeleteStudentUseCase,
+  CreateProjectionUseCase,
+  GetProjectionsByStudentIdUseCase,
+  GetProjectionByIdUseCase,
+  UpdateProjectionUseCase,
+  DeleteProjectionUseCase,
 } from '../../app/use-cases';
 
 class Container {
@@ -23,6 +33,7 @@ class Container {
   private _schoolRepository?: SchoolRepository;
   private _userRepository?: UserRepository;
   private _studentRepository?: StudentRepository;
+  private _projectionRepository?: ProjectionRepository;
 
   // Repositories getters (Lazy initialization)
   get schoolRepository(): SchoolRepository {
@@ -44,6 +55,13 @@ class Container {
       this._studentRepository = new StudentRepository();
     }
     return this._studentRepository;
+  }
+
+  get projectionRepository(): ProjectionRepository {
+    if (!this._projectionRepository) {
+      this._projectionRepository = new ProjectionRepository();
+    }
+    return this._projectionRepository;
   }
 
   // Auth Use Cases
@@ -100,6 +118,27 @@ class Container {
 
   get deleteStudentUseCase(): DeleteStudentUseCase {
     return new DeleteStudentUseCase(this.studentRepository);
+  }
+
+  // Projection Use Cases
+  get createProjectionUseCase(): CreateProjectionUseCase {
+    return new CreateProjectionUseCase(this.projectionRepository);
+  }
+
+  get getProjectionsByStudentIdUseCase(): GetProjectionsByStudentIdUseCase {
+    return new GetProjectionsByStudentIdUseCase(this.projectionRepository);
+  }
+
+  get getProjectionByIdUseCase(): GetProjectionByIdUseCase {
+    return new GetProjectionByIdUseCase(this.projectionRepository);
+  }
+
+  get updateProjectionUseCase(): UpdateProjectionUseCase {
+    return new UpdateProjectionUseCase(this.projectionRepository);
+  }
+
+  get deleteProjectionUseCase(): DeleteProjectionUseCase {
+    return new DeleteProjectionUseCase(this.projectionRepository);
   }
 }
 
