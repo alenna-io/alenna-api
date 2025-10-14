@@ -1,5 +1,10 @@
 // Domain Entity: Student
-export type CertificationType = 'INEA' | 'Grace Christian' | 'Home Life' | 'Lighthouse' | 'Otro';
+export interface CertificationType {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
 
 export interface Parent {
   id: string;
@@ -13,6 +18,7 @@ export class Student {
     public readonly lastName: string,
     public readonly age: number,
     public readonly birthDate: Date,
+    public readonly certificationTypeId: string,
     public readonly certificationType: CertificationType,
     public readonly graduationDate: Date,
     public readonly schoolId: string,
@@ -31,6 +37,7 @@ export class Student {
     lastName: string;
     age: number;
     birthDate: Date;
+    certificationTypeId: string;
     certificationType: CertificationType;
     graduationDate: Date;
     schoolId: string;
@@ -46,6 +53,7 @@ export class Student {
       props.lastName,
       props.age,
       props.birthDate,
+      props.certificationTypeId,
       props.certificationType,
       props.graduationDate,
       props.schoolId,
@@ -66,6 +74,7 @@ export class Student {
       props.lastName ?? this.lastName,
       props.age ?? this.age,
       props.birthDate ?? this.birthDate,
+      props.certificationTypeId ?? this.certificationTypeId,
       props.certificationType ?? this.certificationType,
       props.graduationDate ?? this.graduationDate,
       this.schoolId,

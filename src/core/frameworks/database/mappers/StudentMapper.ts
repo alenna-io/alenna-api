@@ -1,19 +1,32 @@
-import { Student as PrismaStudent, Parent as PrismaParent } from '@prisma/client';
+import { Student as PrismaStudent, Parent as PrismaParent, CertificationType as PrismaCertificationType } from '@prisma/client';
 import { Student, CertificationType } from '../../../domain/entities';
 
-type PrismaStudentWithParents = PrismaStudent & {
+type PrismaStudentWithRelations = PrismaStudent & {
   parents?: PrismaParent[];
+  certificationType?: PrismaCertificationType;
 };
 
 export class StudentMapper {
-  static toDomain(prismaStudent: PrismaStudentWithParents): Student {
+  static toDomain(prismaStudent: PrismaStudentWithRelations): Student {
+    if (!prismaStudent.certificationType) {
+      throw new Error('CertificationType must be included when mapping student');
+    }
+
+    const certificationType: CertificationType = {
+      id: prismaStudent.certificationType.id,
+      name: prismaStudent.certificationType.name,
+      description: prismaStudent.certificationType.description || undefined,
+      isActive: prismaStudent.certificationType.isActive,
+    };
+
     return new Student(
       prismaStudent.id,
       prismaStudent.firstName,
       prismaStudent.lastName,
       prismaStudent.age,
       prismaStudent.birthDate,
-      prismaStudent.certificationType as CertificationType,
+      prismaStudent.certificationTypeId,
+      certificationType,
       prismaStudent.graduationDate,
       prismaStudent.schoolId,
       prismaStudent.contactPhone || undefined,
@@ -33,7 +46,7 @@ export class StudentMapper {
       lastName: student.lastName,
       age: student.age,
       birthDate: student.birthDate,
-      certificationType: student.certificationType,
+      certificationTypeId: student.certificationTypeId,
       graduationDate: student.graduationDate,
       schoolId: student.schoolId,
       contactPhone: student.contactPhone || null,

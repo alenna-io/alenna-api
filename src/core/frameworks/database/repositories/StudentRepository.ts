@@ -12,6 +12,7 @@ export class StudentRepository implements IStudentRepository {
       },
       include: {
         parents: true,
+        certificationType: true,
       },
     });
 
@@ -23,6 +24,7 @@ export class StudentRepository implements IStudentRepository {
       where: { schoolId },
       include: {
         parents: true,
+        certificationType: true,
       },
       orderBy: { lastName: 'asc' },
     });
@@ -37,7 +39,7 @@ export class StudentRepository implements IStudentRepository {
         lastName: student.lastName,
         age: student.age,
         birthDate: student.birthDate,
-        certificationType: student.certificationType,
+        certificationTypeId: student.certificationTypeId,
         graduationDate: student.graduationDate,
         schoolId: student.schoolId,
         contactPhone: student.contactPhone || null,
@@ -50,6 +52,7 @@ export class StudentRepository implements IStudentRepository {
       },
       include: {
         parents: true,
+        certificationType: true,
       },
     });
 
@@ -70,7 +73,7 @@ export class StudentRepository implements IStudentRepository {
         lastName: data.lastName,
         age: data.age,
         birthDate: data.birthDate,
-        certificationType: data.certificationType,
+        certificationTypeId: data.certificationTypeId,
         graduationDate: data.graduationDate,
         contactPhone: data.contactPhone || undefined,
         isLeveled: data.isLeveled,
@@ -79,6 +82,7 @@ export class StudentRepository implements IStudentRepository {
       },
       include: {
         parents: true,
+        certificationType: true,
       },
     });
 

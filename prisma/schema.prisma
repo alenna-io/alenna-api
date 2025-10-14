@@ -19,8 +19,9 @@ model School {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  users     User[]
-  students  Student[]
+  users              User[]
+  students           Student[]
+  certificationTypes CertificationType[]
   
   @@map("schools")
 }
@@ -51,31 +52,54 @@ enum UserRole {
   SUPERVISOR     // Can view all students
 }
 
+// Certification types per school (tenant-scoped)
+model CertificationType {
+  id          String   @id @default(cuid())
+  name        String   // e.g., "INEA", "Grace Christian", "Home Life", etc.
+  description String?
+  isActive    Boolean  @default(true)
+  
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  students    Student[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([schoolId, name]) // Unique certification name per school
+  @@index([schoolId])
+  @@map("certification_types")
+}
+
 // Students belong to a school
 model Student {
-  id                String   @id @default(cuid())
-  firstName         String
-  lastName          String
-  age               Int
-  birthDate         DateTime
-  certificationType String   // "INEA" | "Grace Christian" | "Home Life" | "Lighthouse" | "Otro"
-  graduationDate    DateTime
-  contactPhone      String?
-  isLeveled         Boolean  @default(false)
-  expectedLevel     String?
-  address           String?
+  id                    String   @id @default(cuid())
+  firstName             String
+  lastName              String
+  age                   Int
+  birthDate             DateTime
+  graduationDate        DateTime
+  contactPhone          String?
+  isLeveled             Boolean  @default(false)
+  expectedLevel         String?
+  address               String?
   
-  schoolId          String
-  school            School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId              String
+  school                School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   
-  parents           Parent[]
-  paces             Pace[]
-  dailyGoals        DailyGoal[]
+  certificationTypeId   String
+  certificationType     CertificationType @relation(fields: [certificationTypeId], references: [id], onDelete: Restrict)
   
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  parents               Parent[]
+  paces                 Pace[]
+  dailyGoals            DailyGoal[]
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
   
   @@index([schoolId])
+  @@index([certificationTypeId])
   @@map("students")
 }
 

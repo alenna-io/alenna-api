@@ -6,7 +6,7 @@ export const CreateStudentDTO = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   age: z.number().int().min(0).max(120),
   birthDate: z.string().datetime(),
-  certificationType: z.enum(['INEA', 'Grace Christian', 'Home Life', 'Lighthouse', 'Otro']),
+  certificationTypeId: z.string().min(1, 'Certification type is required'),
   graduationDate: z.string().datetime(),
   contactPhone: z.string().optional(),
   isLeveled: z.boolean().optional().default(false),
