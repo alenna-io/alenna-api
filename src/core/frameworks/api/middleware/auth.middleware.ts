@@ -8,7 +8,6 @@ declare global {
       userId?: string;
       userEmail?: string;
       schoolId?: string;
-      userRole?: string;
     }
   }
 }
@@ -47,7 +46,6 @@ export const attachUserContext = async (
     req.userId = user.id;
     req.userEmail = user.email;
     req.schoolId = user.schoolId;
-    req.userRole = user.role;
 
     next();
   } catch (error) {
@@ -57,16 +55,37 @@ export const attachUserContext = async (
 };
 
 /**
- * Middleware to check if user has required role
+ * Middleware to check if user has required role (DEPRECATED - use permission middleware instead)
+ * @deprecated Use requirePermission() from permission.middleware instead
  */
 export const requireRole = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.userRole) {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
-    if (!roles.includes(req.userRole)) {
+    // Fetch user's roles from database
+    const userRoles = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!userRoles || userRoles.userRoles.length === 0) {
+      res.status(403).json({ 
+        error: 'Forbidden: No roles assigned' 
+      });
+      return;
+    }
+
+    const roleNames = userRoles.userRoles.map(ur => ur.role.name);
+    if (!roles.some(r => roleNames.includes(r))) {
       res.status(403).json({ 
         error: 'Forbidden: Insufficient permissions' 
       });

@@ -1,9 +1,9 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { UserController } from '../controllers';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
-import { attachUserContext, requireRole, ensureTenantIsolation } from '../middleware';
+import { attachUserContext, requireRole, ensureTenantIsolation, requirePermission } from '../middleware';
 
-const router = Router();
+const router: ExpressRouter = Router();
 const userController = new UserController();
 
 // Apply Clerk middleware and authentication
@@ -16,9 +16,9 @@ router.use(attachUserContext);
 router.use(ensureTenantIsolation);
 
 // All routes
-router.get('/', userController.getUsers.bind(userController));
-router.put('/:id', userController.updateUser.bind(userController));
-router.delete('/:id', requireRole('ADMIN'), userController.deleteUser.bind(userController));
+router.get('/', requirePermission('users.read'), userController.getUsers.bind(userController));
+router.put('/:id', requirePermission('users.update'), userController.updateUser.bind(userController));
+router.delete('/:id', requirePermission('users.delete'), userController.deleteUser.bind(userController));
 
 export default router;
 

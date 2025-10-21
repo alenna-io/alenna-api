@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { seedPaceCatalog } from './seed-pace-catalog';
+import { seedRBAC } from './seed-rbac';
 
 const prisma = new PrismaClient();
 
@@ -9,6 +10,10 @@ async function main() {
 
   // First, seed the PACE catalog (Categories, Levels, SubSubjects, PACEs)
   await seedPaceCatalog();
+  console.log('');
+
+  // Second, seed RBAC system (Modules, Permissions, Role Permissions)
+  await seedRBAC();
   console.log('');
 
   // Create demo school
@@ -26,7 +31,7 @@ async function main() {
 
   console.log('✅ Created school:', school.name);
 
-  // Create demo user (admin/teacher)
+  // Create demo user (admin)
   const user = await prisma.user.upsert({
     where: { clerkId: 'user_33skKBEkI8wMg70KnEwHwrjVP93' },
     update: {},
@@ -35,16 +40,76 @@ async function main() {
       email: 'sergio@alenna.io',
       firstName: 'Demo',
       lastName: 'User',
-      role: 'ADMIN',
       schoolId: school.id,
     },
   });
+
+  // Assign ADMIN role to demo user
+  const adminRole = await prisma.role.findFirst({
+    where: { name: 'ADMIN', schoolId: null },
+  });
+  
+  if (adminRole) {
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: user.id,
+          roleId: adminRole.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: user.id,
+        roleId: adminRole.id,
+      },
+    });
+    console.log('✅ Assigned ADMIN role to user');
+  }
 
   console.log('✅ Created user:', user.email);
   console.log('   Clerk ID:', user.clerkId);
   console.log('   ⚠️  Replace this with your actual Clerk user ID!');
 
-  // Clear existing students first (cascade deletes projections, paces, daily goals, parents)
+  // Enable Students module for school
+  const studentsModule = await prisma.module.findUnique({ where: { name: 'Students' } });
+  if (studentsModule) {
+    await prisma.schoolModule.upsert({
+      where: {
+        schoolId_moduleId: {
+          schoolId: school.id,
+          moduleId: studentsModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        schoolId: school.id,
+        moduleId: studentsModule.id,
+        isActive: true,
+      },
+    });
+    console.log('✅ Enabled Students module for school');
+
+    // Assign Students module to demo user
+    await prisma.userModule.upsert({
+      where: {
+        userId_moduleId: {
+          userId: user.id,
+          moduleId: studentsModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: user.id,
+        moduleId: studentsModule.id,
+      },
+    });
+    console.log('✅ Assigned Students module to user');
+  }
+
+  // Clear existing students first (cascade deletes projections, paces, daily goals)
   await prisma.student.deleteMany({ where: { schoolId: school.id } });
 
   // Clear existing certification types
@@ -87,7 +152,6 @@ async function main() {
     {
       firstName: 'María',
       lastName: 'González López',
-      age: 15,
       birthDate: new Date('2009-03-15'),
       certificationTypeName: 'INEA',
       graduationDate: new Date('2025-06-15'),
@@ -96,12 +160,10 @@ async function main() {
       expectedLevel: 'Secundaria',
       currentLevel: 'L8',
       address: 'Calle Principal 123, Colonia Centro, Ciudad de México',
-      parents: ['Carlos González', 'Ana López'],
     },
     {
       firstName: 'José Antonio',
       lastName: 'Rodríguez',
-      age: 14,
       birthDate: new Date('2010-07-22'),
       certificationTypeName: 'Grace Christian',
       graduationDate: new Date('2025-06-15'),
@@ -109,12 +171,10 @@ async function main() {
       isLeveled: false,
       currentLevel: 'L7',
       address: 'Av. Libertad 456, Colonia Norte, Guadalajara',
-      parents: ['María Rodríguez'],
     },
     {
       firstName: 'Sofía',
       lastName: 'Hernández Martínez',
-      age: 16,
       birthDate: new Date('2008-11-08'),
       certificationTypeName: 'Home Life',
       graduationDate: new Date('2025-06-15'),
@@ -123,12 +183,10 @@ async function main() {
       expectedLevel: 'Preparatoria',
       currentLevel: 'L10',
       address: 'Calle Reforma 789, Colonia Sur, Monterrey',
-      parents: ['Roberto Hernández', 'Carmen Martínez'],
     },
     {
       firstName: 'Diego Fernando',
       lastName: 'Silva',
-      age: 13,
       birthDate: new Date('2011-01-30'),
       certificationTypeName: 'Lighthouse',
       graduationDate: new Date('2026-06-15'),
@@ -137,12 +195,10 @@ async function main() {
       expectedLevel: 'Primaria',
       currentLevel: 'L5',
       address: 'Blvd. Universidad 321, Colonia Este, Puebla',
-      parents: ['Patricia Silva'],
     },
     {
       firstName: 'Camila',
       lastName: 'Jiménez Flores',
-      age: 16,
       birthDate: new Date('2008-02-14'),
       certificationTypeName: 'Grace Christian',
       graduationDate: new Date('2025-06-15'),
@@ -151,36 +207,114 @@ async function main() {
       expectedLevel: 'Preparatoria',
       currentLevel: 'L11',
       address: 'Calle Morelos 234, Colonia Sur, Mérida',
-      parents: ['Sandra Jiménez', 'Roberto Flores'],
     },
   ];
 
+  // Get STUDENT and PARENT roles
+  const studentRole = await prisma.role.findFirst({
+    where: { name: 'STUDENT', schoolId: null },
+  });
+  
+  const parentRole = await prisma.role.findFirst({
+    where: { name: 'PARENT', schoolId: null },
+  });
+
   for (const studentData of studentsData) {
-    const { certificationTypeName, parents, currentLevel, ...restData } = studentData;
+    const { certificationTypeName, currentLevel, ...restData } = studentData;
     const studentId = randomUUID();
     
+    // Create User account for student (email must be unique)
+    const studentUser = await prisma.user.create({
+      data: {
+        id: randomUUID(),
+        clerkId: `student_${studentId}_clerk`, // Placeholder - will be set when student logs in
+        email: `student.${studentId.substring(0, 8)}@demo.alenna.io`, // Unique email using student ID
+        firstName: restData.firstName,
+        lastName: restData.lastName,
+        schoolId: school.id,
+      },
+    });
+
+    // Assign STUDENT role
+    if (studentRole) {
+      await prisma.userRole.create({
+        data: {
+          id: randomUUID(),
+          userId: studentUser.id,
+          roleId: studentRole.id,
+        },
+      });
+    }
+
+    // Create Student record
     const student = await prisma.student.create({
       data: {
         id: studentId,
-        ...restData,
+        userId: studentUser.id,
+        birthDate: restData.birthDate,
+        graduationDate: restData.graduationDate,
+        contactPhone: restData.contactPhone,
+        isLeveled: restData.isLeveled,
+        expectedLevel: restData.expectedLevel,
         currentLevel: (currentLevel as string | undefined),
+        address: restData.address,
         certificationTypeId: getCertTypeId(certificationTypeName),
         schoolId: school.id,
       },
     });
     
-    console.log('✅ Created student:', student.firstName, student.lastName);
+    console.log('✅ Created student:', studentUser.firstName, studentUser.lastName);
 
-    // Add parents
-    if (parents && parents.length > 0) {
-      await prisma.parent.createMany({
-        data: parents.map(name => ({
-          id: randomUUID(),
-          name,
-          studentId: student.id,
-        })),
-      });
-      console.log(`   ✅ Added ${parents.length} parent(s)`);
+    // Create parent users and link to student
+    const parentData = [
+      { firstName: 'Carlos', lastName: 'González', relationship: 'Father' },
+      { firstName: 'Ana', lastName: 'López', relationship: 'Mother' },
+    ];
+
+    if (restData.firstName === 'María' && parentRole) {
+      for (const parent of parentData) {
+        const parentUser = await prisma.user.create({
+          data: {
+            id: randomUUID(),
+            clerkId: `parent_${randomUUID()}_clerk`,
+            email: `${parent.firstName.toLowerCase()}.${parent.lastName.toLowerCase()}@demo.alenna.io`,
+            firstName: parent.firstName,
+            lastName: parent.lastName,
+            schoolId: school.id,
+          },
+        });
+
+        // Assign PARENT role
+        await prisma.userRole.create({
+          data: {
+            id: randomUUID(),
+            userId: parentUser.id,
+            roleId: parentRole.id,
+          },
+        });
+
+        // Link parent to student
+        await prisma.userStudent.create({
+          data: {
+            id: randomUUID(),
+            userId: parentUser.id,
+            studentId: student.id,
+            relationship: parent.relationship,
+          },
+        });
+
+        // Give parent access to Students module
+        if (studentsModule) {
+          await prisma.userModule.create({
+            data: {
+              id: randomUUID(),
+              userId: parentUser.id,
+              moduleId: studentsModule.id,
+            },
+          });
+        }
+      }
+      console.log(`   ✅ Created ${parentData.length} parent users and linked to student`);
     }
 
     // Create a projection for this student (2024-2025 school year)

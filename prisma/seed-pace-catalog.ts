@@ -83,7 +83,8 @@ export async function seedPaceCatalog() {
     subSubjectName: string,
     levelId: string,
     difficulty: number,
-    paceCodes: string[]
+    paceCodes: string[],
+    paceNamePrefix?: string // Optional: Use for PACE display name (defaults to categoryName)
   ) {
     const subSubject = await prisma.subSubject.upsert({
       where: {
@@ -104,6 +105,7 @@ export async function seedPaceCatalog() {
     totalSubSubjects++;
 
     // Upsert PACEs for this subsubject
+    const displayName = paceNamePrefix || categoryName;
     for (const code of paceCodes) {
       await prisma.paceCatalog.upsert({
         where: {
@@ -116,7 +118,7 @@ export async function seedPaceCatalog() {
         create: {
           id: randomUUID(),
           code: code,
-          name: `${subSubjectName} - ${code}`,
+          name: `${displayName} ${code}`,
           subSubjectId: subSubject.id,
         },
       });

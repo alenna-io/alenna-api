@@ -23,21 +23,26 @@ model School {
   users              User[]
   students           Student[]
   certificationTypes CertificationType[]
+  roles              Role[] // School-specific custom roles
+  schoolModules      SchoolModule[]
 
   @@map("schools")
 }
 
 // Users belong to a school and are authenticated via Clerk
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique // Clerk user ID
-  email     String   @unique
+  id        String  @id @default(cuid())
+  clerkId   String  @unique // Clerk user ID
+  email     String  @unique
   firstName String?
   lastName  String?
-  role      UserRole @default(TEACHER)
+  schoolId  String
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
-  schoolId String
-  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  userRoles    UserRole[] // Many-to-many with Role
+  userModules  UserModule[]
+  userStudents UserStudent[] // For PARENT role - children they can access
+  student      Student? // If user is a student, link to Student record
 
   deletedAt DateTime?
   createdAt DateTime  @default(now())
@@ -48,11 +53,7 @@ model User {
   @@map("users")
 }
 
-enum UserRole {
-  ADMIN // School administrator
-  TEACHER // Regular teacher
-  SUPERVISOR // Can view all students
-}
+// Removed UserRole enum - now using Role table
 
 // Certification types per school (tenant-scoped)
 model CertificationType {
@@ -75,18 +76,19 @@ model CertificationType {
   @@map("certification_types")
 }
 
-// Students belong to a school
+// Students belong to a school and are linked to a User account
 model Student {
   id             String   @id @default(cuid())
-  firstName      String
-  lastName       String
-  age            Int
   birthDate      DateTime
   graduationDate DateTime
   contactPhone   String?
   isLeveled      Boolean  @default(false)
   expectedLevel  String?
+  currentLevel   String? // Current ACE level (L1-L12)
   address        String?
+
+  userId String @unique // Each student is a user with STUDENT role
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   schoolId String
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -94,9 +96,8 @@ model Student {
   certificationTypeId String
   certificationType   CertificationType @relation(fields: [certificationTypeId], references: [id], onDelete: Restrict)
 
-  parents      Parent[]
+  userStudents UserStudent[] // Parents linked to this student
   projections  Projection[]
-  currentLevel String? // Current ACE level (L1-L12)
 
   deletedAt DateTime?
   createdAt DateTime  @default(now())
@@ -131,20 +132,166 @@ model Projection {
   @@map("projections")
 }
 
-// Parents are linked to students
-model Parent {
-  id   String @id @default(cuid())
-  name String
+// ============================================
+// RBAC & MODULE SYSTEM
+// ============================================
+
+// Role - User roles (can be system-wide or school-specific)
+model Role {
+  id          String  @id @default(cuid())
+  name        String // ADMIN, TEACHER, STUDENT, PARENT, SUPERVISOR, etc.
+  displayName String // Localized display name
+  description String?
+  isSystem    Boolean @default(false) // System roles can't be deleted
+  isActive    Boolean @default(true)
+
+  schoolId String? // NULL = global/system role, otherwise school-specific
+  school   School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, name]) // Role name unique per school (or globally if schoolId is null)
+  @@index([schoolId])
+  @@index([name])
+  @@map("roles")
+}
+
+// User-Role join table (many-to-many)
+model UserRole {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+// Module - Feature modules (Students, Users, Payments, etc.)
+model Module {
+  id           String  @id @default(cuid())
+  name         String  @unique // Students, Users, Configuration, Payments, Teachers, Parents
+  description  String?
+  displayOrder Int     @default(0)
+  isActive     Boolean @default(true)
+
+  permissions   Permission[]
+  schoolModules SchoolModule[]
+  userModules   UserModule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("modules")
+}
+
+// Permission - Granular permissions within modules
+model Permission {
+  id          String  @id @default(cuid())
+  name        String  @unique // students.read, students.create, projections.readOwn, etc.
+  description String?
+
+  moduleId String
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  rolePermissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([moduleId])
+  @@map("permissions")
+}
+
+// School Module - Which modules are enabled for a school
+model SchoolModule {
+  id String @id @default(cuid())
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  moduleId String
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, moduleId])
+  @@index([schoolId])
+  @@index([moduleId])
+  @@map("school_modules")
+}
+
+// User Module - Which modules a user can access (within their school's available modules)
+model UserModule {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  moduleId String
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, moduleId])
+  @@index([userId])
+  @@index([moduleId])
+  @@map("user_modules")
+}
+
+// Role Permission - Permissions assigned to roles
+model RolePermission {
+  id String @id @default(cuid())
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+// User-Student relationship (for PARENT role - links parents to their children)
+model UserStudent {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   studentId String
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  relationship String? // "Mother", "Father", "Guardian", etc.
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, studentId])
+  @@index([userId])
   @@index([studentId])
-  @@map("parents")
+  @@map("user_students")
 }
 
 // ============================================

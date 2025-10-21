@@ -9,4 +9,8 @@ export * from './SubSubject';
 export * from './PaceCatalog';
 export * from './Pace'; // ProjectionPace
 export * from './GradeHistory';
+export * from './Module';
+export * from './Permission';
+export * from './Role';
+export * from './UserStudent';
 
