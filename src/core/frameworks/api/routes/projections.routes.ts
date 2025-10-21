@@ -20,6 +20,7 @@ router.get('/', projectionController.getProjectionsByStudent.bind(projectionCont
 router.get('/:id/detail', projectionController.getProjectionDetail.bind(projectionController)); // Must be before /:id
 router.get('/:id', projectionController.getProjection.bind(projectionController));
 router.post('/', projectionController.createProjection.bind(projectionController));
+router.post('/:id/paces', projectionController.addPaceToProjection.bind(projectionController)); // Add PACE to projection
 router.put('/:id', projectionController.updateProjection.bind(projectionController));
 router.delete('/:id', projectionController.deleteProjection.bind(projectionController));
 

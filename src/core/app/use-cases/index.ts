@@ -4,4 +4,5 @@ export * from './projections';
 export * from './schools';
 export * from './users';
 export * from './students';
+export * from './pace-catalog';
 

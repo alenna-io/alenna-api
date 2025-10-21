@@ -1,5 +1,16 @@
 // DTOs for Pace and related data
 
+import { z } from 'zod';
+
+// Input DTO for adding a PACE to a projection
+export const AddPaceToProjectionDTO = z.object({
+  paceCatalogId: z.string().min(1, 'PACE catalog ID is required'),
+  quarter: z.enum(['Q1', 'Q2', 'Q3', 'Q4']),
+  week: z.number().int().min(1).max(9),
+});
+
+export type AddPaceToProjectionInput = z.infer<typeof AddPaceToProjectionDTO>;
+
 export interface GradeHistoryOutput {
   id: string;
   grade: number;

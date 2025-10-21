@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { container } from '../../di/container';
-import { CreateProjectionDTO, UpdateProjectionDTO } from '../../../app/dtos';
+import { CreateProjectionDTO, UpdateProjectionDTO, AddPaceToProjectionDTO } from '../../../app/dtos';
 
 export class ProjectionController {
   async getProjectionsByStudent(req: Request, res: Response): Promise<void> {
@@ -203,6 +203,62 @@ export class ProjectionController {
       }
       
       res.status(500).json({ error: error.message || 'Failed to delete projection' });
+    }
+  }
+
+  async addPaceToProjection(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId, id } = req.params;
+      const schoolId = req.schoolId!;
+      const validatedData = AddPaceToProjectionDTO.parse(req.body);
+      
+      // Verify student belongs to school
+      const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
+      if (!student) {
+        res.status(404).json({ error: 'Student not found' });
+        return;
+      }
+
+      const projectionPace = await container.addPaceToProjectionUseCase.execute(
+        id,
+        studentId,
+        validatedData.paceCatalogId,
+        validatedData.quarter,
+        validatedData.week
+      );
+
+      res.status(201).json({
+        id: projectionPace.id,
+        projectionId: projectionPace.projectionId,
+        paceCatalogId: projectionPace.paceCatalogId,
+        quarter: projectionPace.quarter,
+        week: projectionPace.week,
+        grade: projectionPace.grade,
+        isCompleted: projectionPace.isCompleted,
+        isFailed: projectionPace.isFailed,
+        comments: projectionPace.comments,
+        createdAt: projectionPace.createdAt?.toISOString(),
+        updatedAt: projectionPace.updatedAt?.toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error adding PACE to projection:', error);
+      
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: error.errors });
+        return;
+      }
+      
+      if (error.message === 'Projection not found' || error.message === 'PACE not found in catalog') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('already')) {
+        res.status(409).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to add PACE to projection' });
     }
   }
 }

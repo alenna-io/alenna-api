@@ -4,6 +4,7 @@ import schoolsRoutes from './schools.routes';
 import usersRoutes from './users.routes';
 import studentsRoutes from './students.routes';
 import projectionsRoutes from './projections.routes';
+import paceCatalogRoutes from './pace-catalog.routes';
 
 const router: ExpressRouter = Router();
 
@@ -24,6 +25,7 @@ v1Router.use('/schools', schoolsRoutes);
 v1Router.use('/users', usersRoutes);
 v1Router.use('/students/:studentId/projections', projectionsRoutes); // Nested route
 v1Router.use('/students', studentsRoutes);
+v1Router.use('/pace-catalog', paceCatalogRoutes);
 
 router.use('/v1', v1Router);
 

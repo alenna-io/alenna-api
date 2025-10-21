@@ -4,4 +4,5 @@ export * from './GetProjectionByIdUseCase';
 export * from './GetProjectionDetailUseCase';
 export * from './GetProjectionsByStudentIdUseCase';
 export * from './UpdateProjectionUseCase';
+export * from './AddPaceToProjectionUseCase';
 
