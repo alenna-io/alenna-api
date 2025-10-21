@@ -31,6 +31,7 @@ import {
   RemovePaceFromProjectionUseCase,
   UpdatePaceGradeUseCase,
   MovePaceUseCase,
+  MarkPaceIncompleteUseCase,
   GetPaceCatalogUseCase,
 } from '../../app/use-cases';
 
@@ -165,6 +166,10 @@ class Container {
 
   get movePaceUseCase(): MovePaceUseCase {
     return new MovePaceUseCase(this.projectionRepository);
+  }
+
+  get markPaceIncompleteUseCase(): MarkPaceIncompleteUseCase {
+    return new MarkPaceIncompleteUseCase(this.projectionRepository);
   }
 
   // PACE Catalog Use Cases

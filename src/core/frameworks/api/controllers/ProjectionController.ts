@@ -398,5 +398,44 @@ export class ProjectionController {
       res.status(500).json({ error: error.message || 'Failed to move PACE' });
     }
   }
+
+  async markPaceIncomplete(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId, id, paceId } = req.params;
+      const schoolId = req.schoolId!;
+      
+      // Verify student belongs to school
+      const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
+      if (!student) {
+        res.status(404).json({ error: 'Student not found' });
+        return;
+      }
+
+      const projectionPace = await container.markPaceIncompleteUseCase.execute(id, paceId, studentId);
+
+      res.json({
+        id: projectionPace.id,
+        projectionId: projectionPace.projectionId,
+        paceCatalogId: projectionPace.paceCatalogId,
+        quarter: projectionPace.quarter,
+        week: projectionPace.week,
+        grade: projectionPace.grade,
+        isCompleted: projectionPace.isCompleted,
+        isFailed: projectionPace.isFailed,
+        comments: projectionPace.comments,
+        createdAt: projectionPace.createdAt?.toISOString(),
+        updatedAt: projectionPace.updatedAt?.toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error marking PACE incomplete:', error);
+      
+      if (error.message === 'Proyección no encontrada' || error.message === 'PACE no encontrado en la proyección') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to mark PACE incomplete' });
+    }
+  }
 }
 
