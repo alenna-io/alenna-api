@@ -12,7 +12,7 @@ export class GetProjectionDetailUseCase {
     const projectionWithPaces = await this.projectionRepository.findByIdWithPaces(id, studentId);
     
     if (!projectionWithPaces) {
-      throw new Error('Projection not found');
+      throw new Error('Proyección no encontrada');
     }
 
     const { projection, projectionPaces } = projectionWithPaces;
@@ -20,7 +20,7 @@ export class GetProjectionDetailUseCase {
     // Fetch student information
     const student = await this.studentRepository.findById(studentId);
     if (!student) {
-      throw new Error('Student not found');
+      throw new Error('Estudiante no encontrado');
     }
 
     // Define all core categories

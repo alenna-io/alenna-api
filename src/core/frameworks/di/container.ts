@@ -28,6 +28,9 @@ import {
   UpdateProjectionUseCase,
   DeleteProjectionUseCase,
   AddPaceToProjectionUseCase,
+  RemovePaceFromProjectionUseCase,
+  UpdatePaceGradeUseCase,
+  MovePaceUseCase,
   GetPaceCatalogUseCase,
 } from '../../app/use-cases';
 
@@ -150,6 +153,18 @@ class Container {
 
   get addPaceToProjectionUseCase(): AddPaceToProjectionUseCase {
     return new AddPaceToProjectionUseCase(this.projectionRepository);
+  }
+
+  get removePaceFromProjectionUseCase(): RemovePaceFromProjectionUseCase {
+    return new RemovePaceFromProjectionUseCase(this.projectionRepository);
+  }
+
+  get updatePaceGradeUseCase(): UpdatePaceGradeUseCase {
+    return new UpdatePaceGradeUseCase(this.projectionRepository);
+  }
+
+  get movePaceUseCase(): MovePaceUseCase {
+    return new MovePaceUseCase(this.projectionRepository);
   }
 
   // PACE Catalog Use Cases

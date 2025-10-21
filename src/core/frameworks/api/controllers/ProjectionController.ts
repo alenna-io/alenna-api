@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { container } from '../../di/container';
-import { CreateProjectionDTO, UpdateProjectionDTO, AddPaceToProjectionDTO } from '../../../app/dtos';
+import { CreateProjectionDTO, UpdateProjectionDTO, AddPaceToProjectionDTO, UpdatePaceGradeDTO, MovePaceDTO } from '../../../app/dtos';
 
 export class ProjectionController {
   async getProjectionsByStudent(req: Request, res: Response): Promise<void> {
@@ -241,14 +241,14 @@ export class ProjectionController {
         updatedAt: projectionPace.updatedAt?.toISOString(),
       });
     } catch (error: any) {
-      console.error('Error adding PACE to projection:', error);
+      console.error('Error al agregar PACE a la proyección:', error);
       
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
       
-      if (error.message === 'Projection not found' || error.message === 'PACE not found in catalog') {
+      if (error.message === 'Proyección no encontrada' || error.message === 'PACE no encontrado en el catálogo') {
         res.status(404).json({ error: error.message });
         return;
       }
@@ -259,6 +259,143 @@ export class ProjectionController {
       }
       
       res.status(500).json({ error: error.message || 'Failed to add PACE to projection' });
+    }
+  }
+
+  async removePaceFromProjection(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId, id, paceId } = req.params;
+      const schoolId = req.schoolId!;
+      
+      // Verify student belongs to school
+      const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
+      if (!student) {
+        res.status(404).json({ error: 'Student not found' });
+        return;
+      }
+
+      await container.removePaceFromProjectionUseCase.execute(id, paceId, studentId);
+
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error removing PACE from projection:', error);
+      
+      if (error.message === 'Projection not found' || error.message === 'PACE not found in projection') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to remove PACE from projection' });
+    }
+  }
+
+  async updatePaceGrade(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId, id, paceId } = req.params;
+      const schoolId = req.schoolId!;
+      const validatedData = UpdatePaceGradeDTO.parse(req.body);
+      
+      // Verify student belongs to school
+      const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
+      if (!student) {
+        res.status(404).json({ error: 'Student not found' });
+        return;
+      }
+
+      const projectionPace = await container.updatePaceGradeUseCase.execute(
+        id,
+        paceId,
+        studentId,
+        validatedData.grade,
+        validatedData.isCompleted,
+        validatedData.isFailed,
+        validatedData.comments,
+        validatedData.note
+      );
+
+      res.json({
+        id: projectionPace.id,
+        projectionId: projectionPace.projectionId,
+        paceCatalogId: projectionPace.paceCatalogId,
+        quarter: projectionPace.quarter,
+        week: projectionPace.week,
+        grade: projectionPace.grade,
+        isCompleted: projectionPace.isCompleted,
+        isFailed: projectionPace.isFailed,
+        comments: projectionPace.comments,
+        createdAt: projectionPace.createdAt?.toISOString(),
+        updatedAt: projectionPace.updatedAt?.toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error updating PACE grade:', error);
+      
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: error.errors });
+        return;
+      }
+      
+      if (error.message === 'Projection not found' || error.message === 'PACE not found in projection') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to update PACE grade' });
+    }
+  }
+
+  async movePace(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId, id, paceId } = req.params;
+      const schoolId = req.schoolId!;
+      const validatedData = MovePaceDTO.parse(req.body);
+      
+      // Verify student belongs to school
+      const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
+      if (!student) {
+        res.status(404).json({ error: 'Student not found' });
+        return;
+      }
+
+      const projectionPace = await container.movePaceUseCase.execute(
+        id,
+        paceId,
+        studentId,
+        validatedData.quarter,
+        validatedData.week
+      );
+
+      res.json({
+        id: projectionPace.id,
+        projectionId: projectionPace.projectionId,
+        paceCatalogId: projectionPace.paceCatalogId,
+        quarter: projectionPace.quarter,
+        week: projectionPace.week,
+        grade: projectionPace.grade,
+        isCompleted: projectionPace.isCompleted,
+        isFailed: projectionPace.isFailed,
+        comments: projectionPace.comments,
+        createdAt: projectionPace.createdAt?.toISOString(),
+        updatedAt: projectionPace.updatedAt?.toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error moving PACE:', error);
+      
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: error.errors });
+        return;
+      }
+      
+      if (error.message === 'Projection not found' || error.message === 'PACE not found in projection') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('already exists')) {
+        res.status(409).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to move PACE' });
     }
   }
 }

@@ -3,11 +3,11 @@ import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
 
-// Helper to calculate PACE codes based on category and level
-// Each category gets a different thousands digit: Math=1xxx, English=2xxx, etc.
-function generatePaceCodes(categoryPrefix: number, levelNumber: number): string[] {
-  const startCode = categoryPrefix * 1000 + (levelNumber - 1) * 12 + 1;
-  return Array.from({ length: 12 }, (_, i) => String(startCode + i).padStart(4, '0'));
+// Helper to calculate PACE codes based on level
+// ALL categories use the same numbering: L1=1001-1012, L2=1013-1024, etc.
+function generatePaceCodes(levelNumber: number): string[] {
+  const startCode = 1000 + (levelNumber - 1) * 12 + 1;
+  return Array.from({ length: 12 }, (_, i) => String(startCode + i));
 }
 
 export async function seedPaceCatalog() {
@@ -107,7 +107,10 @@ export async function seedPaceCatalog() {
     for (const code of paceCodes) {
       await prisma.paceCatalog.upsert({
         where: {
-          code: code,
+          subSubjectId_code: {
+            subSubjectId: subSubject.id,
+            code: code,
+          },
         },
         update: {},
         create: {
@@ -123,7 +126,7 @@ export async function seedPaceCatalog() {
     return subSubject;
   }
 
-  // BIBLE READING (prefix 7xxx)
+  // BIBLE READING
   console.log('  📖 Bible Reading...');
   for (let level = 1; level <= 6; level++) {
     await createSubSubjectWithPaces(
@@ -131,59 +134,59 @@ export async function seedPaceCatalog() {
       `Bible Reading L${level}`,
       `L${level}`,
       2,
-      generatePaceCodes(7, level)
+      generatePaceCodes(level)
     );
   }
 
-  // ELECTIVES (prefix 8xxx)
+  // ELECTIVES
   console.log('  🎓 Electives...');
   
-  // Biblical Studies Life of Christ (L12: 8133-8144)
+  // Biblical Studies Life of Christ (L12: 1133-1144)
   await createSubSubjectWithPaces(
     'Electives',
     'Biblical Studies Life of Christ',
     'L12',
     2,
-    Array.from({ length: 12 }, (_, i) => String(8133 + i).padStart(4, '0'))
+    generatePaceCodes(12)
   );
 
-  // Biblical Studies New Testament Survey (L9: 8097-8108)
+  // Biblical Studies New Testament Survey (L9: 1097-1108)
   await createSubSubjectWithPaces(
     'Electives',
     'Biblical Studies New Testament Survey',
     'L9',
     2,
-    Array.from({ length: 12 }, (_, i) => String(8097 + i).padStart(4, '0'))
+    generatePaceCodes(9)
   );
 
-  // Biblical Studies Old Testament Survey (L10: 8109-8120)
+  // Biblical Studies Old Testament Survey (L10: 1109-1120)
   await createSubSubjectWithPaces(
     'Electives',
     'Biblical Studies Old Testament Survey',
     'L10',
     2,
-    Array.from({ length: 12 }, (_, i) => String(8109 + i).padStart(4, '0'))
+    generatePaceCodes(10)
   );
 
-  // Business Math (Electives: 8001-8012)
+  // Business Math (No level: 001-012)
   await createSubSubjectWithPaces(
     'Electives',
     'Business Math',
     'Electives',
     2,
-    Array.from({ length: 12 }, (_, i) => String(8001 + i).padStart(4, '0'))
+    Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(3, '0'))
   );
 
-  // General Business (Electives: 8013-8024)
+  // General Business (No level: 097-108)
   await createSubSubjectWithPaces(
     'Electives',
     'General Business',
     'Electives',
     2,
-    Array.from({ length: 12 }, (_, i) => String(8013 + i).padStart(4, '0'))
+    Array.from({ length: 12 }, (_, i) => String(97 + i).padStart(3, '0'))
   );
 
-  // ENGLISH (prefix 2xxx)
+  // ENGLISH
   console.log('  📝 English...');
   
   // English L1-L8
@@ -193,7 +196,7 @@ export async function seedPaceCatalog() {
       `English L${level}`,
       `L${level}`,
       3,
-      generatePaceCodes(2, level)
+      generatePaceCodes(level)
     );
   }
   
@@ -203,7 +206,7 @@ export async function seedPaceCatalog() {
     'English I',
     'L9',
     3,
-    generatePaceCodes(2, 9)
+    generatePaceCodes(9)
   );
   
   // English II (L10)
@@ -212,7 +215,7 @@ export async function seedPaceCatalog() {
     'English II',
     'L10',
     3,
-    generatePaceCodes(2, 10)
+    generatePaceCodes(10)
   );
   
   // English III (L11)
@@ -221,7 +224,7 @@ export async function seedPaceCatalog() {
     'English III',
     'L11',
     3,
-    generatePaceCodes(2, 11)
+    generatePaceCodes(11)
   );
   
   // English IV (L12)
@@ -230,10 +233,10 @@ export async function seedPaceCatalog() {
     'English IV',
     'L12',
     3,
-    generatePaceCodes(2, 12)
+    generatePaceCodes(12)
   );
 
-  // MATH (prefix 1xxx)
+  // MATH
   console.log('  🔢 Math...');
   
   // Math L1-L8
@@ -243,7 +246,7 @@ export async function seedPaceCatalog() {
       `Math L${level}`,
       `L${level}`,
       4,
-      generatePaceCodes(1, level)
+      generatePaceCodes(level)
     );
   }
   
@@ -253,7 +256,7 @@ export async function seedPaceCatalog() {
     'Algebra I',
     'L9',
     4,
-    generatePaceCodes(1, 9)
+    generatePaceCodes(9)
   );
   
   // Geometry (L10)
@@ -262,7 +265,7 @@ export async function seedPaceCatalog() {
     'Geometry',
     'L10',
     4,
-    generatePaceCodes(1, 10)
+    generatePaceCodes(10)
   );
   
   // Algebra II (L11)
@@ -271,7 +274,7 @@ export async function seedPaceCatalog() {
     'Algebra II',
     'L11',
     4,
-    generatePaceCodes(1, 11)
+    generatePaceCodes(11)
   );
   
   // Trigonometry (L12)
@@ -280,10 +283,10 @@ export async function seedPaceCatalog() {
     'Trigonometry',
     'L12',
     4,
-    generatePaceCodes(1, 12)
+    generatePaceCodes(12)
   );
 
-  // SCIENCE (prefix 3xxx)
+  // SCIENCE
   console.log('  🔬 Science...');
   
   // Science L1-L8
@@ -293,7 +296,7 @@ export async function seedPaceCatalog() {
       `Science L${level}`,
       `L${level}`,
       4,
-      generatePaceCodes(3, level)
+      generatePaceCodes(level)
     );
   }
   
@@ -303,7 +306,7 @@ export async function seedPaceCatalog() {
     'Biology',
     'L9',
     4,
-    generatePaceCodes(3, 9)
+    generatePaceCodes(9)
   );
   
   // Physical Science (L10)
@@ -312,7 +315,7 @@ export async function seedPaceCatalog() {
     'Physical Science',
     'L10',
     4,
-    generatePaceCodes(3, 10)
+    generatePaceCodes(10)
   );
   
   // Chemistry (L11)
@@ -321,7 +324,7 @@ export async function seedPaceCatalog() {
     'Chemistry',
     'L11',
     4,
-    generatePaceCodes(3, 11)
+    generatePaceCodes(11)
   );
   
   // Physics (L12)
@@ -330,10 +333,10 @@ export async function seedPaceCatalog() {
     'Physics',
     'L12',
     4,
-    generatePaceCodes(3, 12)
+    generatePaceCodes(12)
   );
 
-  // SOCIAL STUDIES (prefix 4xxx)
+  // SOCIAL STUDIES
   console.log('  🌍 Social Studies...');
   
   // Social Studies L1-L8
@@ -343,7 +346,7 @@ export async function seedPaceCatalog() {
       `Social Studies L${level}`,
       `L${level}`,
       2,
-      generatePaceCodes(4, level)
+      generatePaceCodes(level)
     );
   }
   
@@ -353,7 +356,7 @@ export async function seedPaceCatalog() {
     'World Geography',
     'L9',
     2,
-    generatePaceCodes(4, 9)
+    generatePaceCodes(9)
   );
   
   // World History (L10)
@@ -362,7 +365,7 @@ export async function seedPaceCatalog() {
     'World History',
     'L10',
     2,
-    generatePaceCodes(4, 10)
+    generatePaceCodes(10)
   );
   
   // American History (L11)
@@ -371,28 +374,28 @@ export async function seedPaceCatalog() {
     'American History',
     'L11',
     2,
-    generatePaceCodes(4, 11)
+    generatePaceCodes(11)
   );
   
-  // U.S. Civics (L12: 4133-4138 - 6 PACEs)
+  // U.S. Civics (L12: 1133-1138 - 6 PACEs)
   await createSubSubjectWithPaces(
     'Social Studies',
     'U.S. Civics',
     'L12',
     2,
-    Array.from({ length: 6 }, (_, i) => String(4133 + i).padStart(4, '0'))
+    Array.from({ length: 6 }, (_, i) => String(1133 + i))
   );
   
-  // Economics (L12: 4139-4144 - 6 PACEs)
+  // Economics (L12: 1139-1144 - 6 PACEs)
   await createSubSubjectWithPaces(
     'Social Studies',
     'Economics',
     'L12',
     2,
-    Array.from({ length: 6 }, (_, i) => String(4139 + i).padStart(4, '0'))
+    Array.from({ length: 6 }, (_, i) => String(1139 + i))
   );
 
-  // WORD BUILDING (prefix 5xxx)
+  // WORD BUILDING
   console.log('  📚 Word Building...');
   
   // Word Building L1-L8
@@ -402,7 +405,7 @@ export async function seedPaceCatalog() {
       `Word Building L${level}`,
       `L${level}`,
       2,
-      generatePaceCodes(5, level)
+      generatePaceCodes(level)
     );
   }
   
@@ -412,10 +415,10 @@ export async function seedPaceCatalog() {
     'Etymology',
     'L9',
     2,
-    generatePaceCodes(5, 9)
+    generatePaceCodes(9)
   );
 
-  // SPANISH (prefix 6xxx)
+  // SPANISH
   console.log('  🇪🇸 Spanish...');
   
   // Español L1
@@ -424,17 +427,17 @@ export async function seedPaceCatalog() {
     'Español L1',
     'L1',
     3,
-    generatePaceCodes(6, 1)
+    generatePaceCodes(1)
   );
   
-  // Español y Ortografía L2-L6
-  for (let level = 2; level <= 6; level++) {
+  // Español y Ortografía L2-L8
+  for (let level = 2; level <= 8; level++) {
     await createSubSubjectWithPaces(
       'Spanish',
       `Español y Ortografía L${level}`,
       `L${level}`,
       3,
-      generatePaceCodes(6, level)
+      generatePaceCodes(level)
     );
   }
 

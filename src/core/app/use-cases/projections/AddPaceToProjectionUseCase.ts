@@ -16,7 +16,7 @@ export class AddPaceToProjectionUseCase {
     // 1. Verify projection exists and belongs to student
     const projection = await this.projectionRepository.findById(projectionId, studentId);
     if (!projection) {
-      throw new Error('Projection not found');
+      throw new Error('Proyección no encontrada');
     }
 
     // 2. Verify PACE catalog exists
@@ -24,7 +24,7 @@ export class AddPaceToProjectionUseCase {
       where: { id: paceCatalogId },
     });
     if (!paceCatalog) {
-      throw new Error('PACE not found in catalog');
+      throw new Error('PACE no encontrado en el catálogo');
     }
 
     // 3. Check if this PACE is already in the projection
@@ -37,7 +37,7 @@ export class AddPaceToProjectionUseCase {
       },
     });
     if (existingPace) {
-      throw new Error('This PACE is already added to the projection');
+      throw new Error('Este PACE ya está agregado a la proyección');
     }
 
     // 4. Check if there's already a PACE at this quarter/week/subject position
@@ -53,7 +53,7 @@ export class AddPaceToProjectionUseCase {
     });
 
     if (!paceCatalogWithDetails) {
-      throw new Error('PACE details not found');
+      throw new Error('Detalles del PACE no encontrados');
     }
 
     const categoryName = paceCatalogWithDetails.subSubject.category.name;
@@ -75,7 +75,7 @@ export class AddPaceToProjectionUseCase {
     });
 
     if (existingAtPosition) {
-      throw new Error(`A ${categoryName} PACE already exists at ${quarter} Week ${week}`);
+      throw new Error(`Ya existe un PACE de ${categoryName} en ${quarter} Semana ${week}`);
     }
 
     // 5. Create the ProjectionPace

@@ -8,7 +8,7 @@ export class GetProjectionByIdUseCase {
     const projection = await this.projectionRepository.findById(id, studentId);
     
     if (!projection) {
-      throw new Error('Projection not found');
+      throw new Error('Proyección no encontrada');
     }
 
     return projection;

@@ -203,110 +203,143 @@ async function main() {
       
       let projectionPacesCreated = 0;
 
-      // Get L8 subsubjects and their PACEs from the catalog
-      const l8SubSubjects = await prisma.subSubject.findMany({
-        where: { levelId: 'L8' },
-        include: {
-          paces: {
-            orderBy: { code: 'asc' },
-          },
-          category: true,
-        },
-      });
-
-      // Map categories to core subjects
-      const categoryMap: Record<string, string[]> = {};
-      for (const subSubject of l8SubSubjects) {
-        const catName = subSubject.category.name;
-        if (!categoryMap[catName]) {
-          categoryMap[catName] = [];
-        }
-        categoryMap[catName].push(subSubject.id);
-      }
-
-      // Create projection paces for Q1 (weeks 1-4) and Q2 (weeks 1-2)
-      const coreCategories = ['Math', 'English', 'Science', 'Social Studies', 'Word Building', 'Spanish'];
-      
-      for (const category of coreCategories) {
-        const subSubjectIds = categoryMap[category];
-        if (!subSubjectIds || subSubjectIds.length === 0) continue;
-
-        // Get paces for this category's subsubject(s)
-        const catalogPaces = await prisma.paceCatalog.findMany({
+      // Get L8 subsubjects for each category
+      const getSubSubjectPaces = async (categoryName: string) => {
+        const subSubject = await prisma.subSubject.findFirst({
           where: {
-            subSubjectId: { in: subSubjectIds },
+            levelId: 'L8',
+            category: { name: categoryName },
           },
-          orderBy: { code: 'asc' },
-          take: 6, // First 6 PACEs
+          include: {
+            paces: {
+              orderBy: { code: 'asc' },
+            },
+          },
         });
+        return subSubject?.paces || [];
+      };
 
-        // Q1: First 4 PACEs (weeks 1-4)
-        for (let i = 0; i < Math.min(4, catalogPaces.length); i++) {
-          const isCompleted = i < 2; // First 2 are completed
-          const grade = isCompleted ? Math.floor(Math.random() * 21) + 80 : null;
-          
-          const projectionPace = await prisma.projectionPace.create({
-            data: {
-              id: randomUUID(),
-              projectionId: projection.id,
-              paceCatalogId: catalogPaces[i].id,
-              quarter: 'Q1',
-              week: i + 1,
-              grade,
-              isCompleted,
-              isFailed: false,
-              comments: isCompleted ? 'Completed successfully' : undefined,
-            },
-          });
+      const mathPaces = await getSubSubjectPaces('Math');
+      const englishPaces = await getSubSubjectPaces('English');
+      const sciencePaces = await getSubSubjectPaces('Science');
+      const socialStudiesPaces = await getSubSubjectPaces('Social Studies');
+      const wordBuildingPaces = await getSubSubjectPaces('Word Building');
+      const spanishPaces = await getSubSubjectPaces('Spanish');
 
-          // Add grade history for completed PACEs
-          if (isCompleted && Math.random() > 0.7) {
-            // 30% chance of retake
-            await prisma.gradeHistory.create({
+      // Pattern: Week 1,4,7 = Math+English | Week 2,5,8 = Science+Social | Week 3,6,9 = Word+Spanish
+      // Each quarter progresses sequentially (Q1 uses 1085-1087, Q2 uses 1088-1090, etc.)
+      const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+      const pacesPerQuarter = 3; // 3 PACEs per subject per quarter (weeks 1,4,7 or 2,5,8 or 3,6,9)
+      
+      for (let quarterIndex = 0; quarterIndex < quarters.length; quarterIndex++) {
+        const quarter = quarters[quarterIndex];
+        
+        // Calculate which PACEs to use (sequential progression)
+        const startPaceIndex = quarterIndex * pacesPerQuarter; // Q1=0, Q2=3, Q3=6, Q4=9
+        
+        const quarterSchedule = [
+          // Week 1: Math, English
+          { week: 1, subjects: [
+            { paces: mathPaces, paceIndex: startPaceIndex },
+            { paces: englishPaces, paceIndex: startPaceIndex }
+          ]},
+          // Week 2: Science, Social Studies
+          { week: 2, subjects: [
+            { paces: sciencePaces, paceIndex: startPaceIndex },
+            { paces: socialStudiesPaces, paceIndex: startPaceIndex }
+          ]},
+          // Week 3: Word Building, Spanish
+          { week: 3, subjects: [
+            { paces: wordBuildingPaces, paceIndex: startPaceIndex },
+            { paces: spanishPaces, paceIndex: startPaceIndex }
+          ]},
+          // Week 4: Math, English
+          { week: 4, subjects: [
+            { paces: mathPaces, paceIndex: startPaceIndex + 1 },
+            { paces: englishPaces, paceIndex: startPaceIndex + 1 }
+          ]},
+          // Week 5: Science, Social Studies
+          { week: 5, subjects: [
+            { paces: sciencePaces, paceIndex: startPaceIndex + 1 },
+            { paces: socialStudiesPaces, paceIndex: startPaceIndex + 1 }
+          ]},
+          // Week 6: Word Building, Spanish
+          { week: 6, subjects: [
+            { paces: wordBuildingPaces, paceIndex: startPaceIndex + 1 },
+            { paces: spanishPaces, paceIndex: startPaceIndex + 1 }
+          ]},
+          // Week 7: Math, English
+          { week: 7, subjects: [
+            { paces: mathPaces, paceIndex: startPaceIndex + 2 },
+            { paces: englishPaces, paceIndex: startPaceIndex + 2 }
+          ]},
+          // Week 8: Science, Social Studies
+          { week: 8, subjects: [
+            { paces: sciencePaces, paceIndex: startPaceIndex + 2 },
+            { paces: socialStudiesPaces, paceIndex: startPaceIndex + 2 }
+          ]},
+          // Week 9: Word Building, Spanish
+          { week: 9, subjects: [
+            { paces: wordBuildingPaces, paceIndex: startPaceIndex + 2 },
+            { paces: spanishPaces, paceIndex: startPaceIndex + 2 }
+          ]},
+        ];
+
+        for (const schedule of quarterSchedule) {
+          for (const subjectData of schedule.subjects) {
+            const pace = subjectData.paces[subjectData.paceIndex];
+            if (!pace) continue;
+
+            // Only add grades for Q1 (completed quarter)
+            const isCompleted = quarter === 'Q1';
+            const grade = isCompleted ? Math.floor(Math.random() * 21) + 80 : null;
+
+            const projectionPace = await prisma.projectionPace.create({
               data: {
                 id: randomUUID(),
-                projectionPaceId: projectionPace.id,
-                grade: Math.floor(Math.random() * 15) + 65,
-                date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-                note: 'Primera vez - necesita repasar',
+                projectionId: projection.id,
+                paceCatalogId: pace.id,
+                quarter,
+                week: schedule.week,
+                grade,
+                isCompleted,
+                isFailed: false,
+                comments: isCompleted ? 'Completed successfully' : undefined,
               },
             });
+
+            // Add grade history for completed PACEs in Q1
+            if (isCompleted) {
+              // 30% chance of retake
+              if (Math.random() > 0.7) {
+                await prisma.gradeHistory.create({
+                  data: {
+                    id: randomUUID(),
+                    projectionPaceId: projectionPace.id,
+                    grade: Math.floor(Math.random() * 15) + 65,
+                    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                    note: 'Primera vez - necesita repasar',
+                  },
+                });
+              }
+
+              await prisma.gradeHistory.create({
+                data: {
+                  id: randomUUID(),
+                  projectionPaceId: projectionPace.id,
+                  grade: grade!,
+                  date: new Date(),
+                  note: grade! >= 90 ? 'Excelente trabajo' : undefined,
+                },
+              });
+            }
+
+            projectionPacesCreated++;
           }
-
-          if (isCompleted) {
-            await prisma.gradeHistory.create({
-              data: {
-                id: randomUUID(),
-                projectionPaceId: projectionPace.id,
-                grade: grade!,
-                date: new Date(),
-                note: grade! >= 90 ? 'Excelente trabajo' : undefined,
-              },
-            });
-          }
-
-          projectionPacesCreated++;
-        }
-
-        // Q2: Next 2 PACEs (weeks 1-2)
-        for (let i = 4; i < Math.min(6, catalogPaces.length); i++) {
-          await prisma.projectionPace.create({
-            data: {
-              id: randomUUID(),
-              projectionId: projection.id,
-              paceCatalogId: catalogPaces[i].id,
-              quarter: 'Q2',
-              week: i - 3, // Weeks 1-2 of Q2
-              grade: null,
-              isCompleted: false,
-              isFailed: false,
-            },
-          });
-          projectionPacesCreated++;
         }
       }
 
-      console.log(`   ✅ Created ${projectionPacesCreated} projection PACEs with grade history`);
+      console.log(`   ✅ Created ${projectionPacesCreated} projection PACEs across all 4 quarters`);
     }
   }
 

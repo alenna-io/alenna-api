@@ -22,7 +22,10 @@ router.get('/:id', projectionController.getProjection.bind(projectionController)
 router.post('/', projectionController.createProjection.bind(projectionController));
 router.post('/:id/paces', projectionController.addPaceToProjection.bind(projectionController)); // Add PACE to projection
 router.put('/:id', projectionController.updateProjection.bind(projectionController));
+router.put('/:id/paces/:paceId', projectionController.updatePaceGrade.bind(projectionController)); // Update PACE grade
+router.patch('/:id/paces/:paceId/move', projectionController.movePace.bind(projectionController)); // Move PACE to different week
 router.delete('/:id', projectionController.deleteProjection.bind(projectionController));
+router.delete('/:id/paces/:paceId', projectionController.removePaceFromProjection.bind(projectionController)); // Remove PACE
 
 export default router;
 

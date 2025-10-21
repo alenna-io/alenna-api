@@ -206,8 +206,8 @@ model SubSubject {
 // PaceCatalog - Master PACE list (shared across all students)
 model PaceCatalog {
   id   String @id @default(cuid())
-  code String @unique // e.g., "1001", "001", "097"
-  name String // SubSubject name + code, e.g., "Math 1 - 1001"
+  code String // e.g., "1001", "001", "097" - Same codes across all categories!
+  name String // SubSubject name + code, e.g., "Math L1 - 1001"
 
   subSubjectId String
   subSubject   SubSubject @relation(fields: [subSubjectId], references: [id], onDelete: Cascade)
@@ -217,6 +217,7 @@ model PaceCatalog {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([subSubjectId, code]) // Code is unique per SubSubject, not globally
   @@index([subSubjectId])
   @@map("pace_catalog")
 }

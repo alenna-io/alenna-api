@@ -11,6 +11,25 @@ export const AddPaceToProjectionDTO = z.object({
 
 export type AddPaceToProjectionInput = z.infer<typeof AddPaceToProjectionDTO>;
 
+// Input DTO for updating a PACE grade
+export const UpdatePaceGradeDTO = z.object({
+  grade: z.number().int().min(0).max(100),
+  isCompleted: z.boolean().optional(),
+  isFailed: z.boolean().optional(),
+  comments: z.string().optional(),
+  note: z.string().optional(), // Note for grade history
+});
+
+export type UpdatePaceGradeInput = z.infer<typeof UpdatePaceGradeDTO>;
+
+// Input DTO for moving a PACE to a different week/quarter
+export const MovePaceDTO = z.object({
+  quarter: z.enum(['Q1', 'Q2', 'Q3', 'Q4']),
+  week: z.number().int().min(1).max(9),
+});
+
+export type MovePaceInput = z.infer<typeof MovePaceDTO>;
+
 export interface GradeHistoryOutput {
   id: string;
   grade: number;
