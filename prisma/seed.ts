@@ -332,7 +332,7 @@ async function main() {
     console.log(`   ✅ Created projection: ${projection.schoolYear}`);
 
     // Add sample ProjectionPaces for María (L8 student)
-    if (student.firstName === 'María' && student.lastName === 'González López') {
+    if (restData.firstName === 'María' && restData.lastName === 'González López') {
       console.log('   🎯 Adding sample projection PACEs for María (L8)...');
       
       let projectionPacesCreated = 0;
