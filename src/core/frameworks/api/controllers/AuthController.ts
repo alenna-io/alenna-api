@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { container } from '../../di/container';
+import { GetUserInfoUseCase } from '../../../app/use-cases/auth';
 
 export class AuthController {
   async syncUser(req: Request, res: Response): Promise<void> {
@@ -54,6 +55,31 @@ export class AuthController {
     } catch (error: any) {
       console.error('Error getting current user:', error);
       res.status(500).json({ error: error.message || 'Failed to get user' });
+    }
+  }
+
+  /**
+   * GET /api/v1/auth/info
+   * Get current user info with roles
+   */
+  async getUserInfo(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.userId;
+
+      if (!userId) {
+        res.status(401).json({ error: 'No autenticado' });
+        return;
+      }
+
+      const getUserInfoUseCase = new GetUserInfoUseCase();
+      const userInfo = await getUserInfoUseCase.execute(userId);
+
+      res.status(200).json(userInfo);
+    } catch (error) {
+      console.error('Error getting user info:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Error al obtener información del usuario'
+      });
     }
   }
 }

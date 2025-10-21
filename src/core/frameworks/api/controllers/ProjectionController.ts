@@ -7,15 +7,16 @@ export class ProjectionController {
     try {
       const { studentId } = req.params;
       const schoolId = req.schoolId!;
+      const userId = req.userId; // For parent access check
       
-      // Verify student belongs to school
-      const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
+      // Verify student belongs to school (and parent has access if applicable)
+      const student = await container.getStudentByIdUseCase.execute(studentId, schoolId, userId);
       if (!student) {
         res.status(404).json({ error: 'Student not found' });
         return;
       }
 
-      const projections = await container.getProjectionsByStudentIdUseCase.execute(studentId);
+      const projections = await container.getProjectionsByStudentIdUseCase.execute(studentId, userId);
 
       res.json(projections.map(projection => ({
         id: projection.id,

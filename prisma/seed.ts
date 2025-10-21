@@ -31,20 +31,20 @@ async function main() {
 
   console.log('✅ Created school:', school.name);
 
-  // Create demo user (admin)
-  const user = await prisma.user.upsert({
+  // Create demo admin user
+  const adminUser = await prisma.user.upsert({
     where: { clerkId: 'user_33skKBEkI8wMg70KnEwHwrjVP93' },
     update: {},
     create: {
       clerkId: 'user_33skKBEkI8wMg70KnEwHwrjVP93',
-      email: 'sergio@alenna.io',
+      email: 'demo.admin@alenna.io',
       firstName: 'Demo',
-      lastName: 'User',
+      lastName: 'Admin',
       schoolId: school.id,
     },
   });
 
-  // Assign ADMIN role to demo user
+  // Assign ADMIN role
   const adminRole = await prisma.role.findFirst({
     where: { name: 'ADMIN', schoolId: null },
   });
@@ -53,22 +53,21 @@ async function main() {
     await prisma.userRole.upsert({
       where: {
         userId_roleId: {
-          userId: user.id,
+          userId: adminUser.id,
           roleId: adminRole.id,
         },
       },
       update: {},
       create: {
         id: randomUUID(),
-        userId: user.id,
+        userId: adminUser.id,
         roleId: adminRole.id,
       },
     });
-    console.log('✅ Assigned ADMIN role to user');
   }
 
-  console.log('✅ Created user:', user.email);
-  console.log('   Clerk ID:', user.clerkId);
+  console.log('✅ Created ADMIN user:', adminUser.email);
+  console.log('   Clerk ID:', adminUser.clerkId);
   console.log('   ⚠️  Replace this with your actual Clerk user ID!');
 
   // Enable Students module for school
@@ -91,22 +90,163 @@ async function main() {
     });
     console.log('✅ Enabled Students module for school');
 
-    // Assign Students module to demo user
+    // Assign Students module to demo admin
     await prisma.userModule.upsert({
       where: {
         userId_moduleId: {
-          userId: user.id,
+          userId: adminUser.id,
           moduleId: studentsModule.id,
         },
       },
       update: {},
       create: {
         id: randomUUID(),
-        userId: user.id,
+        userId: adminUser.id,
         moduleId: studentsModule.id,
       },
     });
-    console.log('✅ Assigned Students module to user');
+    console.log('✅ Assigned Students module to admin');
+  }
+
+  // Create demo users for each role
+  console.log('\n👥 Creating demo users for each role...');
+
+  // Get roles
+  const teacherRole = await prisma.role.findFirst({ where: { name: 'TEACHER', schoolId: null } });
+  const parentRole = await prisma.role.findFirst({ where: { name: 'PARENT', schoolId: null } });
+  const studentRole = await prisma.role.findFirst({ where: { name: 'STUDENT', schoolId: null } });
+  
+  // 1. Demo Teacher
+  if (teacherRole && studentsModule) {
+    const teacherUser = await prisma.user.upsert({
+      where: { email: 'demo.teacher@alenna.io' },
+      update: {},
+      create: {
+        id: randomUUID(),
+        clerkId: 'demo_teacher_clerk',
+        email: 'demo.teacher@alenna.io',
+        firstName: 'Demo',
+        lastName: 'Teacher',
+        schoolId: school.id,
+      },
+    });
+
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: teacherUser.id,
+          roleId: teacherRole.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: teacherUser.id,
+        roleId: teacherRole.id,
+      },
+    });
+
+    await prisma.userModule.upsert({
+      where: {
+        userId_moduleId: {
+          userId: teacherUser.id,
+          moduleId: studentsModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: teacherUser.id,
+        moduleId: studentsModule.id,
+      },
+    });
+
+    console.log('✅ Created TEACHER user:', teacherUser.email);
+  }
+
+  // 2. Demo Parent (will be linked to first student created)
+  let demoParentUser = null;
+  if (parentRole && studentsModule) {
+    demoParentUser = await prisma.user.upsert({
+      where: { email: 'demo.parent@alenna.io' },
+      update: {},
+      create: {
+        id: randomUUID(),
+        clerkId: 'demo_parent_clerk',
+        email: 'demo.parent@alenna.io',
+        firstName: 'Demo',
+        lastName: 'Parent',
+        schoolId: school.id,
+      },
+    });
+
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: demoParentUser.id,
+          roleId: parentRole.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: demoParentUser.id,
+        roleId: parentRole.id,
+      },
+    });
+
+    await prisma.userModule.upsert({
+      where: {
+        userId_moduleId: {
+          userId: demoParentUser.id,
+          moduleId: studentsModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: demoParentUser.id,
+        moduleId: studentsModule.id,
+      },
+    });
+
+    console.log('✅ Created PARENT user:', demoParentUser.email);
+  }
+
+  // 3. Demo Student (separate from regular students - explicit demo account)
+  if (studentRole) {
+    const demoStudentUser = await prisma.user.upsert({
+      where: { email: 'demo.student@alenna.io' },
+      update: {},
+      create: {
+        id: randomUUID(),
+        clerkId: 'demo_student_clerk',
+        email: 'demo.student@alenna.io',
+        firstName: 'Demo',
+        lastName: 'Student',
+        schoolId: school.id,
+      },
+    });
+
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: demoStudentUser.id,
+          roleId: studentRole.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: demoStudentUser.id,
+        roleId: studentRole.id,
+      },
+    });
+
+    // Students typically don't have module access yet (no permissions)
+    // Can be granted later when student features are added
+
+    console.log('✅ Created STUDENT user:', demoStudentUser.email);
   }
 
   // Clear existing students first (cascade deletes projections, paces, daily goals)
@@ -210,14 +350,7 @@ async function main() {
     },
   ];
 
-  // Get STUDENT and PARENT roles
-  const studentRole = await prisma.role.findFirst({
-    where: { name: 'STUDENT', schoolId: null },
-  });
-  
-  const parentRole = await prisma.role.findFirst({
-    where: { name: 'PARENT', schoolId: null },
-  });
+  // studentRole and parentRole already declared above
 
   for (const studentData of studentsData) {
     const { certificationTypeName, currentLevel, ...restData } = studentData;
@@ -265,7 +398,20 @@ async function main() {
     
     console.log('✅ Created student:', studentUser.firstName, studentUser.lastName);
 
-    // Create parent users and link to student
+    // Link Demo Parent to first student (María)
+    if (restData.firstName === 'María' && demoParentUser) {
+      await prisma.userStudent.create({
+        data: {
+          id: randomUUID(),
+          userId: demoParentUser.id,
+          studentId: student.id,
+          relationship: 'Parent',
+        },
+      });
+      console.log('   ✅ Linked Demo Parent to student');
+    }
+
+    // Create additional parent users for María
     const parentData = [
       { firstName: 'Carlos', lastName: 'González', relationship: 'Father' },
       { firstName: 'Ana', lastName: 'López', relationship: 'Mother' },
@@ -273,11 +419,12 @@ async function main() {
 
     if (restData.firstName === 'María' && parentRole) {
       for (const parent of parentData) {
+        const parentUserId = randomUUID();
         const parentUser = await prisma.user.create({
           data: {
-            id: randomUUID(),
-            clerkId: `parent_${randomUUID()}_clerk`,
-            email: `${parent.firstName.toLowerCase()}.${parent.lastName.toLowerCase()}@demo.alenna.io`,
+            id: parentUserId,
+            clerkId: `parent_${parentUserId}_clerk`,
+            email: `parent.${parentUserId.substring(0, 8)}@demo.alenna.io`, // Unique email
             firstName: parent.firstName,
             lastName: parent.lastName,
             schoolId: school.id,

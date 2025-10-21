@@ -6,8 +6,9 @@ export class StudentController {
   async getStudents(req: Request, res: Response): Promise<void> {
     try {
       const schoolId = req.schoolId!;
+      const userId = req.userId; // For parent filtering
       
-      const students = await container.getStudentsUseCase.execute(schoolId);
+      const students = await container.getStudentsUseCase.execute(schoolId, userId);
 
       res.json(students.map(student => ({
         id: student.id,
@@ -35,8 +36,9 @@ export class StudentController {
     try {
       const { id } = req.params;
       const schoolId = req.schoolId!;
-      
-      const student = await container.getStudentByIdUseCase.execute(id, schoolId);
+      const userId = req.userId; // For parent access check
+
+      const student = await container.getStudentByIdUseCase.execute(id, schoolId, userId);
 
       res.json({
         id: student.id,

@@ -98,9 +98,9 @@ export class CheckPermissionUseCase {
 
       // 6. For "Own" permissions, verify ownership
       if (permission.endsWith('.readOwn') || permission.endsWith('.updateOwn')) {
+        // If no resourceOwnerId provided, allow (filtering happens in use case)
         if (!resourceOwnerId) {
-          // "Own" permission requires resourceOwnerId
-          return false;
+          return true;
         }
 
         // Check if user has PARENT role and is linked to this student
