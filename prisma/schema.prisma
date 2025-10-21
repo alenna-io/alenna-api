@@ -10,66 +10,66 @@ datasource db {
 
 // Multi-tenancy: Each school is a tenant
 model School {
-  id        String   @id @default(cuid())
-  name      String
-  address   String?
-  phone     String?
-  email     String?
-  
+  id      String  @id @default(cuid())
+  name    String
+  address String?
+  phone   String?
+  email   String?
+
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   users              User[]
   students           Student[]
   certificationTypes CertificationType[]
-  
+
   @@map("schools")
 }
 
 // Users belong to a school and are authenticated via Clerk
 model User {
-  id            String   @id @default(cuid())
-  clerkId       String   @unique // Clerk user ID
-  email         String   @unique
-  firstName     String?
-  lastName      String?
-  role          UserRole @default(TEACHER)
-  
-  schoolId      String
-  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  
-  deletedAt     DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  id        String   @id @default(cuid())
+  clerkId   String   @unique // Clerk user ID
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  role      UserRole @default(TEACHER)
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   @@index([schoolId])
   @@index([clerkId])
   @@map("users")
 }
 
 enum UserRole {
-  ADMIN          // School administrator
-  TEACHER        // Regular teacher
-  SUPERVISOR     // Can view all students
+  ADMIN // School administrator
+  TEACHER // Regular teacher
+  SUPERVISOR // Can view all students
 }
 
 // Certification types per school (tenant-scoped)
 model CertificationType {
-  id          String   @id @default(cuid())
-  name        String   // e.g., "INEA", "Grace Christian", "Home Life", etc.
+  id          String  @id @default(cuid())
+  name        String // e.g., "INEA", "Grace Christian", "Home Life", etc.
   description String?
-  isActive    Boolean  @default(true)
-  
-  schoolId    String
-  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  
-  students    Student[]
-  
-  deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  isActive    Boolean @default(true)
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  students Student[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   @@unique([schoolId, name]) // Unique certification name per school
   @@index([schoolId])
   @@map("certification_types")
@@ -77,30 +77,31 @@ model CertificationType {
 
 // Students belong to a school
 model Student {
-  id                    String   @id @default(cuid())
-  firstName             String
-  lastName              String
-  age                   Int
-  birthDate             DateTime
-  graduationDate        DateTime
-  contactPhone          String?
-  isLeveled             Boolean  @default(false)
-  expectedLevel         String?
-  address               String?
-  
-  schoolId              String
-  school                School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  
-  certificationTypeId   String
-  certificationType     CertificationType @relation(fields: [certificationTypeId], references: [id], onDelete: Restrict)
-  
-  parents               Parent[]
-  projections           Projection[]
-  
-  deletedAt             DateTime?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
+  id             String   @id @default(cuid())
+  firstName      String
+  lastName       String
+  age            Int
+  birthDate      DateTime
+  graduationDate DateTime
+  contactPhone   String?
+  isLeveled      Boolean  @default(false)
+  expectedLevel  String?
+  address        String?
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  certificationTypeId String
+  certificationType   CertificationType @relation(fields: [certificationTypeId], references: [id], onDelete: Restrict)
+
+  parents      Parent[]
+  projections  Projection[]
+  currentLevel String? // Current ACE level (L1-L12)
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   @@index([schoolId])
   @@index([certificationTypeId])
   @@map("students")
@@ -108,23 +109,23 @@ model Student {
 
 // Projection: Yearly PACE plan for a student
 model Projection {
-  id              String   @id @default(cuid())
-  schoolYear      String   // e.g., "2024-2025"
-  startDate       DateTime
-  endDate         DateTime
-  isActive        Boolean  @default(true)
-  notes           String?
-  
-  studentId       String
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
-  paces           Pace[]
+  id         String   @id @default(cuid())
+  schoolYear String // e.g., "2024-2025"
+  startDate  DateTime
+  endDate    DateTime
+  isActive   Boolean  @default(true)
+  notes      String?
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  projectionPaces ProjectionPace[]
   dailyGoals      DailyGoal[]
-  
-  deletedAt       DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   @@index([studentId])
   @@index([studentId, isActive])
   @@map("projections")
@@ -132,83 +133,164 @@ model Projection {
 
 // Parents are linked to students
 model Parent {
-  id        String   @id @default(cuid())
-  name      String
-  
+  id   String @id @default(cuid())
+  name String
+
   studentId String
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   @@index([studentId])
   @@map("parents")
 }
 
-// PACE tracking (Packet of Accelerated Christian Education)
-model Pace {
-  id            String   @id @default(cuid())
-  number        String   // PACE number (e.g., "1001")
-  subject       String   // Math, English, Science, Social Studies, Word Building, Spanish
-  quarter       String   // Q1, Q2, Q3, Q4
-  week          Int      // 1-9
-  grade         Int?     // 0-100, null if not graded
-  isCompleted   Boolean  @default(false)
-  isFailed      Boolean  @default(false)
-  comments      String?  // Optional comments about this PACE
-  
-  projectionId  String
-  projection    Projection @relation(fields: [projectionId], references: [id], onDelete: Cascade)
-  
-  gradeHistory  GradeHistory[]
-  
-  deletedAt     DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  @@index([projectionId])
-  @@index([projectionId, quarter, week])
-  @@map("paces")
+// ============================================
+// PACE CATALOG SYSTEM
+// ============================================
+
+// Category (Mega Subject) - e.g., Math, English, Science
+model Category {
+  id           String  @id @default(cuid())
+  name         String  @unique // Bible Reading, Electives, English, Math, Science, Social Studies, Word Building, Spanish
+  description  String?
+  displayOrder Int     @default(0) // For sorting in UI
+
+  subSubjects SubSubject[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
 }
 
-// Grade history for each PACE
-model GradeHistory {
-  id        String   @id @default(cuid())
-  grade     Int
-  date      DateTime @default(now())
-  note      String?
-  
-  paceId    String
-  pace      Pace     @relation(fields: [paceId], references: [id], onDelete: Cascade)
-  
+// Level - L1 to L12
+model Level {
+  id     String @id // "L1" to "L12" or "Electives"
+  number Int? // 1-12, null for special levels like "Electives"
+  name   String // Display name
+
+  subSubjects SubSubject[]
+
   createdAt DateTime @default(now())
-  
-  @@index([paceId])
+  updatedAt DateTime @updatedAt
+
+  @@map("levels")
+}
+
+// SubSubject - Specific subject within a category (e.g., Math 1, Trigonometry)
+model SubSubject {
+  id         String @id @default(cuid())
+  name       String // e.g., "Math 1", "Trigonometry", "English I"
+  difficulty Int    @default(3) // 1-5
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  levelId String
+  level   Level  @relation(fields: [levelId], references: [id], onDelete: Restrict)
+
+  paces PaceCatalog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([categoryId, name])
+  @@index([categoryId])
+  @@index([levelId])
+  @@map("sub_subjects")
+}
+
+// PaceCatalog - Master PACE list (shared across all students)
+model PaceCatalog {
+  id   String @id @default(cuid())
+  code String @unique // e.g., "1001", "001", "097"
+  name String // SubSubject name + code, e.g., "Math 1 - 1001"
+
+  subSubjectId String
+  subSubject   SubSubject @relation(fields: [subSubjectId], references: [id], onDelete: Cascade)
+
+  projectionPaces ProjectionPace[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subSubjectId])
+  @@map("pace_catalog")
+}
+
+// ============================================
+// STUDENT PACE TRACKING
+// ============================================
+
+// ProjectionPace - Student-specific PACE tracking (links to catalog)
+model ProjectionPace {
+  id String @id @default(cuid())
+
+  projectionId String
+  projection   Projection @relation(fields: [projectionId], references: [id], onDelete: Cascade)
+
+  paceCatalogId String
+  paceCatalog   PaceCatalog @relation(fields: [paceCatalogId], references: [id], onDelete: Restrict)
+
+  quarter     String // Q1, Q2, Q3, Q4
+  week        Int // 1-9
+  grade       Int? // 0-100, null if not graded
+  isCompleted Boolean @default(false)
+  isFailed    Boolean @default(false)
+  comments    String? // Optional comments about this PACE
+
+  gradeHistory GradeHistory[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([projectionId, paceCatalogId]) // Student can only have one instance of each PACE per projection
+  @@index([projectionId])
+  @@index([projectionId, quarter, week])
+  @@map("projection_paces")
+}
+
+// Grade history for each student's PACE attempt
+model GradeHistory {
+  id    String   @id @default(cuid())
+  grade Int
+  date  DateTime @default(now())
+  note  String?
+
+  projectionPaceId String
+  projectionPace   ProjectionPace @relation(fields: [projectionPaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([projectionPaceId])
   @@map("grade_history")
 }
 
 // Daily Goals
 model DailyGoal {
-  id              String   @id @default(cuid())
-  subject         String   // Math, English, Science, Social Studies, Word Building, Spanish
-  quarter         String   // Q1, Q2, Q3, Q4
-  week            Int      // 1-9
-  dayOfWeek       Int      // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri
-  text            String   // Goal text (e.g., "1-10" or "Self Test")
-  isCompleted     Boolean  @default(false)
-  notes           String?
-  notesCompleted  Boolean  @default(false)
-  
-  projectionId    String
-  projection      Projection @relation(fields: [projectionId], references: [id], onDelete: Cascade)
-  
-  notesHistory    NoteHistory[]
-  
-  deletedAt       DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id             String  @id @default(cuid())
+  subject        String // Math, English, Science, Social Studies, Word Building, Spanish
+  quarter        String // Q1, Q2, Q3, Q4
+  week           Int // 1-9
+  dayOfWeek      Int // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri
+  text           String // Goal text (e.g., "1-10" or "Self Test")
+  isCompleted    Boolean @default(false)
+  notes          String?
+  notesCompleted Boolean @default(false)
+
+  projectionId String
+  projection   Projection @relation(fields: [projectionId], references: [id], onDelete: Cascade)
+
+  notesHistory NoteHistory[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   @@index([projectionId])
   @@index([projectionId, quarter, week])
   @@map("daily_goals")
@@ -216,16 +298,15 @@ model DailyGoal {
 
 // Notes history for daily goals
 model NoteHistory {
-  id              String    @id @default(cuid())
-  text            String
-  completedDate   DateTime  @default(now())
-  
-  dailyGoalId     String
-  dailyGoal       DailyGoal @relation(fields: [dailyGoalId], references: [id], onDelete: Cascade)
-  
-  createdAt       DateTime  @default(now())
-  
+  id            String   @id @default(cuid())
+  text          String
+  completedDate DateTime @default(now())
+
+  dailyGoalId String
+  dailyGoal   DailyGoal @relation(fields: [dailyGoalId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
   @@index([dailyGoalId])
   @@map("note_history")
 }
-

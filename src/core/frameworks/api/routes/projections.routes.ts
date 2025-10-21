@@ -17,6 +17,7 @@ router.use(ensureTenantIsolation);
 
 // All routes are nested under /students/:studentId/projections
 router.get('/', projectionController.getProjectionsByStudent.bind(projectionController));
+router.get('/:id/detail', projectionController.getProjectionDetail.bind(projectionController)); // Must be before /:id
 router.get('/:id', projectionController.getProjection.bind(projectionController));
 router.post('/', projectionController.createProjection.bind(projectionController));
 router.put('/:id', projectionController.updateProjection.bind(projectionController));

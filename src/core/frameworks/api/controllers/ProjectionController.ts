@@ -71,6 +71,33 @@ export class ProjectionController {
     }
   }
 
+  async getProjectionDetail(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId, id } = req.params;
+      const schoolId = req.schoolId!;
+      
+      // Verify student belongs to school
+      const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
+      if (!student) {
+        res.status(404).json({ error: 'Student not found' });
+        return;
+      }
+
+      const projectionDetail = await container.getProjectionDetailUseCase.execute(id, studentId);
+
+      res.json(projectionDetail);
+    } catch (error: any) {
+      console.error('Error getting projection detail:', error);
+      
+      if (error.message === 'Projection not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to get projection detail' });
+    }
+  }
+
   async createProjection(req: Request, res: Response): Promise<void> {
     try {
       const { studentId } = req.params;

@@ -24,6 +24,7 @@ import {
   CreateProjectionUseCase,
   GetProjectionsByStudentIdUseCase,
   GetProjectionByIdUseCase,
+  GetProjectionDetailUseCase,
   UpdateProjectionUseCase,
   DeleteProjectionUseCase,
 } from '../../app/use-cases';
@@ -131,6 +132,10 @@ class Container {
 
   get getProjectionByIdUseCase(): GetProjectionByIdUseCase {
     return new GetProjectionByIdUseCase(this.projectionRepository);
+  }
+
+  get getProjectionDetailUseCase(): GetProjectionDetailUseCase {
+    return new GetProjectionDetailUseCase(this.projectionRepository, this.studentRepository);
   }
 
   get updateProjectionUseCase(): UpdateProjectionUseCase {

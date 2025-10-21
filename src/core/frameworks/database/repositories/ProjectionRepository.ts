@@ -1,7 +1,14 @@
-import { IProjectionRepository } from '../../../adapters_interface/repositories';
-import { Projection } from '../../../domain/entities';
+import { IProjectionRepository, ProjectionWithPaces } from '../../../adapters_interface/repositories';
+import { Projection, ProjectionPace, GradeHistory, PaceCatalog, SubSubject, Category } from '../../../domain/entities';
 import prisma from '../prisma.client';
-import { ProjectionMapper } from '../mappers';
+import { 
+  ProjectionMapper, 
+  ProjectionPaceMapper, 
+  GradeHistoryMapper, 
+  PaceCatalogMapper, 
+  SubSubjectMapper, 
+  CategoryMapper 
+} from '../mappers';
 
 export class ProjectionRepository implements IProjectionRepository {
   async findById(id: string, studentId: string): Promise<Projection | null> {
@@ -14,6 +21,73 @@ export class ProjectionRepository implements IProjectionRepository {
     });
 
     return projection ? ProjectionMapper.toDomain(projection) : null;
+  }
+
+  async findByIdWithPaces(id: string, studentId: string): Promise<ProjectionWithPaces | null> {
+    const projection = await prisma.projection.findFirst({
+      where: { 
+        id,
+        studentId, // Ensure student owns this projection
+        deletedAt: null, // Soft delete filter
+      },
+      include: {
+        projectionPaces: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            gradeHistory: {
+              orderBy: {
+                date: 'asc',
+              },
+            },
+            paceCatalog: {
+              include: {
+                subSubject: {
+                  include: {
+                    category: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: [
+            { quarter: 'asc' },
+            { week: 'asc' },
+          ],
+        },
+      },
+    });
+
+    if (!projection) {
+      return null;
+    }
+
+    const domainProjection = ProjectionMapper.toDomain(projection);
+    const projectionPaces = projection.projectionPaces.map(pp => {
+      const domainProjectionPace = ProjectionPaceMapper.toDomain(pp);
+      const gradeHistory = pp.gradeHistory.map(GradeHistoryMapper.toDomain);
+      const paceCatalog = PaceCatalogMapper.toDomain(pp.paceCatalog);
+      const subSubject = SubSubjectMapper.toDomain(pp.paceCatalog.subSubject);
+      const category = CategoryMapper.toDomain(pp.paceCatalog.subSubject.category);
+
+      return { 
+        ...domainProjectionPace, 
+        gradeHistory,
+        paceCatalog: {
+          ...paceCatalog,
+          subSubject: {
+            ...subSubject,
+            category,
+          },
+        },
+      };
+    });
+
+    return {
+      projection: domainProjection,
+      projectionPaces,
+    };
   }
 
   async findByStudentId(studentId: string): Promise<Projection[]> {

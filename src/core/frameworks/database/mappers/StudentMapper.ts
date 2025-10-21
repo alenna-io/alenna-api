@@ -32,6 +32,7 @@ export class StudentMapper {
       prismaStudent.contactPhone || undefined,
       prismaStudent.isLeveled,
       prismaStudent.expectedLevel || undefined,
+      prismaStudent.currentLevel || undefined,
       prismaStudent.address || undefined,
       prismaStudent.parents?.map(p => ({ id: p.id, name: p.name })) || [],
       prismaStudent.createdAt,
@@ -39,7 +40,7 @@ export class StudentMapper {
     );
   }
 
-  static toPrisma(student: Student): Omit<PrismaStudent, 'createdAt' | 'updatedAt'> {
+  static toPrisma(student: Student): Omit<PrismaStudent, 'createdAt' | 'updatedAt' | 'deletedAt'> {
     return {
       id: student.id,
       firstName: student.firstName,
@@ -52,7 +53,9 @@ export class StudentMapper {
       contactPhone: student.contactPhone || null,
       isLeveled: student.isLeveled,
       expectedLevel: student.expectedLevel || null,
+      currentLevel: student.currentLevel || null,
       address: student.address || null,
+      deletedAt: null,
     };
   }
 }
