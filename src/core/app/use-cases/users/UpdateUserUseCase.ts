@@ -9,7 +9,7 @@ export class UpdateUserUseCase {
     userId: string,
     input: UpdateUserInput,
     currentUserId: string,
-    currentUserRole: string
+    currentUserRoles: string[]
   ): Promise<User> {
     // Check if user exists
     const existingUser = await this.userRepository.findById(userId);
@@ -18,14 +18,15 @@ export class UpdateUserUseCase {
       throw new Error('User not found');
     }
 
-    // Permission check: Admin can update anyone, others can only update themselves
-    if (currentUserRole !== 'ADMIN' && currentUserId !== userId) {
+    // Permission check: SuperAdmin/Admin can update anyone, others can only update themselves
+    const canManageUsers = currentUserRoles.includes('SUPERADMIN') || currentUserRoles.includes('ADMIN');
+    if (!canManageUsers && currentUserId !== userId) {
       throw new Error('Forbidden: Cannot update other users');
     }
 
-    // Non-admins cannot change their own role
-    if (currentUserRole !== 'ADMIN' && input.role) {
-      throw new Error('Forbidden: Cannot change your own role');
+    // Non-admins cannot change their own roles
+    if (!canManageUsers && input.roleIds) {
+      throw new Error('Forbidden: Cannot change your own roles');
     }
 
     const updatedUser = existingUser.update(input);

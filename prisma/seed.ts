@@ -70,6 +70,67 @@ async function main() {
   console.log('   Clerk ID:', adminUser.clerkId);
   console.log('   ⚠️  Replace this with your actual Clerk user ID!');
 
+  // Create Alenna school for superadmin (global access)
+  const alennaSchool = await prisma.school.upsert({
+    where: {
+      id: 'school_alenna_global'
+    },
+    update: {},
+    create: {
+      id: 'school_alenna_global',
+      name: 'Alenna',
+      address: 'Global System Administration',
+      email: 'admin@alenna.io',
+      phone: null,
+    },
+  });
+
+  // Create superadmin user (global access)
+  // Note: You need to update the clerkId with your actual Clerk ID
+  const superadminUser = await prisma.user.upsert({
+    where: { email: 'superadmin@alenna.io' },
+    update: {
+      clerkId: 'user_34R06gsf80RwrjEhG9aTYAsfIC6', // Actual Clerk ID
+    },
+    create: {
+      clerkId: 'user_34R06gsf80RwrjEhG9aTYAsfIC6', // Actual Clerk ID
+      email: 'superadmin@alenna.io',
+      firstName: 'Super',
+      lastName: 'Admin',
+      schoolId: alennaSchool.id, // Superadmin belongs to Alenna school
+    },
+  });
+
+  // Use the global SUPERADMIN role (created in RBAC seed)
+  const superadminRole = await prisma.role.findFirst({
+    where: { name: 'SUPERADMIN', schoolId: null },
+  });
+
+  if (!superadminRole) {
+    throw new Error('SUPERADMIN role not found. Make sure RBAC seed runs first.');
+  }
+  
+  if (superadminRole) {
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: superadminUser.id,
+          roleId: superadminRole.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: superadminUser.id,
+        roleId: superadminRole.id,
+      },
+    });
+  }
+
+  console.log('✅ Created SUPERADMIN user:', superadminUser.email);
+  console.log('   Clerk ID:', superadminUser.clerkId);
+  console.log('   ⚠️  Replace this with your actual Clerk user ID!');
+
   // Create School Year with Quarters
   console.log('\n📅 Creating School Year (2024-2025)...');
   const schoolYear = await prisma.schoolYear.upsert({
@@ -217,8 +278,9 @@ async function main() {
   console.log('✅ Created school year: 2023-2024 with 4 quarters (inactive)');
 
   // Enable modules for school
-  const studentsModule = await prisma.module.findUnique({ where: { name: 'Students' } });
-  const configModule = await prisma.module.findUnique({ where: { name: 'Configuration' } });
+  const studentsModule = await prisma.module.findUnique({ where: { name: 'Estudiantes' } });
+  const configModule = await prisma.module.findUnique({ where: { name: 'Configuración' } });
+  const usersModule = await prisma.module.findUnique({ where: { name: 'Usuarios' } });
   
   if (studentsModule) {
     await prisma.schoolModule.upsert({
@@ -292,6 +354,84 @@ async function main() {
     console.log('✅ Assigned Configuration module to admin');
   }
 
+  // Enable Users module for Alenna school and assign to superadmin
+  if (usersModule) {
+    await prisma.schoolModule.upsert({
+      where: {
+        schoolId_moduleId: {
+          schoolId: alennaSchool.id,
+          moduleId: usersModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        schoolId: alennaSchool.id,
+        moduleId: usersModule.id,
+        isActive: true,
+      },
+    });
+    console.log('✅ Enabled Users module for Alenna school');
+
+    // Assign Users module to superadmin
+    await prisma.userModule.upsert({
+      where: {
+        userId_moduleId: {
+          userId: superadminUser.id,
+          moduleId: usersModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: superadminUser.id,
+        moduleId: usersModule.id,
+      },
+    });
+    console.log('✅ Assigned Users module to superadmin');
+  }
+
+  // Enable Schools module for Alenna school and assign to superadmin
+  const schoolsModule = await prisma.module.findUnique({ where: { name: 'Escuelas' } });
+  if (schoolsModule) {
+    await prisma.schoolModule.upsert({
+      where: {
+        schoolId_moduleId: {
+          schoolId: alennaSchool.id,
+          moduleId: schoolsModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        schoolId: alennaSchool.id,
+        moduleId: schoolsModule.id,
+        isActive: true,
+      },
+    });
+    console.log('✅ Enabled Schools module for Alenna school');
+
+    // Assign Schools module to superadmin
+    await prisma.userModule.upsert({
+      where: {
+        userId_moduleId: {
+          userId: superadminUser.id,
+          moduleId: schoolsModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: superadminUser.id,
+        moduleId: schoolsModule.id,
+      },
+    });
+    console.log('✅ Assigned Schools module to superadmin');
+  }
+
+  // Superadmins don't get Configuración module as it's per-school
+  // They manage schools through the Users module instead
+
   // Create demo users for each role
   console.log('\n👥 Creating demo users for each role...');
 
@@ -349,7 +489,7 @@ async function main() {
   }
 
   // 2. Demo Parent (will be linked to first student created)
-  let demoParentUser = null;
+  let demoParentUser: any = null;
   if (parentRole && studentsModule) {
     demoParentUser = await prisma.user.upsert({
       where: { email: 'demo.parent@alenna.io' },

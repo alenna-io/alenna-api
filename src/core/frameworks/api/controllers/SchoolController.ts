@@ -83,5 +83,97 @@ export class SchoolController {
       res.status(500).json({ error: error.message || 'Failed to update school' });
     }
   }
+
+  async getAllSchools(req: Request, res: Response): Promise<void> {
+    try {
+      const schools = await container.getAllSchoolsUseCase.execute();
+
+      res.json(schools.map(school => ({
+        id: school.id,
+        name: school.name,
+        address: school.address,
+        phone: school.phone,
+        email: school.email,
+      })));
+    } catch (error: any) {
+      console.error('Error getting all schools:', error);
+      res.status(500).json({ error: error.message || 'Failed to get schools' });
+    }
+  }
+
+  async getSchoolById(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      const school = await container.getSchoolUseCase.execute(id);
+
+      res.json({
+        id: school.id,
+        name: school.name,
+        address: school.address,
+        phone: school.phone,
+        email: school.email,
+      });
+    } catch (error: any) {
+      console.error('Error getting school:', error);
+      
+      if (error.message === 'School not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to get school' });
+    }
+  }
+
+  async updateSchoolById(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const validatedData = UpdateSchoolDTO.parse(req.body);
+      
+      const school = await container.updateSchoolUseCase.execute(id, validatedData);
+
+      res.json({
+        id: school.id,
+        name: school.name,
+        address: school.address,
+        phone: school.phone,
+        email: school.email,
+      });
+    } catch (error: any) {
+      console.error('Error updating school:', error);
+      
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: error.errors });
+        return;
+      }
+      
+      if (error.message === 'School not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to update school' });
+    }
+  }
+
+  async deleteSchool(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      await container.deleteSchoolUseCase.execute(id);
+
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error deleting school:', error);
+      
+      if (error.message === 'School not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to delete school' });
+    }
+  }
 }
 

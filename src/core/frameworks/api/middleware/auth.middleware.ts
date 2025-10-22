@@ -8,6 +8,7 @@ declare global {
       userId?: string;
       userEmail?: string;
       schoolId?: string;
+      userRoles?: string[];
     }
   }
 }
@@ -32,7 +33,14 @@ export const attachUserContext = async (
     // Find user in database
     const user = await prisma.user.findUnique({
       where: { clerkId },
-      include: { school: true },
+      include: { 
+        school: true,
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -46,6 +54,7 @@ export const attachUserContext = async (
     req.userId = user.id;
     req.userEmail = user.email;
     req.schoolId = user.schoolId;
+    req.userRoles = user.userRoles.map(ur => ur.role.name);
 
     next();
   } catch (error) {

@@ -1,8 +1,14 @@
-import { User as PrismaUser, UserRole } from '@prisma/client';
-import { User } from '../../../domain/entities';
+import { User as PrismaUser, UserRole, Role } from '@prisma/client';
+import { User, UserRoleInfo } from '../../../domain/entities';
 
 export class UserMapper {
-  static toDomain(prismaUser: PrismaUser): User {
+  static toDomain(prismaUser: PrismaUser & { userRoles?: { role: Role }[] }): User {
+    const roles: UserRoleInfo[] = prismaUser.userRoles?.map(ur => ({
+      id: ur.role.id,
+      name: ur.role.name,
+      displayName: ur.role.displayName,
+    })) || [];
+
     return new User(
       prismaUser.id,
       prismaUser.clerkId,
@@ -10,7 +16,7 @@ export class UserMapper {
       prismaUser.schoolId,
       prismaUser.firstName || undefined,
       prismaUser.lastName || undefined,
-      prismaUser.role as any,
+      roles,
       prismaUser.createdAt,
       prismaUser.updatedAt
     );
@@ -24,7 +30,6 @@ export class UserMapper {
       schoolId: user.schoolId,
       firstName: user.firstName || null,
       lastName: user.lastName || null,
-      role: user.role as UserRole,
     };
   }
 }

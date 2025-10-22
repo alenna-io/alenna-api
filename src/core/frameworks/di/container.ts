@@ -7,15 +7,20 @@ import {
   StudentRepository,
   ProjectionRepository,
   SchoolYearRepository,
-  DailyGoalRepository
+  DailyGoalRepository,
+  RoleRepository
 } from '../database/repositories';
 import {
   SyncUserUseCase,
   GetCurrentUserUseCase,
   CreateSchoolUseCase,
   GetSchoolUseCase,
+  GetAllSchoolsUseCase,
   UpdateSchoolUseCase,
+  DeleteSchoolUseCase,
   GetUsersUseCase,
+  GetRolesUseCase,
+  CreateUserUseCase,
   UpdateUserUseCase,
   DeleteUserUseCase,
   CreateStudentUseCase,
@@ -61,6 +66,7 @@ class Container {
   private _projectionRepository?: ProjectionRepository;
   private _schoolYearRepository?: SchoolYearRepository;
   private _dailyGoalRepository?: DailyGoalRepository;
+  private _roleRepository?: RoleRepository;
 
   // Repositories getters (Lazy initialization)
   get schoolRepository(): SchoolRepository {
@@ -105,6 +111,13 @@ class Container {
     return this._dailyGoalRepository;
   }
 
+  get roleRepository(): RoleRepository {
+    if (!this._roleRepository) {
+      this._roleRepository = new RoleRepository();
+    }
+    return this._roleRepository;
+  }
+
   // Auth Use Cases
   get syncUserUseCase(): SyncUserUseCase {
     return new SyncUserUseCase(this.userRepository);
@@ -123,13 +136,29 @@ class Container {
     return new GetSchoolUseCase(this.schoolRepository);
   }
 
+  get getAllSchoolsUseCase(): GetAllSchoolsUseCase {
+    return new GetAllSchoolsUseCase(this.schoolRepository);
+  }
+
   get updateSchoolUseCase(): UpdateSchoolUseCase {
     return new UpdateSchoolUseCase(this.schoolRepository);
+  }
+
+  get deleteSchoolUseCase(): DeleteSchoolUseCase {
+    return new DeleteSchoolUseCase(this.schoolRepository);
   }
 
   // User Use Cases
   get getUsersUseCase(): GetUsersUseCase {
     return new GetUsersUseCase(this.userRepository);
+  }
+
+  get getRolesUseCase(): GetRolesUseCase {
+    return new GetRolesUseCase(this.roleRepository);
+  }
+
+  get createUserUseCase(): CreateUserUseCase {
+    return new CreateUserUseCase(this.userRepository);
   }
 
   get updateUserUseCase(): UpdateUserUseCase {

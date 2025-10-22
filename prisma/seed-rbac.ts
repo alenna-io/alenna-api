@@ -10,7 +10,8 @@ export async function seedRBAC() {
   console.log('👥 Creating System Roles...');
   
   const rolesData = [
-    { name: 'ADMIN', displayName: 'Administrator', description: 'Full system access and configuration', isSystem: true },
+    { name: 'SUPERADMIN', displayName: 'Super Administrator', description: 'Full system access across all schools and users', isSystem: true },
+    { name: 'ADMIN', displayName: 'Administrator', description: 'School administrator', isSystem: true },
     { name: 'TEACHER', displayName: 'Teacher', description: 'Can manage students and academic content', isSystem: true },
     { name: 'PARENT', displayName: 'Parent/Guardian', description: 'Can view their children\'s information', isSystem: true },
     { name: 'STUDENT', displayName: 'Student', description: 'Limited access to own information', isSystem: true },
@@ -50,7 +51,8 @@ export async function seedRBAC() {
   const modulesData = [
     { name: 'Estudiantes', description: 'Gestión de estudiantes y proyecciones', displayOrder: 1 },
     { name: 'Usuarios', description: 'Gestión de usuarios del sistema', displayOrder: 2 },
-    { name: 'Configuración', description: 'Configuración del sistema', displayOrder: 3 },
+    { name: 'Escuelas', description: 'Gestión de escuelas', displayOrder: 3 },
+    { name: 'Configuración', description: 'Configuración del sistema', displayOrder: 4 },
   ];
 
   const modules: Record<string, any> = {};
@@ -74,47 +76,53 @@ export async function seedRBAC() {
   
   const permissionsData = [
     // Students Module Permissions
-    { name: 'students.read', description: 'View all students in the school', module: 'Students' },
-    { name: 'students.readOwn', description: 'View only linked students (for parents)', module: 'Students' },
-    { name: 'students.create', description: 'Create new student records', module: 'Students' },
-    { name: 'students.update', description: 'Update existing student information', module: 'Students' },
-    { name: 'students.delete', description: 'Delete student records', module: 'Students' },
+    { name: 'students.read', description: 'View all students in the school', module: 'Estudiantes' },
+    { name: 'students.readOwn', description: 'View only linked students (for parents)', module: 'Estudiantes' },
+    { name: 'students.create', description: 'Create new student records', module: 'Estudiantes' },
+    { name: 'students.update', description: 'Update existing student information', module: 'Estudiantes' },
+    { name: 'students.delete', description: 'Delete student records', module: 'Estudiantes' },
     
     // Projections Permissions
-    { name: 'projections.read', description: 'View all student projections', module: 'Students' },
-    { name: 'projections.readOwn', description: 'View only linked students\' projections (for parents)', module: 'Students' },
-    { name: 'projections.create', description: 'Create new academic projections', module: 'Students' },
-    { name: 'projections.update', description: 'Update projection details', module: 'Students' },
-    { name: 'projections.delete', description: 'Delete projections', module: 'Students' },
+    { name: 'projections.read', description: 'View all student projections', module: 'Estudiantes' },
+    { name: 'projections.readOwn', description: 'View only linked students\' projections (for parents)', module: 'Estudiantes' },
+    { name: 'projections.create', description: 'Create new academic projections', module: 'Estudiantes' },
+    { name: 'projections.update', description: 'Update projection details', module: 'Estudiantes' },
+    { name: 'projections.delete', description: 'Delete projections', module: 'Estudiantes' },
     
     // Projection Paces Permissions
-    { name: 'paces.read', description: 'View PACEs in projections', module: 'Students' },
-    { name: 'paces.create', description: 'Add PACEs to student projections', module: 'Students' },
-    { name: 'paces.update', description: 'Update PACE grades and completion status', module: 'Students' },
-    { name: 'paces.delete', description: 'Remove PACEs from projections', module: 'Students' },
-    { name: 'paces.move', description: 'Move PACEs between weeks/quarters', module: 'Students' },
+    { name: 'paces.read', description: 'View PACEs in projections', module: 'Estudiantes' },
+    { name: 'paces.create', description: 'Add PACEs to student projections', module: 'Estudiantes' },
+    { name: 'paces.update', description: 'Update PACE grades and completion status', module: 'Estudiantes' },
+    { name: 'paces.delete', description: 'Remove PACEs from projections', module: 'Estudiantes' },
+    { name: 'paces.move', description: 'Move PACEs between weeks/quarters', module: 'Estudiantes' },
     
     // Users Module Permissions
-    { name: 'users.read', description: 'View system users', module: 'Users' },
-    { name: 'users.create', description: 'Create new user accounts', module: 'Users' },
-    { name: 'users.update', description: 'Update user information and roles', module: 'Users' },
-    { name: 'users.delete', description: 'Delete user accounts', module: 'Users' },
+    { name: 'users.read', description: 'View system users', module: 'Usuarios' },
+    { name: 'users.create', description: 'Create new user accounts', module: 'Usuarios' },
+    { name: 'users.update', description: 'Update user information and roles', module: 'Usuarios' },
+    { name: 'users.delete', description: 'Delete user accounts', module: 'Usuarios' },
+    
+    // Schools Module Permissions (Superadmin only)
+    { name: 'schools.read', description: 'View all schools', module: 'Escuelas' },
+    { name: 'schools.create', description: 'Create new schools', module: 'Escuelas' },
+    { name: 'schools.update', description: 'Update school information', module: 'Escuelas' },
+    { name: 'schools.delete', description: 'Delete schools', module: 'Escuelas' },
     
     // Configuration Module Permissions
     
     // School Info Submodule (Read-only for all, managed by Alenna)
-    { name: 'schoolInfo.read', description: 'View school information and settings', module: 'Configuration' },
-    { name: 'schoolInfo.update', description: 'Update school information (Alenna only)', module: 'Configuration' },
+    { name: 'schoolInfo.read', description: 'View school information and settings', module: 'Configuración' },
+    { name: 'schoolInfo.update', description: 'Update school information (Alenna only)', module: 'Configuración' },
     
     // School Year Submodule
-    { name: 'schoolYear.read', description: 'View school year configurations', module: 'Configuration' },
-    { name: 'schoolYear.create', description: 'Create new school year configurations', module: 'Configuration' },
-    { name: 'schoolYear.update', description: 'Update school year configurations', module: 'Configuration' },
-    { name: 'schoolYear.delete', description: 'Delete school year configurations', module: 'Configuration' },
+    { name: 'schoolYear.read', description: 'View school year configurations', module: 'Configuración' },
+    { name: 'schoolYear.create', description: 'Create new school year configurations', module: 'Configuración' },
+    { name: 'schoolYear.update', description: 'Update school year configurations', module: 'Configuración' },
+    { name: 'schoolYear.delete', description: 'Delete school year configurations', module: 'Configuración' },
     
     // Billing Submodule
-    { name: 'billing.read', description: 'View billing and payment information', module: 'Configuration' },
-    { name: 'billing.update', description: 'Update billing and payment settings', module: 'Configuration' },
+    { name: 'billing.read', description: 'View billing and payment information', module: 'Configuración' },
+    { name: 'billing.update', description: 'Update billing and payment settings', module: 'Configuración' },
   ];
 
   const permissions: Record<string, any> = {};
@@ -137,8 +145,12 @@ export async function seedRBAC() {
   
   const rolePermissionsData: Array<{ roleName: string; permissions: string[] }> = [
     {
-      roleName: 'ADMIN',
+      roleName: 'SUPERADMIN',
       permissions: Object.keys(permissions), // All permissions
+    },
+    {
+      roleName: 'ADMIN',
+      permissions: Object.keys(permissions).filter(p => !p.startsWith('schools.')), // All permissions except schools
     },
     {
       roleName: 'TEACHER',
