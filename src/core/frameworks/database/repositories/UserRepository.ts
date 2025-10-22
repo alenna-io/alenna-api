@@ -31,7 +31,10 @@ export class UserRepository implements IUserRepository {
 
   async findBySchoolId(schoolId: string): Promise<User[]> {
     const users = await prisma.user.findMany({
-      where: { schoolId },
+      where: { 
+        schoolId,
+        deletedAt: null, // Soft delete filter
+      },
       orderBy: { lastName: 'asc' },
     });
 
@@ -68,8 +71,10 @@ export class UserRepository implements IUserRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await prisma.user.delete({
+    // Soft delete
+    await prisma.user.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 }

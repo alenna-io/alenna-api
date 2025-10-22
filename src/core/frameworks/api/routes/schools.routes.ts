@@ -1,9 +1,9 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { SchoolController } from '../controllers';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
-import { attachUserContext, requireRole } from '../middleware';
+import { attachUserContext, requirePermission } from '../middleware';
 
-const router = Router();
+const router: ExpressRouter = Router();
 const schoolController = new SchoolController();
 
 // Apply Clerk middleware
@@ -20,10 +20,10 @@ router.use(requireAuth());
 router.use(attachUserContext);
 
 // Get current user's school
-router.get('/me', schoolController.getMySchool.bind(schoolController));
+router.get('/me', requirePermission('schoolInfo.read'), schoolController.getMySchool.bind(schoolController));
 
 // Update current user's school (Admin only)
-router.put('/me', requireRole('ADMIN'), schoolController.updateSchool.bind(schoolController));
+router.put('/me', requirePermission('schoolInfo.update'), schoolController.updateSchool.bind(schoolController));
 
 export default router;
 
