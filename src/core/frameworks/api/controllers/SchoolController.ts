@@ -175,5 +175,113 @@ export class SchoolController {
       res.status(500).json({ error: error.message || 'Failed to delete school' });
     }
   }
+
+  async getStudentsCount(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      const students = await container.getStudentsUseCase.execute(id);
+      const count = students.length;
+
+      res.json({ count });
+    } catch (error: any) {
+      console.error('Error getting students count:', error);
+      
+      if (error.message === 'School not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to get students count' });
+    }
+  }
+
+  async getStudents(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      const students = await container.getStudentsUseCase.execute(id);
+
+      res.json(students.map(student => ({
+        id: student.id,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        name: student.fullName,
+        age: student.age,
+        birthDate: student.birthDate.toISOString(),
+        certificationType: student.certificationType.name,
+        certificationTypeId: student.certificationTypeId,
+        graduationDate: student.graduationDate.toISOString(),
+        contactPhone: student.contactPhone,
+        isLeveled: student.isLeveled,
+        expectedLevel: student.expectedLevel,
+        address: student.address,
+        parents: student.parents,
+      })));
+    } catch (error: any) {
+      console.error('Error getting students:', error);
+      
+      if (error.message === 'School not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to get students' });
+    }
+  }
+
+  async getTeachersCount(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      const teachers = await container.getUsersUseCase.execute(id);
+      const teacherCount = teachers.filter(user => 
+        user.roles.some(role => role.name === 'TEACHER')
+      ).length;
+
+      res.json({ count: teacherCount });
+    } catch (error: any) {
+      console.error('Error getting teachers count:', error);
+      
+      if (error.message === 'School not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to get teachers count' });
+    }
+  }
+
+  async getTeachers(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      const users = await container.getUsersUseCase.execute(id);
+      const teachers = users.filter(user => 
+        user.roles.some(role => role.name === 'TEACHER')
+      );
+
+      res.json(teachers.map(teacher => ({
+        id: teacher.id,
+        clerkId: teacher.clerkId,
+        email: teacher.email,
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
+        fullName: teacher.fullName,
+        schoolId: teacher.schoolId,
+        roles: teacher.roles,
+        primaryRole: teacher.primaryRole,
+      })));
+    } catch (error: any) {
+      console.error('Error getting teachers:', error);
+      
+      if (error.message === 'School not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to get teachers' });
+    }
+  }
 }
 

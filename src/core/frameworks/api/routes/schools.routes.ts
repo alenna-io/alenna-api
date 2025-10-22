@@ -41,5 +41,17 @@ router.put('/:id', requirePermission('schools.update'), schoolController.updateS
 // Delete school
 router.delete('/:id', requirePermission('schools.delete'), schoolController.deleteSchool.bind(schoolController));
 
+// Get students count for a school
+router.get('/:id/students/count', requirePermission('schools.read'), schoolController.getStudentsCount.bind(schoolController));
+
+// Get students for a school
+router.get('/:id/students', requirePermission('schools.read'), schoolController.getStudents.bind(schoolController));
+
+// Get teachers count for a school
+router.get('/:id/teachers/count', requirePermission('schools.read'), schoolController.getTeachersCount.bind(schoolController));
+
+// Get teachers for a school
+router.get('/:id/teachers', requirePermission('schools.read'), schoolController.getTeachers.bind(schoolController));
+
 export default router;
 
