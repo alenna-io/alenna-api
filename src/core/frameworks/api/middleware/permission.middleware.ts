@@ -38,7 +38,7 @@ export function requirePermission(permission: string, options?: {
       next();
     } catch (error) {
       console.error('Permission check failed:', error);
-      res.status(403).json({ 
+      res.status(404).json({ 
         error: error instanceof Error ? error.message : 'No tienes permiso para realizar esta acción'
       });
     }
@@ -69,7 +69,7 @@ export function requireAnyPermission(...permissions: string[]) {
       );
 
       if (!hasAnyPermission.some(result => result)) {
-        res.status(403).json({ 
+        res.status(404).json({ 
           error: 'No tienes permiso para realizar esta acción'
         });
         return;
@@ -79,7 +79,7 @@ export function requireAnyPermission(...permissions: string[]) {
       next();
     } catch (error) {
       console.error('Permission check failed:', error);
-      res.status(403).json({ 
+      res.status(404).json({ 
         error: 'No tienes permiso para realizar esta acción'
       });
     }
@@ -110,7 +110,7 @@ export function requireAllPermissions(...permissions: string[]) {
       );
 
       if (!hasAllPermissions.every(result => result)) {
-        res.status(403).json({ 
+        res.status(404).json({ 
           error: 'No tienes permiso para realizar esta acción'
         });
         return;
@@ -120,7 +120,7 @@ export function requireAllPermissions(...permissions: string[]) {
       next();
     } catch (error) {
       console.error('Permission check failed:', error);
-      res.status(403).json({ 
+      res.status(404).json({ 
         error: error instanceof Error ? error.message : 'No tienes permiso para realizar esta acción'
       });
     }
