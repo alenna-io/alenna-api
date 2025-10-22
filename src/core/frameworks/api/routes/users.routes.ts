@@ -1,7 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { UserController } from '../controllers';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
-import { attachUserContext, requireRole, ensureTenantIsolation, requirePermission } from '../middleware';
+import { attachUserContext, ensureTenantIsolation, requirePermission } from '../middleware';
 
 const router: ExpressRouter = Router();
 const userController = new UserController();

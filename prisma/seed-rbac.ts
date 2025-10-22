@@ -48,9 +48,9 @@ export async function seedRBAC() {
   console.log('📦 Creating Modules...');
   
   const modulesData = [
-    { name: 'Students', description: 'Gestión de estudiantes y proyecciones', displayOrder: 1 },
-    { name: 'Users', description: 'Gestión de usuarios del sistema', displayOrder: 2 },
-    { name: 'Configuration', description: 'Configuración del sistema', displayOrder: 3 },
+    { name: 'Estudiantes', description: 'Gestión de estudiantes y proyecciones', displayOrder: 1 },
+    { name: 'Usuarios', description: 'Gestión de usuarios del sistema', displayOrder: 2 },
+    { name: 'Configuración', description: 'Configuración del sistema', displayOrder: 3 },
   ];
 
   const modules: Record<string, any> = {};
