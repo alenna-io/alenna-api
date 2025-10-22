@@ -5,7 +5,8 @@ import {
   SchoolRepository,
   UserRepository,
   StudentRepository,
-  ProjectionRepository
+  ProjectionRepository,
+  SchoolYearRepository
 } from '../database/repositories';
 import {
   SyncUserUseCase,
@@ -33,6 +34,13 @@ import {
   MovePaceUseCase,
   MarkPaceIncompleteUseCase,
   GetPaceCatalogUseCase,
+  CreateSchoolYearUseCase,
+  GetSchoolYearsUseCase,
+  GetSchoolYearByIdUseCase,
+  UpdateSchoolYearUseCase,
+  DeleteSchoolYearUseCase,
+  SetActiveSchoolYearUseCase,
+  GetCurrentWeekUseCase,
 } from '../../app/use-cases';
 
 class Container {
@@ -41,6 +49,7 @@ class Container {
   private _userRepository?: UserRepository;
   private _studentRepository?: StudentRepository;
   private _projectionRepository?: ProjectionRepository;
+  private _schoolYearRepository?: SchoolYearRepository;
 
   // Repositories getters (Lazy initialization)
   get schoolRepository(): SchoolRepository {
@@ -69,6 +78,13 @@ class Container {
       this._projectionRepository = new ProjectionRepository();
     }
     return this._projectionRepository;
+  }
+
+  get schoolYearRepository(): SchoolYearRepository {
+    if (!this._schoolYearRepository) {
+      this._schoolYearRepository = new SchoolYearRepository();
+    }
+    return this._schoolYearRepository;
   }
 
   // Auth Use Cases
@@ -175,6 +191,49 @@ class Container {
   // PACE Catalog Use Cases
   get getPaceCatalogUseCase(): GetPaceCatalogUseCase {
     return new GetPaceCatalogUseCase();
+  }
+
+  // School Year Use Cases
+  get createSchoolYearUseCase(): CreateSchoolYearUseCase {
+    return new CreateSchoolYearUseCase(this.schoolYearRepository);
+  }
+
+  get getSchoolYearsUseCase(): GetSchoolYearsUseCase {
+    return new GetSchoolYearsUseCase(this.schoolYearRepository);
+  }
+
+  get getSchoolYearByIdUseCase(): GetSchoolYearByIdUseCase {
+    return new GetSchoolYearByIdUseCase(this.schoolYearRepository);
+  }
+
+  get updateSchoolYearUseCase(): UpdateSchoolYearUseCase {
+    return new UpdateSchoolYearUseCase(this.schoolYearRepository);
+  }
+
+  get deleteSchoolYearUseCase(): DeleteSchoolYearUseCase {
+    return new DeleteSchoolYearUseCase(this.schoolYearRepository);
+  }
+
+  get setActiveSchoolYearUseCase(): SetActiveSchoolYearUseCase {
+    return new SetActiveSchoolYearUseCase(this.schoolYearRepository);
+  }
+
+  get getCurrentWeekUseCase(): GetCurrentWeekUseCase {
+    return new GetCurrentWeekUseCase(this.schoolYearRepository);
+  }
+
+  // Controllers
+  get schoolYearController() {
+    const { SchoolYearController } = require('../api/controllers');
+    return new SchoolYearController(
+      this.createSchoolYearUseCase,
+      this.getSchoolYearsUseCase,
+      this.getSchoolYearByIdUseCase,
+      this.updateSchoolYearUseCase,
+      this.deleteSchoolYearUseCase,
+      this.setActiveSchoolYearUseCase,
+      this.getCurrentWeekUseCase
+    );
   }
 }
 

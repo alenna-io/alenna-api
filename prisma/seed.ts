@@ -70,8 +70,156 @@ async function main() {
   console.log('   Clerk ID:', adminUser.clerkId);
   console.log('   ⚠️  Replace this with your actual Clerk user ID!');
 
-  // Enable Students module for school
+  // Create School Year with Quarters
+  console.log('\n📅 Creating School Year (2024-2025)...');
+  const schoolYear = await prisma.schoolYear.upsert({
+    where: {
+      id: 'school-year-2024-2025', // Use a fixed ID instead of compound key
+    },
+    update: {},
+    create: {
+      id: 'school-year-2024-2025',
+      schoolId: school.id,
+      name: '2024-2025',
+      startDate: new Date('2024-08-05'), // First Monday of August
+      endDate: new Date('2025-05-30'), // Last Friday of May
+      isActive: true,
+    },
+  });
+
+  // Create 4 Quarters with start/end dates
+  const quartersData = [
+    {
+      name: 'Q1',
+      displayName: 'Bloque 1',
+      startDate: new Date('2024-08-05'), // 9 weeks: Aug 5 - Oct 4
+      endDate: new Date('2024-10-04'),
+      order: 1,
+    },
+    {
+      name: 'Q2',
+      displayName: 'Bloque 2',
+      startDate: new Date('2024-10-14'), // 9 weeks: Oct 14 - Dec 13 (skip Oct 7-11 fall break)
+      endDate: new Date('2024-12-13'),
+      order: 2,
+    },
+    {
+      name: 'Q3',
+      displayName: 'Bloque 3',
+      startDate: new Date('2025-01-06'), // 9 weeks: Jan 6 - Mar 7 (skip Dec 16-Jan 3 winter break)
+      endDate: new Date('2025-03-07'),
+      order: 3,
+    },
+    {
+      name: 'Q4',
+      displayName: 'Bloque 4',
+      startDate: new Date('2025-03-17'), // 9 weeks: Mar 17 - May 16 (skip Mar 10-14 spring break)
+      endDate: new Date('2025-05-16'),
+      order: 4,
+    },
+  ];
+
+  for (const quarterData of quartersData) {
+    await prisma.quarter.upsert({
+      where: {
+        schoolYearId_name: {
+          schoolYearId: schoolYear.id,
+          name: quarterData.name,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        schoolYearId: schoolYear.id,
+        name: quarterData.name,
+        displayName: quarterData.displayName,
+        startDate: quarterData.startDate,
+        endDate: quarterData.endDate,
+        order: quarterData.order,
+        weeksCount: 9,
+      },
+    });
+  }
+
+  console.log('✅ Created school year: 2024-2025 with 4 quarters (36 weeks total)');
+
+  // Create a second inactive school year for testing
+  console.log('\n📅 Creating School Year (2023-2024)...');
+  const schoolYear2023 = await prisma.schoolYear.upsert({
+    where: {
+      id: 'school-year-2023-2024', // Use a fixed ID instead of compound key
+    },
+    update: {},
+    create: {
+      id: 'school-year-2023-2024',
+      schoolId: school.id,
+      name: '2023-2024',
+      startDate: new Date('2023-08-07'),
+      endDate: new Date('2024-05-31'),
+      isActive: false, // This one is inactive
+    },
+  });
+
+  // Create quarters for 2023-2024
+  const quartersData2023 = [
+    {
+      name: 'Q1',
+      displayName: 'Bloque 1',
+      startDate: new Date('2023-08-07'),
+      endDate: new Date('2023-10-06'),
+      order: 1,
+    },
+    {
+      name: 'Q2',
+      displayName: 'Bloque 2',
+      startDate: new Date('2023-10-16'),
+      endDate: new Date('2023-12-15'),
+      order: 2,
+    },
+    {
+      name: 'Q3',
+      displayName: 'Bloque 3',
+      startDate: new Date('2024-01-08'),
+      endDate: new Date('2024-03-08'),
+      order: 3,
+    },
+    {
+      name: 'Q4',
+      displayName: 'Bloque 4',
+      startDate: new Date('2024-03-18'),
+      endDate: new Date('2024-05-17'),
+      order: 4,
+    },
+  ];
+
+  for (const quarterData of quartersData2023) {
+    await prisma.quarter.upsert({
+      where: {
+        schoolYearId_order: {
+          schoolYearId: schoolYear2023.id,
+          order: quarterData.order,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        schoolYearId: schoolYear2023.id,
+        name: quarterData.name,
+        displayName: quarterData.displayName,
+        startDate: quarterData.startDate,
+        endDate: quarterData.endDate,
+        order: quarterData.order,
+        weeksCount: 9,
+      },
+    });
+  }
+
+  console.log('✅ Created school year: 2023-2024 with 4 quarters (inactive)');
+
+  // Enable modules for school
   const studentsModule = await prisma.module.findUnique({ where: { name: 'Students' } });
+  const configModule = await prisma.module.findUnique({ where: { name: 'Configuration' } });
+  
   if (studentsModule) {
     await prisma.schoolModule.upsert({
       where: {
@@ -106,6 +254,42 @@ async function main() {
       },
     });
     console.log('✅ Assigned Students module to admin');
+  }
+
+  if (configModule) {
+    await prisma.schoolModule.upsert({
+      where: {
+        schoolId_moduleId: {
+          schoolId: school.id,
+          moduleId: configModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        schoolId: school.id,
+        moduleId: configModule.id,
+        isActive: true,
+      },
+    });
+    console.log('✅ Enabled Configuration module for school');
+
+    // Assign Configuration module to demo admin
+    await prisma.userModule.upsert({
+      where: {
+        userId_moduleId: {
+          userId: adminUser.id,
+          moduleId: configModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        userId: adminUser.id,
+        moduleId: configModule.id,
+      },
+    });
+    console.log('✅ Assigned Configuration module to admin');
   }
 
   // Create demo users for each role

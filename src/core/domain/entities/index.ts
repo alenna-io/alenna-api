@@ -13,4 +13,5 @@ export * from './Module';
 export * from './Permission';
 export * from './Role';
 export * from './UserStudent';
+export * from './SchoolYear';
 

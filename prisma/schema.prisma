@@ -25,6 +25,7 @@ model School {
   certificationTypes CertificationType[]
   roles              Role[] // School-specific custom roles
   schoolModules      SchoolModule[]
+  schoolYears        SchoolYear[]
 
   @@map("schools")
 }
@@ -54,6 +55,48 @@ model User {
 }
 
 // Removed UserRole enum - now using Role table
+
+// School Year configuration - defines when school year starts/ends and quarter dates
+model SchoolYear {
+  id        String   @id @default(cuid())
+  schoolId  String   @map("school_id")
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name      String // e.g., "2024-2025"
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  isActive  Boolean  @default(false) @map("is_active") // Only one active per school
+
+  quarters Quarter[]
+
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([schoolId, isActive])
+  @@map("school_years")
+}
+
+// Quarter configuration - defines start/end dates for each of 4 quarters
+model Quarter {
+  id           String     @id @default(cuid())
+  schoolYearId String     @map("school_year_id")
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  name         String // Q1, Q2, Q3, Q4
+  displayName  String     @map("display_name") // "Bloque 1", etc.
+  startDate    DateTime   @map("start_date")
+  endDate      DateTime   @map("end_date")
+  order        Int // 1, 2, 3, 4
+  weeksCount   Int        @default(9) @map("weeks_count") // Usually 9 weeks per quarter
+
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([schoolYearId, name])
+  @@unique([schoolYearId, order])
+  @@index([schoolYearId])
+  @@map("quarters")
+}
 
 // Certification types per school (tenant-scoped)
 model CertificationType {

@@ -6,6 +6,7 @@ import studentsRoutes from './students.routes';
 import projectionsRoutes from './projections.routes';
 import paceCatalogRoutes from './pace-catalog.routes';
 import moduleRoutes from './modules.routes';
+import schoolYearRoutes from './school-years.routes';
 
 const router: ExpressRouter = Router();
 
@@ -28,6 +29,7 @@ const v1Router: ExpressRouter = Router();
   v1Router.use('/students', studentsRoutes);
   v1Router.use('/pace-catalog', paceCatalogRoutes);
   v1Router.use('/modules', moduleRoutes);
+  v1Router.use('/school-years', schoolYearRoutes);
 
 router.use('/v1', v1Router);
 

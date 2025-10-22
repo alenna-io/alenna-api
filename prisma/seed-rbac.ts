@@ -101,8 +101,20 @@ export async function seedRBAC() {
     { name: 'users.delete', description: 'Delete user accounts', module: 'Users' },
     
     // Configuration Module Permissions
-    { name: 'school.read', description: 'View school configuration and settings', module: 'Configuration' },
-    { name: 'school.update', description: 'Update school configuration and settings', module: 'Configuration' },
+    
+    // School Info Submodule (Read-only for all, managed by Alenna)
+    { name: 'schoolInfo.read', description: 'View school information and settings', module: 'Configuration' },
+    { name: 'schoolInfo.update', description: 'Update school information (Alenna only)', module: 'Configuration' },
+    
+    // School Year Submodule
+    { name: 'schoolYear.read', description: 'View school year configurations', module: 'Configuration' },
+    { name: 'schoolYear.create', description: 'Create new school year configurations', module: 'Configuration' },
+    { name: 'schoolYear.update', description: 'Update school year configurations', module: 'Configuration' },
+    { name: 'schoolYear.delete', description: 'Delete school year configurations', module: 'Configuration' },
+    
+    // Billing Submodule
+    { name: 'billing.read', description: 'View billing and payment information', module: 'Configuration' },
+    { name: 'billing.update', description: 'Update billing and payment settings', module: 'Configuration' },
   ];
 
   const permissions: Record<string, any> = {};
@@ -147,8 +159,9 @@ export async function seedRBAC() {
         'paces.update',
         'paces.delete',
         'paces.move',
-        // Limited config access
-        'school.read',
+        // Configuration - read-only access
+        'schoolInfo.read',
+        'schoolYear.read',
       ],
     },
     {

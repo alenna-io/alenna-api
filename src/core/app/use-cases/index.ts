@@ -6,4 +6,5 @@ export * from './users';
 export * from './students';
 export * from './pace-catalog';
 export * from './modules';
+export * from './school-years';
 
