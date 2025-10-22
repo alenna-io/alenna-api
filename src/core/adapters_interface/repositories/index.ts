@@ -1,3 +1,4 @@
+export * from './IDailyGoalRepository';
 export * from './IProjectionRepository';
 export * from './ISchoolRepository';
 export * from './IUserRepository';

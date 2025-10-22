@@ -1,4 +1,5 @@
 export * from './AuthController';
+export * from './DailyGoalsController';
 export * from './ProjectionController';
 export * from './SchoolController';
 export * from './UserController';

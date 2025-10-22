@@ -6,7 +6,8 @@ import {
   UserRepository,
   StudentRepository,
   ProjectionRepository,
-  SchoolYearRepository
+  SchoolYearRepository,
+  DailyGoalRepository
 } from '../database/repositories';
 import {
   SyncUserUseCase,
@@ -41,6 +42,15 @@ import {
   DeleteSchoolYearUseCase,
   SetActiveSchoolYearUseCase,
   GetCurrentWeekUseCase,
+  CreateDailyGoalUseCase,
+  UpdateDailyGoalUseCase,
+  GetDailyGoalsUseCase,
+  GetDailyGoalsByProjectionUseCase,
+  UpdateDailyGoalCompletionUseCase,
+  UpdateDailyGoalNotesUseCase,
+  AddNoteToHistoryUseCase,
+  GetNoteHistoryUseCase,
+  DeleteDailyGoalUseCase,
 } from '../../app/use-cases';
 
 class Container {
@@ -50,6 +60,7 @@ class Container {
   private _studentRepository?: StudentRepository;
   private _projectionRepository?: ProjectionRepository;
   private _schoolYearRepository?: SchoolYearRepository;
+  private _dailyGoalRepository?: DailyGoalRepository;
 
   // Repositories getters (Lazy initialization)
   get schoolRepository(): SchoolRepository {
@@ -85,6 +96,13 @@ class Container {
       this._schoolYearRepository = new SchoolYearRepository();
     }
     return this._schoolYearRepository;
+  }
+
+  get dailyGoalRepository(): DailyGoalRepository {
+    if (!this._dailyGoalRepository) {
+      this._dailyGoalRepository = new DailyGoalRepository();
+    }
+    return this._dailyGoalRepository;
   }
 
   // Auth Use Cases
@@ -220,6 +238,43 @@ class Container {
 
   get getCurrentWeekUseCase(): GetCurrentWeekUseCase {
     return new GetCurrentWeekUseCase(this.schoolYearRepository);
+  }
+
+  // Daily Goals Use Cases
+  get createDailyGoalUseCase(): CreateDailyGoalUseCase {
+    return new CreateDailyGoalUseCase(this.dailyGoalRepository);
+  }
+
+  get updateDailyGoalUseCase(): UpdateDailyGoalUseCase {
+    return new UpdateDailyGoalUseCase(this.dailyGoalRepository);
+  }
+
+  get getDailyGoalsUseCase(): GetDailyGoalsUseCase {
+    return new GetDailyGoalsUseCase(this.dailyGoalRepository);
+  }
+
+  get getDailyGoalsByProjectionUseCase(): GetDailyGoalsByProjectionUseCase {
+    return new GetDailyGoalsByProjectionUseCase(this.dailyGoalRepository);
+  }
+
+  get updateDailyGoalCompletionUseCase(): UpdateDailyGoalCompletionUseCase {
+    return new UpdateDailyGoalCompletionUseCase(this.dailyGoalRepository);
+  }
+
+  get updateDailyGoalNotesUseCase(): UpdateDailyGoalNotesUseCase {
+    return new UpdateDailyGoalNotesUseCase(this.dailyGoalRepository);
+  }
+
+  get addNoteToHistoryUseCase(): AddNoteToHistoryUseCase {
+    return new AddNoteToHistoryUseCase(this.dailyGoalRepository);
+  }
+
+  get getNoteHistoryUseCase(): GetNoteHistoryUseCase {
+    return new GetNoteHistoryUseCase(this.dailyGoalRepository);
+  }
+
+  get deleteDailyGoalUseCase(): DeleteDailyGoalUseCase {
+    return new DeleteDailyGoalUseCase(this.dailyGoalRepository);
   }
 
   // Controllers

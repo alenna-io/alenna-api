@@ -1,11 +1,6 @@
-// Domain Entity: Student
-export interface CertificationType {
-  id: string;
-  name: string;
-  description?: string;
-  isActive: boolean;
-}
+import { CertificationType } from './CertificationType';
 
+// Domain Entity: Student
 export interface Parent {
   id: string;
   name: string;

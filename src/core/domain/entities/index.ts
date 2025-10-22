@@ -1,4 +1,6 @@
 export * from './CertificationType';
+export * from './DailyGoal';
+export * from './NoteHistory';
 export * from './Projection';
 export * from './School';
 export * from './User';

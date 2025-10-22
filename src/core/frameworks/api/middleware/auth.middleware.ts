@@ -22,7 +22,7 @@ export const attachUserContext = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId: clerkId } = (req as any).auth || {};
+    const { userId: clerkId } = (req as any).auth?.() || {};
 
     if (!clerkId) {
       res.status(401).json({ error: 'Unauthorized' });

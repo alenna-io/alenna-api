@@ -1,3 +1,4 @@
+export * from './DailyGoalMapper';
 export * from './ProjectionMapper';
 export * from './SchoolMapper';
 export * from './UserMapper';
