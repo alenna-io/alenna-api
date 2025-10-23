@@ -25,5 +25,3 @@ services:
     name: alenna-db
     env: postgresql
     plan: free
-    databaseName: alenna_db
-    databaseUser: alenna_user
