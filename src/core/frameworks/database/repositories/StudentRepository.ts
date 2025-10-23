@@ -9,9 +9,15 @@ export class StudentRepository implements IStudentRepository {
       where: { 
         id,
         schoolId, // Ensure tenant isolation
+        deletedAt: null, // Soft delete filter
       },
       include: {
-        parents: true,
+        user: true, // Student's user account
+        userStudents: {
+          include: {
+            user: true, // Parent users
+          },
+        },
         certificationType: true,
       },
     });
@@ -21,37 +27,55 @@ export class StudentRepository implements IStudentRepository {
 
   async findBySchoolId(schoolId: string): Promise<Student[]> {
     const students = await prisma.student.findMany({
-      where: { schoolId },
+      where: { 
+        schoolId,
+        deletedAt: null, // Soft delete filter
+      },
       include: {
-        parents: true,
+        user: true, // Student's user account
+        userStudents: {
+          include: {
+            user: true, // Parent users
+          },
+        },
         certificationType: true,
       },
-      orderBy: { lastName: 'asc' },
+      orderBy: { 
+        user: {
+          lastName: 'asc',
+        },
+      },
     });
 
     return students.map(StudentMapper.toDomain);
   }
 
   async create(student: Student): Promise<Student> {
+    // This is now handled by CreateStudentUseCase which creates User first
+    throw new Error('Use CreateStudentUseCase instead - it creates User and Student together');
+  }
+
+  async createWithUser(student: Student, userId: string): Promise<Student> {
     const created = await prisma.student.create({
       data: {
-        firstName: student.firstName,
-        lastName: student.lastName,
-        age: student.age,
+        userId,
         birthDate: student.birthDate,
         certificationTypeId: student.certificationTypeId,
         graduationDate: student.graduationDate,
-        schoolId: student.schoolId,
         contactPhone: student.contactPhone || null,
+        schoolId: student.schoolId,
         isLeveled: student.isLeveled,
         expectedLevel: student.expectedLevel || null,
+        currentLevel: student.currentLevel || null,
         address: student.address || null,
-        parents: student.parents.length > 0 ? {
-          create: student.parents.map(p => ({ name: p.name })),
-        } : undefined,
       },
       include: {
-        parents: true,
+        user: true,
+        userStudents: {
+          include: {
+            user: true,
+          },
+        },
         certificationType: true,
       },
     });
@@ -66,22 +90,26 @@ export class StudentRepository implements IStudentRepository {
       throw new Error('Student not found');
     }
 
+    // Update student record
     const updated = await prisma.student.update({
       where: { id },
       data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        age: data.age,
         birthDate: data.birthDate,
         certificationTypeId: data.certificationTypeId,
         graduationDate: data.graduationDate,
         contactPhone: data.contactPhone || undefined,
         isLeveled: data.isLeveled,
         expectedLevel: data.expectedLevel || undefined,
+        currentLevel: data.currentLevel || undefined,
         address: data.address || undefined,
       },
       include: {
-        parents: true,
+        user: true,
+        userStudents: {
+          include: {
+            user: true,
+          },
+        },
         certificationType: true,
       },
     });
@@ -96,8 +124,10 @@ export class StudentRepository implements IStudentRepository {
       throw new Error('Student not found');
     }
 
-    await prisma.student.delete({
+    // Soft delete
+    await prisma.student.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 }

@@ -1,14 +1,26 @@
 // Dependency Injection Container
 // This is where we wire up all dependencies following Clean Architecture
 
-import { SchoolRepository, UserRepository, StudentRepository } from '../database/repositories';
+import {
+  SchoolRepository,
+  UserRepository,
+  StudentRepository,
+  ProjectionRepository,
+  SchoolYearRepository,
+  DailyGoalRepository,
+  RoleRepository
+} from '../database/repositories';
 import {
   SyncUserUseCase,
   GetCurrentUserUseCase,
   CreateSchoolUseCase,
   GetSchoolUseCase,
+  GetAllSchoolsUseCase,
   UpdateSchoolUseCase,
+  DeleteSchoolUseCase,
   GetUsersUseCase,
+  GetRolesUseCase,
+  CreateUserUseCase,
   UpdateUserUseCase,
   DeleteUserUseCase,
   CreateStudentUseCase,
@@ -16,6 +28,34 @@ import {
   GetStudentByIdUseCase,
   UpdateStudentUseCase,
   DeleteStudentUseCase,
+  CreateProjectionUseCase,
+  GetProjectionsByStudentIdUseCase,
+  GetProjectionByIdUseCase,
+  GetProjectionDetailUseCase,
+  UpdateProjectionUseCase,
+  DeleteProjectionUseCase,
+  AddPaceToProjectionUseCase,
+  RemovePaceFromProjectionUseCase,
+  UpdatePaceGradeUseCase,
+  MovePaceUseCase,
+  MarkPaceIncompleteUseCase,
+  GetPaceCatalogUseCase,
+  CreateSchoolYearUseCase,
+  GetSchoolYearsUseCase,
+  GetSchoolYearByIdUseCase,
+  UpdateSchoolYearUseCase,
+  DeleteSchoolYearUseCase,
+  SetActiveSchoolYearUseCase,
+  GetCurrentWeekUseCase,
+  CreateDailyGoalUseCase,
+  UpdateDailyGoalUseCase,
+  GetDailyGoalsUseCase,
+  GetDailyGoalsByProjectionUseCase,
+  UpdateDailyGoalCompletionUseCase,
+  UpdateDailyGoalNotesUseCase,
+  AddNoteToHistoryUseCase,
+  GetNoteHistoryUseCase,
+  DeleteDailyGoalUseCase,
 } from '../../app/use-cases';
 
 class Container {
@@ -23,6 +63,10 @@ class Container {
   private _schoolRepository?: SchoolRepository;
   private _userRepository?: UserRepository;
   private _studentRepository?: StudentRepository;
+  private _projectionRepository?: ProjectionRepository;
+  private _schoolYearRepository?: SchoolYearRepository;
+  private _dailyGoalRepository?: DailyGoalRepository;
+  private _roleRepository?: RoleRepository;
 
   // Repositories getters (Lazy initialization)
   get schoolRepository(): SchoolRepository {
@@ -46,6 +90,34 @@ class Container {
     return this._studentRepository;
   }
 
+  get projectionRepository(): ProjectionRepository {
+    if (!this._projectionRepository) {
+      this._projectionRepository = new ProjectionRepository();
+    }
+    return this._projectionRepository;
+  }
+
+  get schoolYearRepository(): SchoolYearRepository {
+    if (!this._schoolYearRepository) {
+      this._schoolYearRepository = new SchoolYearRepository();
+    }
+    return this._schoolYearRepository;
+  }
+
+  get dailyGoalRepository(): DailyGoalRepository {
+    if (!this._dailyGoalRepository) {
+      this._dailyGoalRepository = new DailyGoalRepository();
+    }
+    return this._dailyGoalRepository;
+  }
+
+  get roleRepository(): RoleRepository {
+    if (!this._roleRepository) {
+      this._roleRepository = new RoleRepository();
+    }
+    return this._roleRepository;
+  }
+
   // Auth Use Cases
   get syncUserUseCase(): SyncUserUseCase {
     return new SyncUserUseCase(this.userRepository);
@@ -64,13 +136,29 @@ class Container {
     return new GetSchoolUseCase(this.schoolRepository);
   }
 
+  get getAllSchoolsUseCase(): GetAllSchoolsUseCase {
+    return new GetAllSchoolsUseCase(this.schoolRepository);
+  }
+
   get updateSchoolUseCase(): UpdateSchoolUseCase {
     return new UpdateSchoolUseCase(this.schoolRepository);
+  }
+
+  get deleteSchoolUseCase(): DeleteSchoolUseCase {
+    return new DeleteSchoolUseCase(this.schoolRepository);
   }
 
   // User Use Cases
   get getUsersUseCase(): GetUsersUseCase {
     return new GetUsersUseCase(this.userRepository);
+  }
+
+  get getRolesUseCase(): GetRolesUseCase {
+    return new GetRolesUseCase(this.roleRepository);
+  }
+
+  get createUserUseCase(): CreateUserUseCase {
+    return new CreateUserUseCase(this.userRepository);
   }
 
   get updateUserUseCase(): UpdateUserUseCase {
@@ -100,6 +188,136 @@ class Container {
 
   get deleteStudentUseCase(): DeleteStudentUseCase {
     return new DeleteStudentUseCase(this.studentRepository);
+  }
+
+  // Projection Use Cases
+  get createProjectionUseCase(): CreateProjectionUseCase {
+    return new CreateProjectionUseCase(this.projectionRepository);
+  }
+
+  get getProjectionsByStudentIdUseCase(): GetProjectionsByStudentIdUseCase {
+    return new GetProjectionsByStudentIdUseCase(this.projectionRepository);
+  }
+
+  get getProjectionByIdUseCase(): GetProjectionByIdUseCase {
+    return new GetProjectionByIdUseCase(this.projectionRepository);
+  }
+
+  get getProjectionDetailUseCase(): GetProjectionDetailUseCase {
+    return new GetProjectionDetailUseCase(this.projectionRepository, this.studentRepository);
+  }
+
+  get updateProjectionUseCase(): UpdateProjectionUseCase {
+    return new UpdateProjectionUseCase(this.projectionRepository);
+  }
+
+  get deleteProjectionUseCase(): DeleteProjectionUseCase {
+    return new DeleteProjectionUseCase(this.projectionRepository);
+  }
+
+  get addPaceToProjectionUseCase(): AddPaceToProjectionUseCase {
+    return new AddPaceToProjectionUseCase(this.projectionRepository);
+  }
+
+  get removePaceFromProjectionUseCase(): RemovePaceFromProjectionUseCase {
+    return new RemovePaceFromProjectionUseCase(this.projectionRepository);
+  }
+
+  get updatePaceGradeUseCase(): UpdatePaceGradeUseCase {
+    return new UpdatePaceGradeUseCase(this.projectionRepository);
+  }
+
+  get movePaceUseCase(): MovePaceUseCase {
+    return new MovePaceUseCase(this.projectionRepository);
+  }
+
+  get markPaceIncompleteUseCase(): MarkPaceIncompleteUseCase {
+    return new MarkPaceIncompleteUseCase(this.projectionRepository);
+  }
+
+  // PACE Catalog Use Cases
+  get getPaceCatalogUseCase(): GetPaceCatalogUseCase {
+    return new GetPaceCatalogUseCase();
+  }
+
+  // School Year Use Cases
+  get createSchoolYearUseCase(): CreateSchoolYearUseCase {
+    return new CreateSchoolYearUseCase(this.schoolYearRepository);
+  }
+
+  get getSchoolYearsUseCase(): GetSchoolYearsUseCase {
+    return new GetSchoolYearsUseCase(this.schoolYearRepository);
+  }
+
+  get getSchoolYearByIdUseCase(): GetSchoolYearByIdUseCase {
+    return new GetSchoolYearByIdUseCase(this.schoolYearRepository);
+  }
+
+  get updateSchoolYearUseCase(): UpdateSchoolYearUseCase {
+    return new UpdateSchoolYearUseCase(this.schoolYearRepository);
+  }
+
+  get deleteSchoolYearUseCase(): DeleteSchoolYearUseCase {
+    return new DeleteSchoolYearUseCase(this.schoolYearRepository);
+  }
+
+  get setActiveSchoolYearUseCase(): SetActiveSchoolYearUseCase {
+    return new SetActiveSchoolYearUseCase(this.schoolYearRepository);
+  }
+
+  get getCurrentWeekUseCase(): GetCurrentWeekUseCase {
+    return new GetCurrentWeekUseCase(this.schoolYearRepository);
+  }
+
+  // Daily Goals Use Cases
+  get createDailyGoalUseCase(): CreateDailyGoalUseCase {
+    return new CreateDailyGoalUseCase(this.dailyGoalRepository);
+  }
+
+  get updateDailyGoalUseCase(): UpdateDailyGoalUseCase {
+    return new UpdateDailyGoalUseCase(this.dailyGoalRepository);
+  }
+
+  get getDailyGoalsUseCase(): GetDailyGoalsUseCase {
+    return new GetDailyGoalsUseCase(this.dailyGoalRepository);
+  }
+
+  get getDailyGoalsByProjectionUseCase(): GetDailyGoalsByProjectionUseCase {
+    return new GetDailyGoalsByProjectionUseCase(this.dailyGoalRepository);
+  }
+
+  get updateDailyGoalCompletionUseCase(): UpdateDailyGoalCompletionUseCase {
+    return new UpdateDailyGoalCompletionUseCase(this.dailyGoalRepository);
+  }
+
+  get updateDailyGoalNotesUseCase(): UpdateDailyGoalNotesUseCase {
+    return new UpdateDailyGoalNotesUseCase(this.dailyGoalRepository);
+  }
+
+  get addNoteToHistoryUseCase(): AddNoteToHistoryUseCase {
+    return new AddNoteToHistoryUseCase(this.dailyGoalRepository);
+  }
+
+  get getNoteHistoryUseCase(): GetNoteHistoryUseCase {
+    return new GetNoteHistoryUseCase(this.dailyGoalRepository);
+  }
+
+  get deleteDailyGoalUseCase(): DeleteDailyGoalUseCase {
+    return new DeleteDailyGoalUseCase(this.dailyGoalRepository);
+  }
+
+  // Controllers
+  get schoolYearController() {
+    const { SchoolYearController } = require('../api/controllers');
+    return new SchoolYearController(
+      this.createSchoolYearUseCase,
+      this.getSchoolYearsUseCase,
+      this.getSchoolYearByIdUseCase,
+      this.updateSchoolYearUseCase,
+      this.deleteSchoolYearUseCase,
+      this.setActiveSchoolYearUseCase,
+      this.getCurrentWeekUseCase
+    );
   }
 }
 

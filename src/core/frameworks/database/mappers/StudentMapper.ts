@@ -1,8 +1,14 @@
-import { Student as PrismaStudent, Parent as PrismaParent, CertificationType as PrismaCertificationType } from '@prisma/client';
+import { 
+  Student as PrismaStudent, 
+  User as PrismaUser,
+  UserStudent as PrismaUserStudent,
+  CertificationType as PrismaCertificationType 
+} from '@prisma/client';
 import { Student, CertificationType } from '../../../domain/entities';
 
 type PrismaStudentWithRelations = PrismaStudent & {
-  parents?: PrismaParent[];
+  user?: PrismaUser;
+  userStudents?: (PrismaUserStudent & { user: PrismaUser })[];
   certificationType?: PrismaCertificationType;
 };
 
@@ -12,6 +18,10 @@ export class StudentMapper {
       throw new Error('CertificationType must be included when mapping student');
     }
 
+    if (!prismaStudent.user) {
+      throw new Error('User must be included when mapping student');
+    }
+
     const certificationType: CertificationType = {
       id: prismaStudent.certificationType.id,
       name: prismaStudent.certificationType.name,
@@ -19,11 +29,26 @@ export class StudentMapper {
       isActive: prismaStudent.certificationType.isActive,
     };
 
+    // Calculate age from birthDate
+    const today = new Date();
+    const birthDate = new Date(prismaStudent.birthDate);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    // Get parent users
+    const parents = prismaStudent.userStudents?.map(us => ({
+      id: us.user.id,
+      name: `${us.user.firstName || ''} ${us.user.lastName || ''}`.trim(),
+    })) || [];
+
     return new Student(
       prismaStudent.id,
-      prismaStudent.firstName,
-      prismaStudent.lastName,
-      prismaStudent.age,
+      prismaStudent.user.firstName || '',
+      prismaStudent.user.lastName || '',
+      age,
       prismaStudent.birthDate,
       prismaStudent.certificationTypeId,
       certificationType,
@@ -32,14 +57,15 @@ export class StudentMapper {
       prismaStudent.contactPhone || undefined,
       prismaStudent.isLeveled,
       prismaStudent.expectedLevel || undefined,
+      prismaStudent.currentLevel || undefined,
       prismaStudent.address || undefined,
-      prismaStudent.parents?.map(p => ({ id: p.id, name: p.name })) || [],
+      parents,
       prismaStudent.createdAt,
       prismaStudent.updatedAt
     );
   }
 
-  static toPrisma(student: Student): Omit<PrismaStudent, 'createdAt' | 'updatedAt'> {
+  static toPrisma(student: Student): Omit<PrismaStudent, 'createdAt' | 'updatedAt' | 'deletedAt'> {
     return {
       id: student.id,
       firstName: student.firstName,
@@ -52,7 +78,9 @@ export class StudentMapper {
       contactPhone: student.contactPhone || null,
       isLeveled: student.isLeveled,
       expectedLevel: student.expectedLevel || null,
+      currentLevel: student.currentLevel || null,
       address: student.address || null,
+      deletedAt: null,
     };
   }
 }

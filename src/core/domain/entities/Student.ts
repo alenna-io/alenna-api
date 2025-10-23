@@ -1,11 +1,6 @@
-// Domain Entity: Student
-export interface CertificationType {
-  id: string;
-  name: string;
-  description?: string;
-  isActive: boolean;
-}
+import { CertificationType } from './CertificationType';
 
+// Domain Entity: Student
 export interface Parent {
   id: string;
   name: string;
@@ -25,6 +20,7 @@ export class Student {
     public readonly contactPhone?: string,
     public readonly isLeveled: boolean = false,
     public readonly expectedLevel?: string,
+    public readonly currentLevel?: string,
     public readonly address?: string,
     public readonly parents: Parent[] = [],
     public readonly createdAt?: Date,
@@ -44,6 +40,7 @@ export class Student {
     contactPhone?: string;
     isLeveled?: boolean;
     expectedLevel?: string;
+    currentLevel?: string;
     address?: string;
     parents?: Parent[];
   }): Student {
@@ -60,6 +57,7 @@ export class Student {
       props.contactPhone,
       props.isLeveled || false,
       props.expectedLevel,
+      props.currentLevel,
       props.address,
       props.parents || [],
       new Date(),
@@ -81,6 +79,7 @@ export class Student {
       props.contactPhone ?? this.contactPhone,
       props.isLeveled ?? this.isLeveled,
       props.expectedLevel ?? this.expectedLevel,
+      props.currentLevel ?? this.currentLevel,
       props.address ?? this.address,
       props.parents ?? this.parents,
       this.createdAt,

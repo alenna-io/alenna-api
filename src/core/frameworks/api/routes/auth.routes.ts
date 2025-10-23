@@ -18,5 +18,8 @@ router.post('/sync', requireAuth(), authController.syncUser.bind(authController)
 // Get current authenticated user (protected)
 router.get('/me', requireAuth(), attachUserContext, authController.getCurrentUser.bind(authController));
 
+// Get current user info with roles (protected)
+router.get('/info', requireAuth(), attachUserContext, authController.getUserInfo.bind(authController));
+
 export default router;
 

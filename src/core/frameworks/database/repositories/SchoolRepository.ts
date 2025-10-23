@@ -5,8 +5,11 @@ import { SchoolMapper } from '../mappers';
 
 export class SchoolRepository implements ISchoolRepository {
   async findById(id: string): Promise<School | null> {
-    const school = await prisma.school.findUnique({
-      where: { id },
+    const school = await prisma.school.findFirst({
+      where: { 
+        id,
+        deletedAt: null, // Soft delete filter
+      },
     });
 
     return school ? SchoolMapper.toDomain(school) : null;
