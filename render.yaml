@@ -23,5 +23,4 @@ services:
   # PostgreSQL Database
   - type: pserv
     name: alenna-db
-    env: postgresql
     plan: free
