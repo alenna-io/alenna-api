@@ -15,6 +15,7 @@ export interface UserInfoOutput {
     name: string;
     displayName: string;
   }>;
+  permissions: string[];
 }
 
 export class GetUserInfoUseCase {
@@ -25,7 +26,15 @@ export class GetUserInfoUseCase {
         school: true,
         userRoles: {
           include: {
-            role: true,
+            role: {
+              include: {
+                rolePermissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -34,6 +43,14 @@ export class GetUserInfoUseCase {
     if (!user) {
       throw new Error('Usuario no encontrado');
     }
+
+    // Collect all permissions from user's roles
+    const permissions = new Set<string>();
+    user.userRoles.forEach(userRole => {
+      userRole.role.rolePermissions.forEach(rp => {
+        permissions.add(rp.permission.name);
+      });
+    });
 
     return {
       id: user.id,
@@ -48,6 +65,7 @@ export class GetUserInfoUseCase {
         name: ur.role.name,
         displayName: ur.role.displayName,
       })),
+      permissions: Array.from(permissions),
     };
   }
 }

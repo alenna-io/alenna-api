@@ -10,4 +10,5 @@ export * from './PaceCatalogMapper';
 export * from './PaceMapper'; // ProjectionPaceMapper
 export * from './GradeHistoryMapper';
 export * from './SchoolYearMapper';
+export * from './RoleMapper';
 

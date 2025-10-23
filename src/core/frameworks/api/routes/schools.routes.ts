@@ -25,5 +25,33 @@ router.get('/me', requirePermission('schoolInfo.read'), schoolController.getMySc
 // Update current user's school (Admin only)
 router.put('/me', requirePermission('schoolInfo.update'), schoolController.updateSchool.bind(schoolController));
 
+// Superadmin-only routes for managing all schools
+// Get all schools
+router.get('/', requirePermission('schools.read'), schoolController.getAllSchools.bind(schoolController));
+
+// Get specific school by ID
+router.get('/:id', requirePermission('schools.read'), schoolController.getSchoolById.bind(schoolController));
+
+// Create new school (also available via public route above, but protected here for superadmins)
+router.post('/admin/create', requirePermission('schools.create'), schoolController.createSchool.bind(schoolController));
+
+// Update specific school by ID
+router.put('/:id', requirePermission('schools.update'), schoolController.updateSchoolById.bind(schoolController));
+
+// Delete school
+router.delete('/:id', requirePermission('schools.delete'), schoolController.deleteSchool.bind(schoolController));
+
+// Get students count for a school
+router.get('/:id/students/count', requirePermission('schools.read'), schoolController.getStudentsCount.bind(schoolController));
+
+// Get students for a school
+router.get('/:id/students', requirePermission('schools.read'), schoolController.getStudents.bind(schoolController));
+
+// Get teachers count for a school
+router.get('/:id/teachers/count', requirePermission('schools.read'), schoolController.getTeachersCount.bind(schoolController));
+
+// Get teachers for a school
+router.get('/:id/teachers', requirePermission('schools.read'), schoolController.getTeachers.bind(schoolController));
+
 export default router;
 

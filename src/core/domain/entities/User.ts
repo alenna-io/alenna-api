@@ -1,5 +1,11 @@
 // Domain Entity: User
-export type UserRole = 'ADMIN' | 'TEACHER' | 'SUPERVISOR';
+export type UserRole = 'SUPERADMIN' | 'ADMIN' | 'TEACHER' | 'PARENT' | 'STUDENT';
+
+export interface UserRoleInfo {
+  id: string;
+  name: string;
+  displayName: string;
+}
 
 export class User {
   constructor(
@@ -9,7 +15,7 @@ export class User {
     public readonly schoolId: string,
     public readonly firstName?: string,
     public readonly lastName?: string,
-    public readonly role: UserRole = 'TEACHER',
+    public readonly roles: UserRoleInfo[] = [],
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date
   ) {}
@@ -21,7 +27,7 @@ export class User {
     schoolId: string;
     firstName?: string;
     lastName?: string;
-    role?: UserRole;
+    roles?: UserRoleInfo[];
   }): User {
     return new User(
       props.id,
@@ -30,21 +36,21 @@ export class User {
       props.schoolId,
       props.firstName,
       props.lastName,
-      props.role || 'TEACHER',
+      props.roles || [],
       new Date(),
       new Date()
     );
   }
 
-  update(props: Partial<Pick<User, 'firstName' | 'lastName' | 'role' | 'email'>>): User {
+  update(props: Partial<Pick<User, 'firstName' | 'lastName' | 'roles' | 'email' | 'schoolId'>>): User {
     return new User(
       this.id,
       this.clerkId,
       props.email ?? this.email,
-      this.schoolId,
+      props.schoolId ?? this.schoolId,
       props.firstName ?? this.firstName,
       props.lastName ?? this.lastName,
-      props.role ?? this.role,
+      props.roles ?? this.roles,
       this.createdAt,
       new Date()
     );
@@ -54,20 +60,34 @@ export class User {
     return `${this.firstName || ''} ${this.lastName || ''}`.trim() || this.email;
   }
 
-  hasRole(role: UserRole): boolean {
-    return this.role === role;
+  hasRole(roleName: string): boolean {
+    return this.roles.some(role => role.name === roleName);
+  }
+
+  isSuperAdmin(): boolean {
+    return this.hasRole('SUPERADMIN');
   }
 
   isAdmin(): boolean {
-    return this.role === 'ADMIN';
+    return this.hasRole('ADMIN');
   }
 
   canManageUsers(): boolean {
-    return this.role === 'ADMIN';
+    return this.hasRole('SUPERADMIN') || this.hasRole('ADMIN');
   }
 
   canManageStudents(): boolean {
-    return ['ADMIN', 'TEACHER', 'SUPERVISOR'].includes(this.role);
+    return this.hasRole('SUPERADMIN') || this.hasRole('ADMIN') || this.hasRole('TEACHER');
+  }
+
+  get primaryRole(): UserRoleInfo | undefined {
+    // Return the highest priority role
+    const priorityOrder = ['SUPERADMIN', 'ADMIN', 'TEACHER', 'PARENT', 'STUDENT'];
+    for (const roleName of priorityOrder) {
+      const role = this.roles.find(r => r.name === roleName);
+      if (role) return role;
+    }
+    return this.roles[0];
   }
 }
 
