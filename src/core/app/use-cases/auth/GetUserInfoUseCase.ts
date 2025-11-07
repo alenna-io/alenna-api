@@ -1,6 +1,15 @@
 import { PrismaClient } from '@prisma/client';
+import { CheckPermissionUseCase } from './CheckPermissionUseCase';
 
 const prisma = new PrismaClient();
+
+export interface ModuleAccessOutput {
+  key: string;
+  name: string;
+  description?: string;
+  displayOrder: number;
+  actions: string[];
+}
 
 export interface UserInfoOutput {
   id: string;
@@ -16,6 +25,7 @@ export interface UserInfoOutput {
     displayName: string;
   }>;
   permissions: string[];
+  modules: ModuleAccessOutput[];
 }
 
 export class GetUserInfoUseCase {
@@ -26,15 +36,7 @@ export class GetUserInfoUseCase {
         school: true,
         userRoles: {
           include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: true,
-                  },
-                },
-              },
-            },
+            role: true,
           },
         },
       },
@@ -44,13 +46,11 @@ export class GetUserInfoUseCase {
       throw new Error('Usuario no encontrado');
     }
 
-    // Collect all permissions from user's roles
-    const permissions = new Set<string>();
-    user.userRoles.forEach(userRole => {
-      userRole.role.rolePermissions.forEach(rp => {
-        permissions.add(rp.permission.name);
-      });
-    });
+    const accessControl = new CheckPermissionUseCase();
+    const [permissions, modules] = await Promise.all([
+      accessControl.getUserPermissions(userId),
+      accessControl.getUserModules(userId),
+    ]);
 
     return {
       id: user.id,
@@ -60,12 +60,13 @@ export class GetUserInfoUseCase {
       fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
       schoolId: user.schoolId,
       schoolName: user.school.name,
-      roles: user.userRoles.map(ur => ({
-        id: ur.role.id,
-        name: ur.role.name,
-        displayName: ur.role.displayName,
+      roles: user.userRoles.map((userRole) => ({
+        id: userRole.role.id,
+        name: userRole.role.name,
+        displayName: userRole.role.displayName,
       })),
-      permissions: Array.from(permissions),
+      permissions: permissions.sort(),
+      modules,
     };
   }
 }

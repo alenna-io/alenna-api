@@ -18,8 +18,8 @@ export class UpdateUserUseCase {
       throw new Error('User not found');
     }
 
-    // Permission check: SuperAdmin/Admin can update anyone, others can only update themselves
-    const canManageUsers = currentUserRoles.includes('SUPERADMIN') || currentUserRoles.includes('ADMIN');
+    // Permission check: SuperAdmin/School Admin can update anyone, others can only update themselves
+    const canManageUsers = currentUserRoles.includes('SUPERADMIN') || currentUserRoles.includes('SCHOOL_ADMIN');
     if (!canManageUsers && currentUserId !== userId) {
       throw new Error('Forbidden: Cannot update other users');
     }

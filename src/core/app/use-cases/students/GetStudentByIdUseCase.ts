@@ -34,7 +34,7 @@ export class GetStudentByIdUseCase {
 
       const hasParentRole = user?.userRoles.some(ur => ur.role.name === 'PARENT');
       const hasTeacherOrAdminRole = user?.userRoles.some(ur => 
-        ur.role.name === 'TEACHER' || ur.role.name === 'ADMIN'
+        ur.role.name === 'TEACHER' || ur.role.name === 'SCHOOL_ADMIN'
       );
 
       // If user is ONLY a parent, verify they're linked to this student

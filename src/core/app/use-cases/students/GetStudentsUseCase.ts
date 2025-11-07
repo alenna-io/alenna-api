@@ -29,7 +29,7 @@ export class GetStudentsUseCase {
       // If user is ONLY a parent (no teacher/admin roles), filter to their children
       const hasParentRole = user?.userRoles.some(ur => ur.role.name === 'PARENT');
       const hasTeacherOrAdminRole = user?.userRoles.some(ur => 
-        ur.role.name === 'TEACHER' || ur.role.name === 'ADMIN'
+        ur.role.name === 'TEACHER' || ur.role.name === 'SCHOOL_ADMIN'
       );
 
       if (hasParentRole && !hasTeacherOrAdminRole) {

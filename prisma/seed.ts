@@ -16,6 +16,51 @@ async function main() {
   await seedRBAC();
   console.log('');
 
+  const grantModuleToRoles = async (
+    moduleId: string,
+    schoolId: string,
+    roles: Array<{ id: string; name: string }>,
+  ) => {
+    for (const role of roles) {
+      await prisma.roleModuleSchool.upsert({
+        where: {
+          roleId_schoolId_moduleId: {
+            roleId: role.id,
+            schoolId,
+            moduleId,
+          },
+        },
+        update: {},
+        create: {
+          id: randomUUID(),
+          roleId: role.id,
+          schoolId,
+          moduleId,
+        },
+      });
+    }
+  };
+
+  const superadminRole = await prisma.role.findFirst({
+    where: { name: 'SUPERADMIN', schoolId: null },
+  });
+
+  const schoolAdminRole = await prisma.role.findFirst({
+    where: { name: 'SCHOOL_ADMIN', schoolId: null },
+  });
+
+  const teacherRole = await prisma.role.findFirst({
+    where: { name: 'TEACHER', schoolId: null },
+  });
+
+  const parentRole = await prisma.role.findFirst({
+    where: { name: 'PARENT', schoolId: null },
+  });
+
+  const studentRole = await prisma.role.findFirst({
+    where: { name: 'STUDENT', schoolId: null },
+  });
+
   // Create demo school
   const school = await prisma.school.upsert({
     where: { id: 'demo-school' },
@@ -44,29 +89,25 @@ async function main() {
     },
   });
 
-  // Assign ADMIN role
-  const adminRole = await prisma.role.findFirst({
-    where: { name: 'ADMIN', schoolId: null },
-  });
-  
-  if (adminRole) {
+  // Assign SCHOOL_ADMIN role
+  if (schoolAdminRole) {
     await prisma.userRole.upsert({
       where: {
         userId_roleId: {
           userId: adminUser.id,
-          roleId: adminRole.id,
+          roleId: schoolAdminRole.id,
         },
       },
       update: {},
       create: {
         id: randomUUID(),
         userId: adminUser.id,
-        roleId: adminRole.id,
+        roleId: schoolAdminRole.id,
       },
     });
   }
 
-  console.log('✅ Created ADMIN user:', adminUser.email);
+  console.log('✅ Created SCHOOL ADMIN user:', adminUser.email);
   console.log('   Clerk ID:', adminUser.clerkId);
   console.log('   ⚠️  Replace this with your actual Clerk user ID!');
 
@@ -102,10 +143,6 @@ async function main() {
   });
 
   // Use the global SUPERADMIN role (created in RBAC seed)
-  const superadminRole = await prisma.role.findFirst({
-    where: { name: 'SUPERADMIN', schoolId: null },
-  });
-
   if (!superadminRole) {
     throw new Error('SUPERADMIN role not found. Make sure RBAC seed runs first.');
   }
@@ -278,9 +315,9 @@ async function main() {
   console.log('✅ Created school year: 2023-2024 with 4 quarters (inactive)');
 
   // Enable modules for school
-  const studentsModule = await prisma.module.findUnique({ where: { name: 'Estudiantes' } });
-  const configModule = await prisma.module.findUnique({ where: { name: 'Configuración' } });
-  const usersModule = await prisma.module.findUnique({ where: { name: 'Usuarios' } });
+  const studentsModule = await prisma.module.findUnique({ where: { key: 'students' } });
+  const configModule = await prisma.module.findUnique({ where: { key: 'configuration' } });
+  const usersModule = await prisma.module.findUnique({ where: { key: 'users' } });
   
   if (studentsModule) {
     await prisma.schoolModule.upsert({
@@ -300,22 +337,12 @@ async function main() {
     });
     console.log('✅ Enabled Students module for school');
 
-    // Assign Students module to demo admin
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: adminUser.id,
-          moduleId: studentsModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: adminUser.id,
-        moduleId: studentsModule.id,
-      },
-    });
-    console.log('✅ Assigned Students module to admin');
+    const rolesToGrant = [schoolAdminRole, teacherRole, parentRole, studentRole].filter(
+      (role): role is { id: string; name: string } => Boolean(role),
+    );
+
+    await grantModuleToRoles(studentsModule.id, school.id, rolesToGrant);
+    console.log('✅ Granted Students module to school roles');
   }
 
   if (configModule) {
@@ -336,22 +363,38 @@ async function main() {
     });
     console.log('✅ Enabled Configuration module for school');
 
-    // Assign Configuration module to demo admin
-    await prisma.userModule.upsert({
+    const rolesToGrant = [schoolAdminRole, teacherRole].filter(
+      (role): role is { id: string; name: string } => Boolean(role),
+    );
+
+    await grantModuleToRoles(configModule.id, school.id, rolesToGrant);
+    console.log('✅ Granted Configuration module to school roles');
+  }
+
+  if (usersModule) {
+    await prisma.schoolModule.upsert({
       where: {
-        userId_moduleId: {
-          userId: adminUser.id,
-          moduleId: configModule.id,
+        schoolId_moduleId: {
+          schoolId: school.id,
+          moduleId: usersModule.id,
         },
       },
       update: {},
       create: {
         id: randomUUID(),
-        userId: adminUser.id,
-        moduleId: configModule.id,
+        schoolId: school.id,
+        moduleId: usersModule.id,
+        isActive: true,
       },
     });
-    console.log('✅ Assigned Configuration module to admin');
+    console.log('✅ Enabled Users module for demo school');
+
+    const rolesToGrant = [schoolAdminRole].filter(
+      (role): role is { id: string; name: string } => Boolean(role),
+    );
+
+    await grantModuleToRoles(usersModule.id, school.id, rolesToGrant);
+    console.log('✅ Granted Users module to school admins');
   }
 
   // Enable Users module for Alenna school and assign to superadmin
@@ -373,26 +416,14 @@ async function main() {
     });
     console.log('✅ Enabled Users module for Alenna school');
 
-    // Assign Users module to superadmin
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: superadminUser.id,
-          moduleId: usersModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: superadminUser.id,
-        moduleId: usersModule.id,
-      },
-    });
-    console.log('✅ Assigned Users module to superadmin');
+    if (superadminRole) {
+      await grantModuleToRoles(usersModule.id, alennaSchool.id, [superadminRole]);
+    }
+    console.log('✅ Granted Users module to Alenna superadmins');
   }
 
   // Enable Schools module for Alenna school and assign to superadmin
-  const schoolsModule = await prisma.module.findUnique({ where: { name: 'Escuelas' } });
+  const schoolsModule = await prisma.module.findUnique({ where: { key: 'schools' } });
   if (schoolsModule) {
     await prisma.schoolModule.upsert({
       where: {
@@ -411,22 +442,10 @@ async function main() {
     });
     console.log('✅ Enabled Schools module for Alenna school');
 
-    // Assign Schools module to superadmin
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: superadminUser.id,
-          moduleId: schoolsModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: superadminUser.id,
-        moduleId: schoolsModule.id,
-      },
-    });
-    console.log('✅ Assigned Schools module to superadmin');
+    if (superadminRole) {
+      await grantModuleToRoles(schoolsModule.id, alennaSchool.id, [superadminRole]);
+    }
+    console.log('✅ Granted Schools module to Alenna superadmins');
   }
 
   // Superadmins don't get Configuración module as it's per-school
@@ -435,11 +454,6 @@ async function main() {
   // Create demo users for each role
   console.log('\n👥 Creating demo users for each role...');
 
-  // Get roles
-  const teacherRole = await prisma.role.findFirst({ where: { name: 'TEACHER', schoolId: null } });
-  const parentRole = await prisma.role.findFirst({ where: { name: 'PARENT', schoolId: null } });
-  const studentRole = await prisma.role.findFirst({ where: { name: 'STUDENT', schoolId: null } });
-  
   // 1. Demo Teacher
   if (teacherRole && studentsModule) {
     const teacherUser = await prisma.user.upsert({
@@ -467,21 +481,6 @@ async function main() {
         id: randomUUID(),
         userId: teacherUser.id,
         roleId: teacherRole.id,
-      },
-    });
-
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: teacherUser.id,
-          moduleId: studentsModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: teacherUser.id,
-        moduleId: studentsModule.id,
       },
     });
 
@@ -516,21 +515,6 @@ async function main() {
         id: randomUUID(),
         userId: demoParentUser.id,
         roleId: parentRole.id,
-      },
-    });
-
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: demoParentUser.id,
-          moduleId: studentsModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: demoParentUser.id,
-        moduleId: studentsModule.id,
       },
     });
 
@@ -773,17 +757,6 @@ async function main() {
             relationship: parent.relationship,
           },
         });
-
-        // Give parent access to Students module
-        if (studentsModule) {
-          await prisma.userModule.create({
-            data: {
-              id: randomUUID(),
-              userId: parentUser.id,
-              moduleId: studentsModule.id,
-            },
-          });
-        }
       }
       console.log(`   ✅ Created ${parentData.length} parent users and linked to student`);
     }
