@@ -11,6 +11,21 @@ export interface ModuleAccessOutput {
   actions: string[];
 }
 
+export interface StudentProfileOutput {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  birthDate: string;
+  graduationDate: string;
+  certificationType?: string;
+  contactPhone?: string;
+  isLeveled: boolean;
+  expectedLevel?: string;
+  address?: string;
+  parents: Array<{ id: string; name: string }>;
+}
+
 export interface UserInfoOutput {
   id: string;
   email: string;
@@ -19,6 +34,8 @@ export interface UserInfoOutput {
   fullName: string;
   schoolId: string;
   schoolName: string;
+  studentId?: string;
+  studentProfile?: StudentProfileOutput;
   roles: Array<{
     id: string;
     name: string;
@@ -39,11 +56,75 @@ export class GetUserInfoUseCase {
             role: true,
           },
         },
+        student: {
+          include: {
+            certificationType: true,
+            userStudents: {
+              include: {
+                user: {
+                  include: {
+                    userRoles: {
+                      include: {
+                        role: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            user: true,
+          },
+        },
       },
     });
 
     if (!user) {
       throw new Error('Usuario no encontrado');
+    }
+
+    let studentData = user.student;
+
+    if (!studentData && user.userRoles.some((userRole) => userRole.role.name === 'STUDENT')) {
+      studentData = await prisma.student.findFirst({
+        where: {
+          userId: user.id,
+          deletedAt: null,
+        },
+        include: {
+          certificationType: true,
+          userStudents: {
+            include: {
+              user: {
+                include: {
+                  userRoles: {
+                    include: {
+                      role: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          user: true,
+        },
+      });
+
+      if (studentData) {
+        console.info('[GetUserInfo] Student profile resolved via fallback for user', userId, {
+          studentId: studentData.id,
+          parentLinks: studentData.userStudents.length,
+        });
+      }
+    }
+
+    if (!studentData) {
+      console.info('[GetUserInfo] No student profile linked for user', userId);
+    } else {
+      console.info('[GetUserInfo] Student profile found for user', userId, {
+        studentId: studentData.id,
+        hasCertification: Boolean(studentData.certificationType),
+        parentLinks: studentData.userStudents.length,
+      });
     }
 
     const accessControl = new CheckPermissionUseCase();
@@ -60,6 +141,28 @@ export class GetUserInfoUseCase {
       fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
       schoolId: user.schoolId,
       schoolName: user.school.name,
+      studentId: user.student?.id ?? studentData?.id,
+      studentProfile: studentData
+        ? {
+            id: studentData.id,
+            firstName: studentData.user?.firstName ?? '',
+            lastName: studentData.user?.lastName ?? '',
+            name: `${studentData.user?.firstName ?? ''} ${studentData.user?.lastName ?? ''}`.trim(),
+            birthDate: studentData.birthDate.toISOString(),
+            graduationDate: studentData.graduationDate?.toISOString() ?? '',
+            certificationType: studentData.certificationType?.name,
+            contactPhone: studentData.contactPhone ?? undefined,
+            isLeveled: studentData.isLeveled,
+            expectedLevel: studentData.expectedLevel ?? undefined,
+            address: studentData.address ?? undefined,
+            parents: studentData.userStudents
+              .filter((userStudent) => userStudent.user.userRoles.some((role) => role.role.name === 'PARENT'))
+              .map((userStudent) => ({
+                id: userStudent.user.id,
+                name: `${userStudent.user.firstName ?? ''} ${userStudent.user.lastName ?? ''}`.trim(),
+              })),
+          }
+        : undefined,
       roles: user.userRoles.map((userRole) => ({
         id: userRole.role.id,
         name: userRole.role.name,

@@ -54,6 +54,12 @@ export class CheckPermissionUseCase {
       return false;
     }
 
+    const isSuperAdmin = userContext.roles.some((role) => role.name === 'SUPERADMIN');
+    if (isSuperAdmin) {
+      const superPermissions = ROLE_PERMISSION_MAP.SUPERADMIN;
+      return superPermissions.includes(permission);
+    }
+
     const moduleRecord = await this.getModule(permissionDefinition.module);
     if (!moduleRecord) {
       return false;
@@ -179,25 +185,32 @@ export class CheckPermissionUseCase {
       };
     }
 
+    const isSuperAdmin = applicableRoles.includes('SUPERADMIN');
     const roleIds = userContext.roles.map((role) => role.id);
 
     const moduleKeys = new Set<ModuleKey>();
-    for (const roleName of applicableRoles) {
-      const permissions = ROLE_PERMISSION_MAP[roleName];
-      permissions.forEach((permission) => {
-        const definition = PERMISSION_DEFINITIONS[permission];
-        if (definition) {
-          moduleKeys.add(definition.module);
-        }
-      });
+    if (isSuperAdmin) {
+      (Object.keys(MODULE_KEY_TO_DB_KEY) as ModuleKey[]).forEach((moduleKey) => moduleKeys.add(moduleKey));
+    } else {
+      for (const roleName of applicableRoles) {
+        const permissions = ROLE_PERMISSION_MAP[roleName];
+        permissions.forEach((permission) => {
+          const definition = PERMISSION_DEFINITIONS[permission];
+          if (definition) {
+            moduleKeys.add(definition.module);
+          }
+        });
+      }
     }
 
     const modules = (await prismaAny.module.findMany({
-      where: {
-        key: {
-          in: Array.from(moduleKeys).map((moduleKey) => MODULE_KEY_TO_DB_KEY[moduleKey]),
-        },
-      },
+      where: isSuperAdmin
+        ? undefined
+        : {
+            key: {
+              in: Array.from(moduleKeys).map((moduleKey) => MODULE_KEY_TO_DB_KEY[moduleKey]),
+            },
+          },
       select: {
         id: true,
         key: true,
@@ -212,39 +225,49 @@ export class CheckPermissionUseCase {
 
     const moduleIds = modules.map((module) => module.id);
 
-    const activeSchoolModules = await prisma.schoolModule.findMany({
-      where: {
-        schoolId: userContext.schoolId,
-        moduleId: {
-          in: moduleIds,
-        },
-        isActive: true,
-      },
-      select: {
-        moduleId: true,
-      },
-    });
-
-    const activeModuleIds = new Set(activeSchoolModules.map((sm) => sm.moduleId));
-
-    const roleAssignments = await prismaAny.roleModuleSchool.findMany({
-      where: {
-        schoolId: userContext.schoolId,
-        moduleId: { in: moduleIds },
-        roleId: { in: roleIds },
-      },
-      select: {
-        roleId: true,
-        moduleId: true,
-      },
-    });
+    const activeModuleIds = isSuperAdmin
+      ? new Set(moduleIds)
+      : new Set(
+          (
+            await prisma.schoolModule.findMany({
+              where: {
+                schoolId: userContext.schoolId,
+                moduleId: {
+                  in: moduleIds,
+                },
+                isActive: true,
+              },
+              select: {
+                moduleId: true,
+              },
+            })
+          ).map((sm) => sm.moduleId)
+        );
 
     const assignmentsByRole = new Map<string, Set<string>>();
-    roleAssignments.forEach((assignment: { roleId: string; moduleId: string }) => {
-      const existing = assignmentsByRole.get(assignment.roleId) ?? new Set<string>();
-      existing.add(assignment.moduleId);
-      assignmentsByRole.set(assignment.roleId, existing);
-    });
+    if (isSuperAdmin) {
+      userContext.roles.forEach((role) => {
+        assignmentsByRole.set(role.id, new Set(moduleIds));
+      });
+    } else {
+      const roleAssignments = await prismaAny.roleModuleSchool.findMany({
+        where: {
+          schoolId: userContext.schoolId,
+          moduleId: { in: moduleIds },
+          roleId: { in: roleIds },
+        },
+        select: {
+          roleId: true,
+          moduleId: true,
+        },
+      });
+
+      roleAssignments.forEach((assignment: { roleId: string; moduleId: string }) => {
+        const existing = assignmentsByRole.get(assignment.roleId) ?? new Set<string>();
+        existing.add(assignment.moduleId);
+        assignmentsByRole.set(assignment.roleId, existing);
+      });
+    }
 
     const permissionSet = new Set<string>();
     const moduleActions = new Map<ModuleKey, string[]>();
@@ -262,7 +285,9 @@ export class CheckPermissionUseCase {
 
       const assignedModules = assignmentsByRole.get(role.id);
       if (!assignedModules) {
-        continue;
+        if (roleName !== 'SUPERADMIN') {
+          continue;
+        }
       }
 
       for (const permission of allowedPermissions) {
@@ -276,12 +301,14 @@ export class CheckPermissionUseCase {
           continue;
         }
 
-        if (!activeModuleIds.has(moduleRecord.id)) {
-          continue;
-        }
+        if (!isSuperAdmin) {
+          if (!activeModuleIds.has(moduleRecord.id)) {
+            continue;
+          }
 
-        if (!assignedModules.has(moduleRecord.id)) {
-          continue;
+          if (!assignedModules.has(moduleRecord.id)) {
+            continue;
+          }
         }
 
         permissionSet.add(permission);

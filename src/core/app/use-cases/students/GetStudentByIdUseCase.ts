@@ -29,6 +29,11 @@ export class GetStudentByIdUseCase {
               studentId: true,
             },
           },
+          student: {
+            select: {
+              id: true,
+            },
+          },
         },
       });
 
@@ -36,12 +41,20 @@ export class GetStudentByIdUseCase {
       const hasTeacherOrAdminRole = user?.userRoles.some(ur => 
         ur.role.name === 'TEACHER' || ur.role.name === 'SCHOOL_ADMIN'
       );
+      const hasStudentRole = user?.userRoles.some(ur => ur.role.name === 'STUDENT');
 
       // If user is ONLY a parent, verify they're linked to this student
       if (hasParentRole && !hasTeacherOrAdminRole) {
         const linkedStudentIds = new Set(user?.userStudents.map(us => us.studentId) || []);
         
         if (!linkedStudentIds.has(studentId)) {
+          throw new Error('No tienes permiso para ver este estudiante');
+        }
+      }
+
+      if (hasStudentRole && !hasTeacherOrAdminRole) {
+        const ownStudentId = user?.student?.id;
+        if (!ownStudentId || ownStudentId !== studentId) {
           throw new Error('No tienes permiso para ver este estudiante');
         }
       }

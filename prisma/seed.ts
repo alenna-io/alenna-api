@@ -67,7 +67,7 @@ async function main() {
     update: {},
     create: {
       id: 'demo-school',
-      name: 'Demo Grace Christian Academy',
+      name: 'Demo Academy',
       address: '123 Education Street, Learning City',
       phone: '+1 (555) 123-4567',
       email: 'admin@demoacademy.edu',
@@ -84,7 +84,7 @@ async function main() {
       clerkId: 'user_33skKBEkI8wMg70KnEwHwrjVP93',
       email: 'demo.admin@alenna.io',
       firstName: 'Demo',
-      lastName: 'Admin',
+      lastName: 'School Admin',
       schoolId: school.id,
     },
   });
@@ -461,7 +461,7 @@ async function main() {
       update: {},
       create: {
         id: randomUUID(),
-        clerkId: 'demo_teacher_clerk',
+        clerkId: 'user_34OK5lMOuaKKAOiNLuSeAkIN6Vo',
         email: 'demo.teacher@alenna.io',
         firstName: 'Demo',
         lastName: 'Teacher',
@@ -495,7 +495,7 @@ async function main() {
       update: {},
       create: {
         id: randomUUID(),
-        clerkId: 'demo_parent_clerk',
+        clerkId: 'user_34OKCyGRvnekmyY7ffTpLmYc57I',
         email: 'demo.parent@alenna.io',
         firstName: 'Demo',
         lastName: 'Parent',
@@ -522,13 +522,14 @@ async function main() {
   }
 
   // 3. Demo Student (separate from regular students - explicit demo account)
+  let demoStudentUser: any = null;
   if (studentRole) {
-    const demoStudentUser = await prisma.user.upsert({
+    demoStudentUser = await prisma.user.upsert({
       where: { email: 'demo.student@alenna.io' },
       update: {},
       create: {
         id: randomUUID(),
-        clerkId: 'demo_student_clerk',
+        clerkId: 'user_34OK8zFtHjyc4m4tbS6ecWtOcBF',
         email: 'demo.student@alenna.io',
         firstName: 'Demo',
         lastName: 'Student',
@@ -594,6 +595,28 @@ async function main() {
     if (!certType) throw new Error(`Certification type ${name} not found`);
     return certType.id;
   };
+
+  // Create student profile for demo student user (login account)
+  if (studentRole && demoStudentUser) {
+    const demoStudentId = randomUUID();
+    await prisma.student.create({
+      data: {
+        id: demoStudentId,
+        userId: demoStudentUser.id,
+        birthDate: new Date('2010-01-01'),
+        graduationDate: new Date('2025-06-15'),
+        contactPhone: '+52 555 000 0000',
+        isLeveled: false,
+        expectedLevel: null,
+        currentLevel: null,
+        address: 'Perfil demo del estudiante',
+        certificationTypeId: getCertTypeId('Grace Christian'),
+        schoolId: school.id,
+      },
+    });
+
+    console.log('✅ Linked demo student user to student profile');
+  }
 
   // Create demo students
   const studentsData = [
