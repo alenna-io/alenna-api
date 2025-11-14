@@ -1,223 +1,419 @@
 import { PrismaClient } from '@prisma/client';
+import {
+  MODULE_KEY_TO_DB_KEY,
+  PERMISSION_DEFINITIONS,
+  ROLE_PERMISSION_MAP,
+  type ModuleKey,
+  type RoleName,
+} from './permission-map';
 
 const prisma = new PrismaClient();
+const prismaAny = prisma as any;
 
 export interface PermissionCheckInput {
   userId: string;
-  permission: string; // e.g., "students.read", "projections.update"
-  resourceOwnerId?: string; // For "readOwn" permissions - the student/resource owner ID
+  permission: string;
+  resourceOwnerId?: string;
+}
+
+interface UserContext {
+  id: string;
+  schoolId: string;
+  roles: Array<{ id: string; name: string }>;
+  linkedStudentIds: Set<string>;
+  studentId?: string;
+}
+
+interface ModuleRecord {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  displayOrder: number;
+}
+
+interface AccessProfile {
+  permissions: string[];
+  moduleActions: Map<ModuleKey, string[]>;
+  modules: Map<ModuleKey, ModuleRecord>;
 }
 
 export class CheckPermissionUseCase {
-  /**
-   * Check if user has permission to perform an action
-   * 
-   * Logic:
-   * 1. Get user's roles (many-to-many)
-   * 2. Check if permission is assigned to any of user's roles (via RolePermission)
-   * 3. Check if user has access to the module that contains the permission
-   * 4. For "Own" permissions (readOwn, etc.), verify ownership
-   */
+  private moduleCache = new Map<ModuleKey, ModuleRecord>();
+
   async execute(input: PermissionCheckInput): Promise<boolean> {
     const { userId, permission, resourceOwnerId } = input;
 
-    try {
-      // 1. Get user with roles
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { 
-          id: true,
-          schoolId: true,
-          userRoles: {
-            include: {
-              role: true,
-            },
-          },
+    const permissionDefinition = PERMISSION_DEFINITIONS[permission];
+    if (!permissionDefinition) {
+      return false;
+    }
+
+    const userContext = await this.getUserContext(userId);
+    if (!userContext || userContext.roles.length === 0) {
+      return false;
+    }
+
+    const isSuperAdmin = userContext.roles.some((role) => role.name === 'SUPERADMIN');
+    if (isSuperAdmin) {
+      const superPermissions = ROLE_PERMISSION_MAP.SUPERADMIN;
+      return superPermissions.includes(permission);
+    }
+
+    const moduleRecord = await this.getModule(permissionDefinition.module);
+    if (!moduleRecord) {
+      return false;
+    }
+
+    const activeModule = await prisma.schoolModule.findUnique({
+      where: {
+        schoolId_moduleId: {
+          schoolId: userContext.schoolId,
+          moduleId: moduleRecord.id,
         },
-      });
+      },
+    });
 
-      if (!user) {
-        throw new Error('Usuario no encontrado');
-      }
+    if (!activeModule || !activeModule.isActive) {
+      return false;
+    }
 
-      if (user.userRoles.length === 0) {
-        return false;
-      }
-
-      // 2. Check if this permission exists and get its module
-      const permissionRecord = await prisma.permission.findUnique({
-        where: { name: permission },
-        include: { module: true },
-      });
-
-      if (!permissionRecord) {
-        return false;
-      }
-
-      // 3. Check if ANY of user's roles has this permission
-      const userRoleIds = user.userRoles.map(ur => ur.role.id);
-      
-      const rolePermission = await prisma.rolePermission.findFirst({
-        where: {
-          roleId: { in: userRoleIds },
-          permissionId: permissionRecord.id,
+    const roleAssignments = await prismaAny.roleModuleSchool.findMany({
+      where: {
+        schoolId: userContext.schoolId,
+        moduleId: moduleRecord.id,
+        roleId: {
+          in: userContext.roles.map((role) => role.id),
         },
-      });
+      },
+    });
 
-      if (!rolePermission) {
-        return false;
+    if (roleAssignments.length === 0) {
+      return false;
+    }
+
+    const assignedRoleIds = new Set(
+      roleAssignments.map((assignment: { roleId: string }) => assignment.roleId),
+    );
+
+    for (const role of userContext.roles) {
+      if (!assignedRoleIds.has(role.id)) {
+        continue;
       }
 
-      // 4. Check if school has this module enabled
-      const schoolModule = await prisma.schoolModule.findUnique({
-        where: {
-          schoolId_moduleId: {
-            schoolId: user.schoolId,
-            moduleId: permissionRecord.moduleId,
-          },
-        },
-      });
-
-      if (!schoolModule || !schoolModule.isActive) {
-        return false;
+      const roleName = this.toRoleName(role.name);
+      if (!roleName) {
+        continue;
       }
 
-      // 5. Check if user has access to this module
-      const userModule = await prisma.userModule.findUnique({
-        where: {
-          userId_moduleId: {
-            userId: user.id,
-            moduleId: permissionRecord.moduleId,
-          },
-        },
-      });
-
-      if (!userModule) {
-        return false;
+      const allowedPermissions = ROLE_PERMISSION_MAP[roleName];
+      if (!allowedPermissions || !allowedPermissions.includes(permission)) {
+        continue;
       }
 
-      // 6. For "Own" permissions, verify ownership
-      if (permission.endsWith('.readOwn') || permission.endsWith('.updateOwn')) {
-        // If no resourceOwnerId provided, allow (filtering happens in use case)
+      if (permissionDefinition.scope === 'own') {
         if (!resourceOwnerId) {
           return true;
         }
 
-        // Check if user has PARENT role and is linked to this student
-        const hasParentRole = user.userRoles.some(ur => ur.role.name === 'PARENT');
-        
-        if (hasParentRole) {
-          const userStudent = await prisma.userStudent.findUnique({
-            where: {
-              userId_studentId: {
-                userId: user.id,
-                studentId: resourceOwnerId,
-              },
-            },
-          });
-
-          return !!userStudent;
+        if (roleName === 'PARENT' && userContext.linkedStudentIds.has(resourceOwnerId)) {
+          return true;
         }
 
-        // For other roles with "Own" permissions, check if resource belongs to user's school
-        // (Implement additional ownership logic as needed)
-        return true;
+        if (roleName === 'STUDENT' && userContext.studentId === resourceOwnerId) {
+          return true;
+        }
+
+        // If user also has another role that grants broader access, continue loop
+        continue;
       }
 
-      // All checks passed
       return true;
-    } catch (error) {
-      console.error('Error checking permission:', error);
-      return false;
     }
+
+    return false;
   }
 
-  /**
-   * Check permission and throw error if not allowed
-   */
   async enforcePermission(input: PermissionCheckInput): Promise<void> {
     const hasPermission = await this.execute(input);
-    
+
     if (!hasPermission) {
       throw new Error(`No tienes permiso para: ${input.permission}`);
     }
   }
 
-  /**
-   * Get all permissions for a user (useful for UI)
-   */
   async getUserPermissions(userId: string): Promise<string[]> {
+    const userContext = await this.getUserContext(userId);
+    if (!userContext || userContext.roles.length === 0) {
+      return [];
+    }
+
+    const profile = await this.buildAccessProfile(userContext);
+    return profile.permissions;
+  }
+
+  async getUserModules(userId: string): Promise<Array<{ id: string; key: string; name: string; description?: string; displayOrder: number; actions: string[] }>> {
+    const userContext = await this.getUserContext(userId);
+    if (!userContext || userContext.roles.length === 0) {
+      return [];
+    }
+
+    const profile = await this.buildAccessProfile(userContext);
+
+    return Array.from(profile.modules.entries())
+      .map(([moduleKey, moduleRecord]) => ({
+        id: moduleRecord.id,
+        key: moduleRecord.key,
+        name: moduleRecord.name,
+        description: moduleRecord.description ?? undefined,
+        displayOrder: moduleRecord.displayOrder,
+        actions: profile.moduleActions.get(moduleKey) ?? [],
+      }))
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+  }
+
+  private async buildAccessProfile(userContext: UserContext): Promise<AccessProfile> {
+    const applicableRoles = userContext.roles
+      .map((role) => this.toRoleName(role.name))
+      .filter((roleName): roleName is RoleName => Boolean(roleName));
+
+    if (applicableRoles.length === 0) {
+      return {
+        permissions: [],
+        moduleActions: new Map(),
+        modules: new Map(),
+      };
+    }
+
+    const isSuperAdmin = applicableRoles.includes('SUPERADMIN');
+    const roleIds = userContext.roles.map((role) => role.id);
+
+    const moduleKeys = new Set<ModuleKey>();
+    if (isSuperAdmin) {
+      (Object.keys(MODULE_KEY_TO_DB_KEY) as ModuleKey[]).forEach((moduleKey) => moduleKeys.add(moduleKey));
+    } else {
+      for (const roleName of applicableRoles) {
+        const permissions = ROLE_PERMISSION_MAP[roleName];
+        permissions.forEach((permission) => {
+          const definition = PERMISSION_DEFINITIONS[permission];
+          if (definition) {
+            moduleKeys.add(definition.module);
+          }
+        });
+      }
+    }
+
+    const modules = (await prismaAny.module.findMany({
+      where: isSuperAdmin
+        ? undefined
+        : {
+            key: {
+              in: Array.from(moduleKeys).map((moduleKey) => MODULE_KEY_TO_DB_KEY[moduleKey]),
+            },
+          },
+      select: {
+        id: true,
+        key: true,
+        name: true,
+        description: true,
+        displayOrder: true,
+      },
+    })) as ModuleRecord[];
+
+    const moduleByKey = new Map<string, ModuleRecord>();
+    modules.forEach((module: ModuleRecord) => moduleByKey.set(module.key, module));
+
+    const moduleIds = modules.map((module) => module.id);
+
+    const activeModuleIds = isSuperAdmin
+      ? new Set(moduleIds)
+      : new Set(
+          (
+            await prisma.schoolModule.findMany({
+              where: {
+                schoolId: userContext.schoolId,
+                moduleId: {
+                  in: moduleIds,
+                },
+                isActive: true,
+              },
+              select: {
+                moduleId: true,
+              },
+            })
+          ).map((sm) => sm.moduleId)
+        );
+
+    const assignmentsByRole = new Map<string, Set<string>>();
+    if (isSuperAdmin) {
+      userContext.roles.forEach((role) => {
+        assignmentsByRole.set(role.id, new Set(moduleIds));
+      });
+    } else {
+      const roleAssignments = await prismaAny.roleModuleSchool.findMany({
+        where: {
+          schoolId: userContext.schoolId,
+          moduleId: { in: moduleIds },
+          roleId: { in: roleIds },
+        },
+        select: {
+          roleId: true,
+          moduleId: true,
+        },
+      });
+
+      roleAssignments.forEach((assignment: { roleId: string; moduleId: string }) => {
+        const existing = assignmentsByRole.get(assignment.roleId) ?? new Set<string>();
+        existing.add(assignment.moduleId);
+        assignmentsByRole.set(assignment.roleId, existing);
+      });
+    }
+
+    const permissionSet = new Set<string>();
+    const moduleActions = new Map<ModuleKey, string[]>();
+
+    for (const role of userContext.roles) {
+      const roleName = this.toRoleName(role.name);
+      if (!roleName) {
+        continue;
+      }
+
+      const allowedPermissions = ROLE_PERMISSION_MAP[roleName];
+      if (!allowedPermissions) {
+        continue;
+      }
+
+      const assignedModules = assignmentsByRole.get(role.id);
+      if (!assignedModules) {
+        if (roleName !== 'SUPERADMIN') {
+          continue;
+        }
+      }
+
+      for (const permission of allowedPermissions) {
+        const definition = PERMISSION_DEFINITIONS[permission];
+        if (!definition) {
+          continue;
+        }
+
+        const moduleRecord = moduleByKey.get(MODULE_KEY_TO_DB_KEY[definition.module]);
+        if (!moduleRecord) {
+          continue;
+        }
+
+        if (!isSuperAdmin) {
+          if (!activeModuleIds.has(moduleRecord.id)) {
+            continue;
+          }
+
+          if (!assignedModules.has(moduleRecord.id)) {
+            continue;
+          }
+        }
+
+        permissionSet.add(permission);
+
+        const existingActions = moduleActions.get(definition.module) ?? [];
+        if (!existingActions.includes(permission)) {
+          existingActions.push(permission);
+          moduleActions.set(definition.module, existingActions);
+        }
+
+        if (!this.moduleCache.has(definition.module)) {
+          this.moduleCache.set(definition.module, moduleRecord);
+        }
+      }
+    }
+
+    const resultModules = new Map<ModuleKey, ModuleRecord>();
+    moduleActions.forEach((actions, moduleKey) => {
+      actions.sort();
+      const record = this.moduleCache.get(moduleKey);
+      if (record) {
+        resultModules.set(moduleKey, record);
+      }
+    });
+
+    return {
+      permissions: Array.from(permissionSet).sort(),
+      moduleActions,
+      modules: resultModules,
+    };
+  }
+
+  private async getUserContext(userId: string): Promise<UserContext | null> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { 
+      select: {
+        id: true,
         schoolId: true,
         userRoles: {
           include: {
             role: true,
           },
         },
-      },
-    });
-
-    if (!user || user.userRoles.length === 0) {
-      return [];
-    }
-
-    // Get all permissions for user's roles
-    const userRoleIds = user.userRoles.map(ur => ur.role.id);
-    
-    const rolePermissions = await prisma.rolePermission.findMany({
-      where: { roleId: { in: userRoleIds } },
-      include: {
-        permission: {
-          include: {
-            module: true,
+        userStudents: {
+          select: {
+            studentId: true,
           },
         },
-      },
-    });
-
-    // Filter by modules user has access to
-    const userModules = await prisma.userModule.findMany({
-      where: { userId },
-      select: { moduleId: true },
-    });
-
-    const userModuleIds = new Set(userModules.map(um => um.moduleId));
-
-    // Get unique permissions (in case multiple roles grant same permission)
-    const permissionSet = new Set<string>();
-    rolePermissions
-      .filter(rp => userModuleIds.has(rp.permission.moduleId))
-      .forEach(rp => permissionSet.add(rp.permission.name));
-
-    return Array.from(permissionSet);
-  }
-  
-  /**
-   * Get all roles for a user
-   */
-  async getUserRoles(userId: string): Promise<Array<{ id: string; name: string; displayName: string }>> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        userRoles: {
-          include: {
-            role: true,
+        student: {
+          select: {
+            id: true,
           },
         },
       },
     });
 
     if (!user) {
-      return [];
+      return null;
     }
 
-    return user.userRoles.map(ur => ({
-      id: ur.role.id,
-      name: ur.role.name,
-      displayName: ur.role.displayName,
-    }));
+    return {
+      id: user.id,
+      schoolId: user.schoolId,
+      roles: user.userRoles.map((userRole) => ({
+        id: userRole.role.id,
+        name: userRole.role.name,
+      })),
+      linkedStudentIds: new Set(user.userStudents.map((student) => student.studentId)),
+      studentId: user.student?.id,
+    };
+  }
+
+  private async getModule(moduleKey: ModuleKey): Promise<ModuleRecord | null> {
+    const cachedModule = this.moduleCache.get(moduleKey);
+    if (cachedModule) {
+      return cachedModule;
+    }
+
+    const dbKey = MODULE_KEY_TO_DB_KEY[moduleKey];
+
+    const module = (await prismaAny.module.findUnique({
+      where: { key: dbKey },
+      select: {
+        id: true,
+        key: true,
+        name: true,
+        description: true,
+        displayOrder: true,
+      },
+    })) as ModuleRecord | null;
+
+    if (!module) {
+      return null;
+    }
+
+    this.moduleCache.set(moduleKey, module);
+    return module;
+  }
+
+  private toRoleName(roleName: string): RoleName | null {
+    if (['SUPERADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'PARENT', 'STUDENT'].includes(roleName)) {
+      return roleName as RoleName;
+    }
+
+    return null;
   }
 }
 

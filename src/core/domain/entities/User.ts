@@ -1,5 +1,5 @@
 // Domain Entity: User
-export type UserRole = 'SUPERADMIN' | 'ADMIN' | 'TEACHER' | 'PARENT' | 'STUDENT';
+export type UserRole = 'SUPERADMIN' | 'SCHOOL_ADMIN' | 'TEACHER' | 'PARENT' | 'STUDENT';
 
 export interface UserRoleInfo {
   id: string;
@@ -68,21 +68,21 @@ export class User {
     return this.hasRole('SUPERADMIN');
   }
 
-  isAdmin(): boolean {
-    return this.hasRole('ADMIN');
+  isSchoolAdmin(): boolean {
+    return this.hasRole('SCHOOL_ADMIN');
   }
 
   canManageUsers(): boolean {
-    return this.hasRole('SUPERADMIN') || this.hasRole('ADMIN');
+    return this.hasRole('SUPERADMIN') || this.hasRole('SCHOOL_ADMIN');
   }
 
   canManageStudents(): boolean {
-    return this.hasRole('SUPERADMIN') || this.hasRole('ADMIN') || this.hasRole('TEACHER');
+    return this.hasRole('SUPERADMIN') || this.hasRole('SCHOOL_ADMIN') || this.hasRole('TEACHER');
   }
 
   get primaryRole(): UserRoleInfo | undefined {
     // Return the highest priority role
-    const priorityOrder = ['SUPERADMIN', 'ADMIN', 'TEACHER', 'PARENT', 'STUDENT'];
+    const priorityOrder = ['SUPERADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'PARENT', 'STUDENT'];
     for (const roleName of priorityOrder) {
       const role = this.roles.find(r => r.name === roleName);
       if (role) return role;

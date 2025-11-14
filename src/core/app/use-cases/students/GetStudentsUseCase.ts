@@ -23,14 +23,20 @@ export class GetStudentsUseCase {
               studentId: true,
             },
           },
+          student: {
+            select: {
+              id: true,
+            },
+          },
         },
       });
 
       // If user is ONLY a parent (no teacher/admin roles), filter to their children
       const hasParentRole = user?.userRoles.some(ur => ur.role.name === 'PARENT');
       const hasTeacherOrAdminRole = user?.userRoles.some(ur => 
-        ur.role.name === 'TEACHER' || ur.role.name === 'ADMIN'
+        ur.role.name === 'TEACHER' || ur.role.name === 'SCHOOL_ADMIN'
       );
+      const hasStudentRole = user?.userRoles.some(ur => ur.role.name === 'STUDENT');
 
       if (hasParentRole && !hasTeacherOrAdminRole) {
         // Return only linked students
@@ -38,6 +44,16 @@ export class GetStudentsUseCase {
         const linkedStudentIds = new Set(user?.userStudents.map(us => us.studentId) || []);
         
         return allStudents.filter(student => linkedStudentIds.has(student.id));
+      }
+
+      if (hasStudentRole && !hasTeacherOrAdminRole) {
+        const ownStudentId = user?.student?.id;
+        if (!ownStudentId) {
+          return [];
+        }
+
+        const ownStudent = await this.studentRepository.findById(ownStudentId, schoolId);
+        return ownStudent ? [ownStudent] : [];
       }
     }
 

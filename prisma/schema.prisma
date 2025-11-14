@@ -25,6 +25,7 @@ model School {
   certificationTypes CertificationType[]
   roles              Role[] // School-specific custom roles
   schoolModules      SchoolModule[]
+  roleModuleSchools  RoleModuleSchool[]
   schoolYears        SchoolYear[]
 
   @@map("schools")
@@ -41,7 +42,6 @@ model User {
   school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   userRoles    UserRole[]
-  userModules  UserModule[]
   userStudents UserStudent[]
   student      Student?
 
@@ -191,8 +191,8 @@ model Role {
   schoolId String? @map("school_id")
   school   School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
-  userRoles       UserRole[]
-  rolePermissions RolePermission[]
+  userRoles         UserRole[]
+  roleModuleSchools RoleModuleSchool[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -224,37 +224,19 @@ model UserRole {
 // Module - Feature modules (Students, Users, Payments, etc.)
 model Module {
   id           String  @id @default(cuid())
-  name         String  @unique
+  key          String  @unique
+  name         String
   description  String?
   displayOrder Int     @default(0) @map("display_order")
   isActive     Boolean @default(true) @map("is_active")
 
-  permissions   Permission[]
-  schoolModules SchoolModule[]
-  userModules   UserModule[]
+  schoolModules     SchoolModule[]
+  roleModuleSchools RoleModuleSchool[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("modules")
-}
-
-// Permission - Granular permissions within modules
-model Permission {
-  id          String  @id @default(cuid())
-  name        String  @unique
-  description String?
-
-  moduleId String @map("module_id")
-  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-
-  rolePermissions RolePermission[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@index([moduleId])
-  @@map("permissions")
 }
 
 // School Module - Which modules are enabled for a school
@@ -278,12 +260,15 @@ model SchoolModule {
   @@map("school_modules")
 }
 
-// User Module - Which modules a user can access (within their school's available modules)
-model UserModule {
+// Role-Module assignment per school (which roles can access which modules at a school)
+model RoleModuleSchool {
   id String @id @default(cuid())
 
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId String @map("role_id")
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  schoolId String @map("school_id")
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   moduleId String @map("module_id")
   module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
@@ -291,29 +276,11 @@ model UserModule {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([userId, moduleId])
-  @@index([userId])
-  @@index([moduleId])
-  @@map("user_modules")
-}
-
-// Role Permission - Permissions assigned to roles
-model RolePermission {
-  id String @id @default(cuid())
-
-  roleId String @map("role_id")
-  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  permissionId String     @map("permission_id")
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@unique([roleId, permissionId])
+  @@unique([roleId, schoolId, moduleId])
   @@index([roleId])
-  @@index([permissionId])
-  @@map("role_permissions")
+  @@index([schoolId])
+  @@index([moduleId])
+  @@map("roles_modules_school")
 }
 
 // User-Student relationship (for PARENT role - links parents to their children)
