@@ -311,7 +311,7 @@ export class CheckPermissionUseCase {
             continue;
           }
 
-          if (!assignedModules.has(moduleRecord.id)) {
+          if (!assignedModules || !assignedModules.has(moduleRecord.id)) {
             continue;
           }
         }

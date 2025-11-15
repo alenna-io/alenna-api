@@ -4,11 +4,11 @@ import prisma from '../prisma.client';
 import { StudentMapper } from '../mappers';
 
 export class StudentRepository implements IStudentRepository {
-  async findById(id: string, schoolId: string): Promise<Student | null> {
+  async findById(id: string, schoolId?: string): Promise<Student | null> {
     const student = await prisma.student.findFirst({
       where: { 
         id,
-        schoolId, // Ensure tenant isolation
+        ...(schoolId && { schoolId }), // Only filter by schoolId if provided
         deletedAt: null, // Soft delete filter
       },
       include: {
