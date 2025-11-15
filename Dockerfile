@@ -8,15 +8,15 @@ COPY package*.json ./
 COPY pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
 
+# Copy Prisma schema (needed for postinstall hook)
+COPY prisma ./prisma
+
 # Install pnpm and dependencies
 RUN npm install -g pnpm@9.0.0
 RUN pnpm install --no-frozen-lockfile
 
-# Copy source code
+# Copy rest of source code
 COPY . .
-
-# Generate Prisma client
-RUN npx prisma generate
 
 # Build the application
 RUN pnpm run build
