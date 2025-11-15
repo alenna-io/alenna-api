@@ -10,7 +10,7 @@ COPY pnpm-workspace.yaml ./
 
 # Install pnpm and dependencies
 RUN npm install -g pnpm@9.0.0
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
 COPY . .
