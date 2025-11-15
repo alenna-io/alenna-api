@@ -50,7 +50,7 @@ export class StudentRepository implements IStudentRepository {
     return students.map(StudentMapper.toDomain);
   }
 
-  async create(student: Student): Promise<Student> {
+  async create(_student: Student): Promise<Student> {
     // This is now handled by CreateStudentUseCase which creates User first
     throw new Error('Use CreateStudentUseCase instead - it creates User and Student together');
   }

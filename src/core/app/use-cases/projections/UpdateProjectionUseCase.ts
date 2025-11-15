@@ -6,13 +6,19 @@ export class UpdateProjectionUseCase {
   constructor(private projectionRepository: IProjectionRepository) {}
 
   async execute(id: string, data: UpdateProjectionInput, studentId: string): Promise<Projection> {
-    const updateData: Partial<Projection> = {};
+    // Get existing projection to use its update method
+    const existing = await this.projectionRepository.findById(id, studentId);
+    if (!existing) {
+      throw new Error('Projection not found');
+    }
 
-    if (data.schoolYear !== undefined) updateData.schoolYear = data.schoolYear;
-    if (data.startDate !== undefined) updateData.startDate = new Date(data.startDate);
-    if (data.endDate !== undefined) updateData.endDate = new Date(data.endDate);
-    if (data.isActive !== undefined) updateData.isActive = data.isActive;
-    if (data.notes !== undefined) updateData.notes = data.notes;
+    const updateData = {
+      schoolYear: data.schoolYear,
+      startDate: data.startDate ? new Date(data.startDate) : undefined,
+      endDate: data.endDate ? new Date(data.endDate) : undefined,
+      isActive: data.isActive,
+      notes: data.notes,
+    };
 
     return await this.projectionRepository.update(id, updateData, studentId);
   }

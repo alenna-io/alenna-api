@@ -22,12 +22,15 @@ export class StudentMapper {
       throw new Error('User must be included when mapping student');
     }
 
-    const certificationType: CertificationType = {
-      id: prismaStudent.certificationType.id,
-      name: prismaStudent.certificationType.name,
-      description: prismaStudent.certificationType.description || undefined,
-      isActive: prismaStudent.certificationType.isActive,
-    };
+    const certificationType = new CertificationType(
+      prismaStudent.certificationType.id,
+      prismaStudent.certificationType.name,
+      prismaStudent.certificationType.schoolId,
+      prismaStudent.certificationType.description || undefined,
+      prismaStudent.certificationType.isActive,
+      prismaStudent.certificationType.createdAt,
+      prismaStudent.certificationType.updatedAt
+    );
 
     // Calculate age from birthDate
     const today = new Date();
@@ -68,9 +71,7 @@ export class StudentMapper {
   static toPrisma(student: Student): Omit<PrismaStudent, 'createdAt' | 'updatedAt' | 'deletedAt'> {
     return {
       id: student.id,
-      firstName: student.firstName,
-      lastName: student.lastName,
-      age: student.age,
+      userId: student.id, // Assuming student.id is the userId
       birthDate: student.birthDate,
       certificationTypeId: student.certificationTypeId,
       graduationDate: student.graduationDate,
@@ -80,7 +81,6 @@ export class StudentMapper {
       expectedLevel: student.expectedLevel || null,
       currentLevel: student.currentLevel || null,
       address: student.address || null,
-      deletedAt: null,
     };
   }
 }

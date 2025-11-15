@@ -1,5 +1,5 @@
 import { IProjectionRepository, ProjectionWithPaces } from '../../../adapters_interface/repositories';
-import { Projection, ProjectionPace, GradeHistory, PaceCatalog, SubSubject, Category } from '../../../domain/entities';
+import { Projection } from '../../../domain/entities';
 import prisma from '../prisma.client';
 import { 
   ProjectionMapper, 
@@ -71,8 +71,8 @@ export class ProjectionRepository implements IProjectionRepository {
       const subSubject = SubSubjectMapper.toDomain(pp.paceCatalog.subSubject);
       const category = CategoryMapper.toDomain(pp.paceCatalog.subSubject.category);
 
-      return { 
-        ...domainProjectionPace, 
+      // Create an extended object that includes all ProjectionPace properties and methods
+      return Object.assign(Object.create(Object.getPrototypeOf(domainProjectionPace)), domainProjectionPace, {
         gradeHistory,
         paceCatalog: {
           ...paceCatalog,
@@ -81,7 +81,7 @@ export class ProjectionRepository implements IProjectionRepository {
             category,
           },
         },
-      };
+      });
     });
 
     return {

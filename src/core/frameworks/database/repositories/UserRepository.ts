@@ -2,7 +2,6 @@ import { IUserRepository } from '../../../adapters_interface/repositories';
 import { User } from '../../../domain/entities';
 import prisma from '../prisma.client';
 import { UserMapper } from '../mappers';
-import { UserRole } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
 export class UserRepository implements IUserRepository {

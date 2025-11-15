@@ -289,6 +289,11 @@ export class CheckPermissionUseCase {
           continue;
         }
       }
+      
+      // Ensure assignedModules is defined for non-SUPERADMIN roles
+      if (roleName !== 'SUPERADMIN' && !assignedModules) {
+        continue;
+      }
 
       for (const permission of allowedPermissions) {
         const definition = PERMISSION_DEFINITIONS[permission];

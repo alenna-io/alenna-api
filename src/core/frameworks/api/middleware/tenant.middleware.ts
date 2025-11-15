@@ -9,12 +9,13 @@ export const ensureTenantIsolation = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   // Allow superadmins to bypass tenant isolation
   const isSuperAdmin = req.userRoles?.includes('SUPERADMIN');
   
   if (!req.schoolId && !isSuperAdmin) {
-    return res.status(401).json({ error: 'School context not found' });
+    res.status(401).json({ error: 'School context not found' });
+    return;
   }
 
   // Store schoolId in locals for easy access (null for superadmins)

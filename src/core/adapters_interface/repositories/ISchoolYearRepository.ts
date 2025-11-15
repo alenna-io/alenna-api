@@ -1,4 +1,4 @@
-import type { SchoolYear, Quarter, CurrentWeekInfo } from '../../domain/entities';
+import type { SchoolYear, CurrentWeekInfo } from '../../domain/entities';
 
 export interface ISchoolYearRepository {
   // School Year CRUD

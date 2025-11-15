@@ -7,7 +7,7 @@ import { logger } from './utils/logger';
 import routes from './core/frameworks/api/routes';
 
 // Initialize Express app
-const app = express();
+const app: express.Application = express();
 
 // Middleware
 app.use(helmet()); // Security headers
@@ -28,7 +28,7 @@ app.use((req: Request, res: Response) => {
 });
 
 // Global error handler
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   logger.error('Error:', err);
 
   const statusCode = err.statusCode || 500;

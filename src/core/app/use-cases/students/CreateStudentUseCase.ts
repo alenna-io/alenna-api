@@ -1,5 +1,5 @@
 import { IStudentRepository } from '../../../adapters_interface/repositories';
-import { Student } from '../../../domain/entities';
+import { Student, CertificationType } from '../../../domain/entities';
 import { CreateStudentInput } from '../../dtos';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
@@ -60,7 +60,7 @@ export class CreateStudentUseCase {
       age, // Calculated from birthDate
       birthDate,
       certificationTypeId: input.certificationTypeId,
-      certificationType: { id: input.certificationTypeId, name: '', isActive: true }, // Will be populated by repository
+      certificationType: new CertificationType(input.certificationTypeId, '', schoolId), // Will be populated by repository
       graduationDate: new Date(input.graduationDate),
       schoolId,
       contactPhone: input.contactPhone,

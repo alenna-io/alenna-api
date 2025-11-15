@@ -1,4 +1,4 @@
-import { User as PrismaUser, UserRole, Role } from '@prisma/client';
+import { User as PrismaUser, Role } from '@prisma/client';
 import { User, UserRoleInfo } from '../../../domain/entities';
 
 export class UserMapper {
@@ -30,6 +30,7 @@ export class UserMapper {
       schoolId: user.schoolId,
       firstName: user.firstName || null,
       lastName: user.lastName || null,
+      deletedAt: null,
     };
   }
 }

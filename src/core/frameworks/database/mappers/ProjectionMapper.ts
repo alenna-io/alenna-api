@@ -25,6 +25,7 @@ export class ProjectionMapper {
       endDate: projection.endDate,
       isActive: projection.isActive,
       notes: projection.notes || null,
+      deletedAt: null,
     };
   }
 }

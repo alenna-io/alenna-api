@@ -84,7 +84,7 @@ export class SchoolController {
     }
   }
 
-  async getAllSchools(req: Request, res: Response): Promise<void> {
+  async getAllSchools(_req: Request, res: Response): Promise<void> {
     try {
       const schools = await container.getAllSchoolsUseCase.execute();
 

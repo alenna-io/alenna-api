@@ -21,6 +21,7 @@ export class SchoolMapper {
       address: school.address || null,
       phone: school.phone || null,
       email: school.email || null,
+      deletedAt: null,
     };
   }
 }

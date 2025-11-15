@@ -21,7 +21,7 @@ export class AuthController {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role,
+        roles: user.roles,
         schoolId: user.schoolId,
       });
     } catch (error: any) {
@@ -49,7 +49,7 @@ export class AuthController {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role,
+        roles: user.roles,
         schoolId: user.schoolId,
       });
     } catch (error: any) {

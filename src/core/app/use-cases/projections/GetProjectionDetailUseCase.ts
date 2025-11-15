@@ -18,7 +18,7 @@ export class GetProjectionDetailUseCase {
     const { projection, projectionPaces } = projectionWithPaces;
 
     // Fetch student information
-    const student = await this.studentRepository.findById(studentId);
+    const student = await this.studentRepository.findById(studentId, projection.schoolId);
     if (!student) {
       throw new Error('Estudiante no encontrado');
     }

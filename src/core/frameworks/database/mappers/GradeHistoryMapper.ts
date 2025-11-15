@@ -5,7 +5,7 @@ export class GradeHistoryMapper {
   static toDomain(gradeHistory: PrismaGradeHistory): GradeHistory {
     return new GradeHistory(
       gradeHistory.id,
-      gradeHistory.paceId,
+      gradeHistory.projectionPaceId,
       gradeHistory.grade,
       gradeHistory.date,
       gradeHistory.note ?? undefined,
