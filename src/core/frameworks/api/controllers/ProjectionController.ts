@@ -242,7 +242,7 @@ export class ProjectionController {
         updatedAt: projectionPace.updatedAt?.toISOString(),
       });
     } catch (error: any) {
-      console.error('Error al agregar PACE a la proyección:', error);
+      console.error('Error al agregar la lección a la proyección:', error);
       
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
