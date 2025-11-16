@@ -40,9 +40,9 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// Start server
-app.listen(config.port, () => {
-  logger.info(`🚀 Server running on http://localhost:${config.port}`);
+// Start server - listening on all interfaces for Docker/Fly.io
+app.listen(config.port, '0.0.0.0', () => {
+  logger.info(`🚀 Server running on http://0.0.0.0:${config.port}`);
   logger.info(`📊 Environment: ${config.nodeEnv}`);
   logger.info(`🏗️  Clean Architecture enabled`);
   logger.info(`🔐 Clerk authentication configured`);

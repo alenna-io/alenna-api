@@ -21,6 +21,9 @@ COPY . .
 # Build the application
 RUN pnpm run build
 
+# Verify the build output
+RUN ls -la dist/
+
 # Remove dev dependencies
 RUN pnpm prune --prod
 

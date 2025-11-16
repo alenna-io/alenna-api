@@ -1,12 +1,17 @@
 # Replace with your actual app name from 'fly launch'
 app = 'alenna-api'
-primary_region = 'mia'
+primary_region = 'dfw'
 
 [build]
 
 [env]
   PORT = '8080'
   NODE_ENV = 'production'
+
+# Uncomment if you need persistent storage
+# [[mounts]]
+#   source = 'data'
+#   destination = '/data'
 
 [http_service]
   internal_port = 8080
