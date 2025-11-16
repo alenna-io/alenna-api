@@ -163,8 +163,9 @@ model Projection {
   studentId String
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  projectionPaces ProjectionPace[]
-  dailyGoals      DailyGoal[]
+  projectionPaces     ProjectionPace[]
+  dailyGoals          DailyGoal[]
+  monthlyAssignments  MonthlyAssignment[]
 
   deletedAt DateTime?
   createdAt DateTime  @default(now())
@@ -467,4 +468,41 @@ model NoteHistory {
 
   @@index([dailyGoalId])
   @@map("note_history")
+}
+
+// Monthly Assignments - Quarterly assignments (oral reports, verses, etc.)
+model MonthlyAssignment {
+  id      String @id @default(cuid())
+  name    String // Assignment name (e.g., "Oral Report", "Bible Verse")
+  quarter String // Q1, Q2, Q3, Q4
+  grade   Int? // Grade 0-100, null if not graded yet
+
+  projectionId String     @map("projection_id")
+  projection   Projection @relation(fields: [projectionId], references: [id], onDelete: Cascade)
+
+  gradeHistory MonthlyAssignmentGradeHistory[]
+
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([projectionId])
+  @@index([projectionId, quarter])
+  @@map("monthly_assignments")
+}
+
+// Grade history for monthly assignments (for retakes)
+model MonthlyAssignmentGradeHistory {
+  id    String   @id @default(cuid())
+  grade Int
+  date  DateTime @default(now())
+  note  String?
+
+  monthlyAssignmentId String            @map("monthly_assignment_id")
+  monthlyAssignment   MonthlyAssignment @relation(fields: [monthlyAssignmentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([monthlyAssignmentId])
+  @@map("monthly_assignment_grade_history")
 }

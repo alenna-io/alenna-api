@@ -6,4 +6,5 @@ export * from './UserDTO';
 export * from './StudentDTO';
 export * from './PaceDTO';
 export * from './SchoolYearDTO';
+export * from './MonthlyAssignmentDTO';
 

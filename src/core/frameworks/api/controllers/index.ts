@@ -7,4 +7,5 @@ export * from './StudentController';
 export * from './PaceCatalogController';
 export * from './ModuleController';
 export * from './SchoolYearController';
+export * from './MonthlyAssignmentController';
 

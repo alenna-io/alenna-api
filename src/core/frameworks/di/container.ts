@@ -58,6 +58,14 @@ import {
   DeleteDailyGoalUseCase,
 } from '../../app/use-cases';
 
+import {
+  CreateMonthlyAssignmentUseCase,
+  UpdateMonthlyAssignmentUseCase,
+  GradeMonthlyAssignmentUseCase,
+  DeleteMonthlyAssignmentUseCase,
+  GetMonthlyAssignmentsByProjectionUseCase,
+} from '../../app/use-cases/monthly-assignments';
+
 class Container {
   // Repositories (Singleton instances)
   private _schoolRepository?: SchoolRepository;
@@ -304,6 +312,27 @@ class Container {
 
   get deleteDailyGoalUseCase(): DeleteDailyGoalUseCase {
     return new DeleteDailyGoalUseCase(this.dailyGoalRepository);
+  }
+
+  // Monthly Assignment Use Cases
+  get createMonthlyAssignmentUseCase(): CreateMonthlyAssignmentUseCase {
+    return new CreateMonthlyAssignmentUseCase();
+  }
+
+  get updateMonthlyAssignmentUseCase(): UpdateMonthlyAssignmentUseCase {
+    return new UpdateMonthlyAssignmentUseCase();
+  }
+
+  get gradeMonthlyAssignmentUseCase(): GradeMonthlyAssignmentUseCase {
+    return new GradeMonthlyAssignmentUseCase();
+  }
+
+  get deleteMonthlyAssignmentUseCase(): DeleteMonthlyAssignmentUseCase {
+    return new DeleteMonthlyAssignmentUseCase();
+  }
+
+  get getMonthlyAssignmentsByProjectionUseCase(): GetMonthlyAssignmentsByProjectionUseCase {
+    return new GetMonthlyAssignmentsByProjectionUseCase();
   }
 
   // Controllers
