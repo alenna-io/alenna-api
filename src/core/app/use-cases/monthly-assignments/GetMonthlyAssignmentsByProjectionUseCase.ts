@@ -1,5 +1,5 @@
 import prisma from '../../../frameworks/database/prisma.client';
-import { MonthlyAssignmentOutput, MonthlyAssignmentGradeHistoryOutput } from '../../dtos';
+import { MonthlyAssignmentOutput } from '../../dtos';
 
 export class GetMonthlyAssignmentsByProjectionUseCase {
   async execute(
