@@ -39,6 +39,7 @@ export interface GradeHistoryOutput {
 
 export interface PaceOutput {
   id: string;
+  paceCatalogId: string; // Added to identify which pace from catalog
   number: string;
   subject: string;
   quarter: string;

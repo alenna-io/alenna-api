@@ -57,6 +57,7 @@ export class GetProjectionDetailUseCase {
 
         const paceOutput: PaceOutput = {
           id: pp.id,
+          paceCatalogId: pp.paceCatalogId,
           number: pp.paceCatalog.code,
           subject: categoryName,
           quarter: pp.quarter,

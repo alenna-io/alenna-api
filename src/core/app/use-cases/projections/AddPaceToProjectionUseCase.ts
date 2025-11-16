@@ -27,7 +27,7 @@ export class AddPaceToProjectionUseCase {
       throw new Error('PACE no encontrado en el catálogo');
     }
 
-    // 3. Check if this PACE is already in the projection
+    // 3. Check if this PACE is already in the projection (active, not deleted)
     const existingPace = await prisma.projectionPace.findUnique({
       where: {
         projectionId_paceCatalogId: {
@@ -36,7 +36,9 @@ export class AddPaceToProjectionUseCase {
         },
       },
     });
-    if (existingPace) {
+    
+    // If the pace exists but is soft-deleted, we'll restore it instead of creating new
+    if (existingPace && existingPace.deletedAt === null) {
       throw new Error('Este PACE ya está agregado a la proyección');
     }
 
@@ -58,12 +60,13 @@ export class AddPaceToProjectionUseCase {
 
     const categoryName = paceCatalogWithDetails.subSubject.category.name;
 
-    // Check for existing PACE at this position in the same category
+    // Check for existing PACE at this position in the same category (excluding soft-deleted)
     const existingAtPosition = await prisma.projectionPace.findFirst({
       where: {
         projectionId,
         quarter,
         week,
+        deletedAt: null, // Only check active paces
         paceCatalog: {
           subSubject: {
             category: {
@@ -78,19 +81,38 @@ export class AddPaceToProjectionUseCase {
       throw new Error(`Ya existe un PACE de ${categoryName} en ${quarter} Semana ${week}`);
     }
 
-    // 5. Create the ProjectionPace
-    const projectionPace = await prisma.projectionPace.create({
-      data: {
-        id: randomUUID(),
-        projectionId,
-        paceCatalogId,
-        quarter,
-        week,
-        grade: null,
-        isCompleted: false,
-        isFailed: false,
-      },
-    });
+    // 5. Restore soft-deleted pace or create new one
+    let projectionPace;
+    
+    if (existingPace && existingPace.deletedAt !== null) {
+      // Restore the soft-deleted pace with new position
+      projectionPace = await prisma.projectionPace.update({
+        where: { id: existingPace.id },
+        data: {
+          quarter,
+          week,
+          deletedAt: null, // Restore by clearing deletedAt
+          grade: null, // Reset grade on restore
+          isCompleted: false,
+          isFailed: false,
+          comments: null,
+        },
+      });
+    } else {
+      // Create new projection pace
+      projectionPace = await prisma.projectionPace.create({
+        data: {
+          id: randomUUID(),
+          projectionId,
+          paceCatalogId,
+          quarter,
+          week,
+          grade: null,
+          isCompleted: false,
+          isFailed: false,
+        },
+      });
+    }
 
     // 6. Map to domain entity
     return new ProjectionPace(

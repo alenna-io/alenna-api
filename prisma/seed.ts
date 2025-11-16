@@ -169,18 +169,18 @@ async function main() {
   console.log('   ⚠️  Replace this with your actual Clerk user ID!');
 
   // Create School Year with Quarters
-  console.log('\n📅 Creating School Year (2024-2025)...');
+  console.log('\n📅 Creating School Year (2025-2026)...');
   const schoolYear = await prisma.schoolYear.upsert({
     where: {
-      id: 'school-year-2024-2025', // Use a fixed ID instead of compound key
+      id: 'school-year-2025-2026', // Use a fixed ID instead of compound key
     },
     update: {},
     create: {
-      id: 'school-year-2024-2025',
+      id: 'school-year-2025-2026',
       schoolId: school.id,
-      name: '2024-2025',
-      startDate: new Date('2024-08-05'), // First Monday of August
-      endDate: new Date('2025-05-30'), // Last Friday of May
+      name: '2025-2026',
+      startDate: new Date('2025-09-01'), // First Monday of August
+      endDate: new Date('2026-07-11'), // Last Friday of May
       isActive: true,
     },
   });
@@ -190,29 +190,29 @@ async function main() {
     {
       name: 'Q1',
       displayName: 'Bloque 1',
-      startDate: new Date('2024-08-05'), // 9 weeks: Aug 5 - Oct 4
-      endDate: new Date('2024-10-04'),
+      startDate: new Date('2025-09-01'), // 9 weeks: Aug 5 - Oct 4
+      endDate: new Date('2025-11-09'),
       order: 1,
     },
     {
       name: 'Q2',
       displayName: 'Bloque 2',
-      startDate: new Date('2024-10-14'), // 9 weeks: Oct 14 - Dec 13 (skip Oct 7-11 fall break)
-      endDate: new Date('2024-12-13'),
+      startDate: new Date('2025-11-10'), // 9 weeks: Oct 14 - Dec 13 (skip Oct 7-11 fall break)
+      endDate: new Date('2026-02-08'),
       order: 2,
     },
     {
       name: 'Q3',
       displayName: 'Bloque 3',
-      startDate: new Date('2025-01-06'), // 9 weeks: Jan 6 - Mar 7 (skip Dec 16-Jan 3 winter break)
-      endDate: new Date('2025-03-07'),
+      startDate: new Date('2026-02-09'), // 9 weeks: Jan 6 - Mar 7 (skip Dec 16-Jan 3 winter break)
+      endDate: new Date('2026-04-28'),
       order: 3,
     },
     {
       name: 'Q4',
       displayName: 'Bloque 4',
-      startDate: new Date('2025-03-17'), // 9 weeks: Mar 17 - May 16 (skip Mar 10-14 spring break)
-      endDate: new Date('2025-05-16'),
+      startDate: new Date('2026-04-29'), // 9 weeks: Mar 17 - May 16 (skip Mar 10-14 spring break)
+      endDate: new Date('2026-07-11'),
       order: 4,
     },
   ];
@@ -239,58 +239,58 @@ async function main() {
     });
   }
 
-  console.log('✅ Created school year: 2024-2025 with 4 quarters (36 weeks total)');
+  console.log('✅ Created school year: 2025-2026 with 4 quarters (36 weeks total)');
 
   // Create a second inactive school year for testing
-  console.log('\n📅 Creating School Year (2023-2024)...');
+  console.log('\n📅 Creating School Year (2024-2025)...');
   const schoolYear2023 = await prisma.schoolYear.upsert({
     where: {
-      id: 'school-year-2023-2024', // Use a fixed ID instead of compound key
+      id: 'school-year-2024-2025', // Use a fixed ID instead of compound key
     },
     update: {},
     create: {
-      id: 'school-year-2023-2024',
+      id: 'school-year-2024-2025',
       schoolId: school.id,
-      name: '2023-2024',
-      startDate: new Date('2023-08-07'),
-      endDate: new Date('2024-05-31'),
+      name: '2024-2025',
+      startDate: new Date('2024-09-01'),
+      endDate: new Date('2025-07-11'),
       isActive: false, // This one is inactive
     },
   });
 
-  // Create quarters for 2023-2024
-  const quartersData2023 = [
+  // Create quarters for 2024-2025
+  const quartersData2024 = [
     {
       name: 'Q1',
       displayName: 'Bloque 1',
-      startDate: new Date('2023-08-07'),
-      endDate: new Date('2023-10-06'),
+      startDate: new Date('2024-09-01'),
+      endDate: new Date('2024-11-09'),
       order: 1,
     },
     {
       name: 'Q2',
       displayName: 'Bloque 2',
-      startDate: new Date('2023-10-16'),
-      endDate: new Date('2023-12-15'),
+      startDate: new Date('2024-11-10'),
+      endDate: new Date('2025-02-07'),
       order: 2,
     },
     {
       name: 'Q3',
       displayName: 'Bloque 3',
-      startDate: new Date('2024-01-08'),
-      endDate: new Date('2024-03-08'),
+      startDate: new Date('2025-02-08'),
+      endDate: new Date('2025-04-27'),
       order: 3,
     },
     {
       name: 'Q4',
       displayName: 'Bloque 4',
-      startDate: new Date('2024-03-18'),
-      endDate: new Date('2024-05-17'),
+      startDate: new Date('2025-04-28'),
+      endDate: new Date('2025-07-10'),
       order: 4,
     },
   ];
 
-  for (const quarterData of quartersData2023) {
+  for (const quarterData of quartersData2024) {
     await prisma.quarter.upsert({
       where: {
         schoolYearId_order: {
@@ -312,7 +312,7 @@ async function main() {
     });
   }
 
-  console.log('✅ Created school year: 2023-2024 with 4 quarters (inactive)');
+  console.log('✅ Created school year: 2024-2025 with 4 quarters (inactive)');
 
   // Enable modules for school
   const studentsModule = await prisma.module.findUnique({ where: { key: 'students' } });
@@ -784,16 +784,16 @@ async function main() {
       console.log(`   ✅ Created ${parentData.length} parent users and linked to student`);
     }
 
-    // Create a projection for this student (2024-2025 school year)
+    // Create a projection for this student (2025-2026 school year)
     const projection = await prisma.projection.create({
       data: {
         id: randomUUID(),
         studentId: student.id,
-        schoolYear: '2024-2025',
+        schoolYear: '2025-2026',
         startDate: new Date('2024-08-01'),
         endDate: new Date('2025-06-30'),
         isActive: true,
-        notes: 'Initial projection for 2024-2025 school year',
+        notes: 'Initial projection for 2025-2026 school year',
       },
     });
     console.log(`   ✅ Created projection: ${projection.schoolYear}`);
