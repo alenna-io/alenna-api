@@ -6,7 +6,7 @@ import {
   UpdateSchoolMonthlyAssignmentTemplateUseCase,
   UpdateQuarterGradePercentageUseCase,
   GetQuarterGradePercentagesUseCase,
-} from '../../app/use-cases/school-monthly-assignments';
+} from '../../../app/use-cases/school-monthly-assignments';
 
 export class SchoolMonthlyAssignmentController {
   constructor(
