@@ -337,12 +337,18 @@ async function main() {
     });
     console.log('✅ Enabled Students module for school');
 
-    const rolesToGrant = [schoolAdminRole, teacherRole, parentRole, studentRole].filter(
-      (role): role is { id: string; name: string } => Boolean(role),
-    );
+    // Grant Students module to roles that need access
+    // This module includes permissions for:
+    // - students.* (read, create, update, delete)
+    // - projections.* (read, readOwn, create, update, delete)
+    // - reportCards.* (read, readOwn) - Report Cards/Boletas feature
+    // - paces.* (read, create, update, delete, move)
+    const rolesToGrant = [schoolAdminRole, teacherRole, parentRole, studentRole]
+      .filter((role): role is NonNullable<typeof role> => Boolean(role))
+      .map((role) => ({ id: role.id, name: role.name }));
 
     await grantModuleToRoles(studentsModule.id, school.id, rolesToGrant);
-    console.log('✅ Granted Students module to school roles');
+    console.log('✅ Granted Students module to school roles (includes reportCards permissions)');
   }
 
   if (configModule) {
@@ -363,9 +369,9 @@ async function main() {
     });
     console.log('✅ Enabled Configuration module for school');
 
-    const rolesToGrant = [schoolAdminRole, teacherRole].filter(
-      (role): role is { id: string; name: string } => Boolean(role),
-    );
+    const rolesToGrant = [schoolAdminRole, teacherRole]
+      .filter((role): role is NonNullable<typeof role> => Boolean(role))
+      .map((role) => ({ id: role.id, name: role.name }));
 
     await grantModuleToRoles(configModule.id, school.id, rolesToGrant);
     console.log('✅ Granted Configuration module to school roles');
@@ -389,9 +395,9 @@ async function main() {
     });
     console.log('✅ Enabled Users module for demo school');
 
-    const rolesToGrant = [schoolAdminRole].filter(
-      (role): role is { id: string; name: string } => Boolean(role),
-    );
+    const rolesToGrant = [schoolAdminRole]
+      .filter((role): role is NonNullable<typeof role> => Boolean(role))
+      .map((role) => ({ id: role.id, name: role.name }));
 
     await grantModuleToRoles(usersModule.id, school.id, rolesToGrant);
     console.log('✅ Granted Users module to school admins');
@@ -447,6 +453,12 @@ async function main() {
     }
     console.log('✅ Granted Schools module to Alenna superadmins');
   }
+
+  // Note: SUPERADMIN role has all permissions by default (bypasses module checks)
+  // so they don't need explicit module assignments, but it's good practice to enable
+  // modules for the Alenna school for consistency. The Students module includes
+  // reportCards permissions (reportCards.read and reportCards.readOwn) which are
+  // already defined in permission-map.ts and assigned to appropriate roles.
 
   // Superadmins don't get Configuración module as it's per-school
   // They manage schools through the Users module instead

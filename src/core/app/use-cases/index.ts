@@ -9,4 +9,5 @@ export * from './pace-catalog';
 export * from './modules';
 export * from './school-years';
 export * from './school-monthly-assignments';
+export * from './report-cards';
 

@@ -58,6 +58,7 @@ import {
   GetNoteHistoryUseCase,
   DeleteDailyGoalUseCase,
 } from '../../app/use-cases';
+import { GetReportCardUseCase } from '../../app/use-cases/report-cards';
 import {
   CreateSchoolMonthlyAssignmentTemplateUseCase,
   GetSchoolMonthlyAssignmentTemplatesUseCase,
@@ -373,6 +374,11 @@ return new GetMonthlyAssignmentsByProjectionUseCase();
     return new GetQuarterGradePercentagesUseCase();
   }
 
+  // Report Cards Use Cases
+  get getReportCardUseCase(): GetReportCardUseCase {
+    return new GetReportCardUseCase();
+  }
+
   // Controllers
   get schoolYearController() {
     const { SchoolYearController } = require('../api/controllers');
@@ -397,6 +403,11 @@ return new GetMonthlyAssignmentsByProjectionUseCase();
       this.updateQuarterGradePercentageUseCase,
       this.getQuarterGradePercentagesUseCase
     );
+  }
+
+  get reportCardController() {
+    const { ReportCardController } = require('../api/controllers');
+    return new ReportCardController(this.getReportCardUseCase);
   }
 }
 

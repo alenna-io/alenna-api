@@ -11,6 +11,7 @@ import paceCatalogRoutes from './pace-catalog.routes';
 import moduleRoutes from './modules.routes';
 import schoolYearRoutes from './school-years.routes';
 import schoolMonthlyAssignmentsRoutes from './school-monthly-assignments.routes';
+import reportCardsRoutes from './report-cards.routes';
 
 const router: ExpressRouter = Router();
 
@@ -38,6 +39,7 @@ const v1Router: ExpressRouter = Router();
   v1Router.use('/modules', moduleRoutes);
   v1Router.use('/school-years', schoolYearRoutes);
   v1Router.use('/school-monthly-assignments', schoolMonthlyAssignmentsRoutes);
+  v1Router.use('/students/:studentId/projections/:projectionId/report-card', reportCardsRoutes);
 
 router.use('/v1', v1Router);
 

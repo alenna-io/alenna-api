@@ -21,6 +21,9 @@ export const PERMISSION_DEFINITIONS: Record<string, PermissionDefinition> = {
   'projections.update': { module: 'students', scope: 'school' },
   'projections.delete': { module: 'students', scope: 'school' },
 
+  'reportCards.read': { module: 'students', scope: 'school' },
+  'reportCards.readOwn': { module: 'students', scope: 'own' },
+
   'paces.read': { module: 'students', scope: 'school' },
   'paces.create': { module: 'students', scope: 'school' },
   'paces.update': { module: 'students', scope: 'school' },
@@ -65,6 +68,7 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'projections.create',
     'projections.update',
     'projections.delete',
+    'reportCards.read',
     'paces.read',
     'paces.create',
     'paces.update',
@@ -93,6 +97,7 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'projections.create',
     'projections.update',
     'projections.delete',
+    'reportCards.read',
     'paces.read',
     'paces.create',
     'paces.update',
@@ -108,11 +113,13 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
   PARENT: [
     'students.readOwn',
     'projections.readOwn',
+    'reportCards.readOwn',
     'paces.read',
   ],
   STUDENT: [
     'students.readOwn',
     'projections.readOwn',
+    'reportCards.readOwn',
   ],
 };
 

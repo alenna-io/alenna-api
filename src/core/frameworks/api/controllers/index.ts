@@ -9,4 +9,5 @@ export * from './ModuleController';
 export * from './SchoolYearController';
 export * from './MonthlyAssignmentController';
 export * from './SchoolMonthlyAssignmentController';
+export * from './ReportCardController';
 
