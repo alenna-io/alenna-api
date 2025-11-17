@@ -30,6 +30,7 @@ import {
   DeleteStudentUseCase,
   CreateProjectionUseCase,
   GetProjectionsByStudentIdUseCase,
+  GetAllProjectionsUseCase,
   GetProjectionByIdUseCase,
   GetProjectionDetailUseCase,
   UpdateProjectionUseCase,
@@ -205,6 +206,10 @@ class Container {
 
   get getProjectionsByStudentIdUseCase(): GetProjectionsByStudentIdUseCase {
     return new GetProjectionsByStudentIdUseCase(this.projectionRepository);
+  }
+
+  get getAllProjectionsUseCase(): GetAllProjectionsUseCase {
+    return new GetAllProjectionsUseCase();
   }
 
   get getProjectionByIdUseCase(): GetProjectionByIdUseCase {

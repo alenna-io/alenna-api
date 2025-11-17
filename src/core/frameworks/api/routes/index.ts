@@ -4,6 +4,7 @@ import schoolsRoutes from './schools.routes';
 import usersRoutes from './users.routes';
 import studentsRoutes from './students.routes';
 import projectionsRoutes from './projections.routes';
+import projectionsListRoutes from './projections-list.routes';
 import dailyGoalsRoutes from './daily-goals.routes';
 import monthlyAssignmentsRoutes from './monthlyAssignments.routes';
 import paceCatalogRoutes from './pace-catalog.routes';
@@ -27,6 +28,7 @@ const v1Router: ExpressRouter = Router();
   v1Router.use('/auth', authRoutes);
   v1Router.use('/schools', schoolsRoutes);
   v1Router.use('/users', usersRoutes);
+  v1Router.use('/projections', projectionsListRoutes); // All projections route
   v1Router.use('/students/:studentId/projections', projectionsRoutes); // Nested route
   v1Router.use('/students/:studentId/projections/:projectionId/daily-goals', dailyGoalsRoutes); // Nested daily goals route
   v1Router.use('/students/:studentId/projections/:projectionId/monthly-assignments', monthlyAssignmentsRoutes); // Nested monthly assignments route

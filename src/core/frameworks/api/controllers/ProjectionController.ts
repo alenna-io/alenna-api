@@ -438,5 +438,30 @@ export class ProjectionController {
       res.status(500).json({ error: error.message || 'Failed to mark PACE incomplete' });
     }
   }
+
+  async getAllProjections(req: Request, res: Response): Promise<void> {
+    try {
+      const schoolId = req.schoolId!;
+      const year = req.query.year as string | undefined;
+      
+      const projections = await container.getAllProjectionsUseCase.execute(schoolId, year);
+
+      res.json(projections.map(projection => ({
+        id: projection.id,
+        studentId: projection.studentId,
+        schoolYear: projection.schoolYear,
+        startDate: projection.startDate.toISOString(),
+        endDate: projection.endDate.toISOString(),
+        isActive: projection.isActive,
+        notes: projection.notes,
+        createdAt: projection.createdAt.toISOString(),
+        updatedAt: projection.updatedAt.toISOString(),
+        student: projection.student,
+      })));
+    } catch (error: any) {
+      console.error('Error getting all projections:', error);
+      res.status(500).json({ error: error.message || 'Failed to get projections' });
+    }
+  }
 }
 
