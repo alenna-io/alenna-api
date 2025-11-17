@@ -133,14 +133,18 @@ export class GetUserInfoUseCase {
       accessControl.getUserModules(userId),
     ]);
 
+    // Handle case where school might be soft-deleted or missing
+    const schoolName = user.school?.name || 'Alenna'
+    const schoolId = user.schoolId
+
     return {
       id: user.id,
       email: user.email,
       firstName: user.firstName || undefined,
       lastName: user.lastName || undefined,
-      fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-      schoolId: user.schoolId,
-      schoolName: user.school.name,
+      fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+      schoolId: schoolId,
+      schoolName: schoolName,
       studentId: user.student?.id ?? studentData?.id,
       studentProfile: studentData
         ? {
