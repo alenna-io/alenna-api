@@ -58,6 +58,14 @@ import {
   GetNoteHistoryUseCase,
   DeleteDailyGoalUseCase,
 } from '../../app/use-cases';
+import {
+  CreateSchoolMonthlyAssignmentTemplateUseCase,
+  GetSchoolMonthlyAssignmentTemplatesUseCase,
+  DeleteSchoolMonthlyAssignmentTemplateUseCase,
+  UpdateSchoolMonthlyAssignmentTemplateUseCase,
+  UpdateQuarterGradePercentageUseCase,
+  GetQuarterGradePercentagesUseCase,
+} from '../../app/use-cases/school-monthly-assignments';
 
 import {
   CreateMonthlyAssignmentUseCase,
@@ -337,7 +345,32 @@ class Container {
   }
 
   get getMonthlyAssignmentsByProjectionUseCase(): GetMonthlyAssignmentsByProjectionUseCase {
-    return new GetMonthlyAssignmentsByProjectionUseCase();
+return new GetMonthlyAssignmentsByProjectionUseCase();
+  }
+
+  // School Monthly Assignment Use Cases
+  get createSchoolMonthlyAssignmentTemplateUseCase(): CreateSchoolMonthlyAssignmentTemplateUseCase {
+    return new CreateSchoolMonthlyAssignmentTemplateUseCase();
+  }
+
+  get getSchoolMonthlyAssignmentTemplatesUseCase(): GetSchoolMonthlyAssignmentTemplatesUseCase {
+    return new GetSchoolMonthlyAssignmentTemplatesUseCase();
+  }
+
+  get deleteSchoolMonthlyAssignmentTemplateUseCase(): DeleteSchoolMonthlyAssignmentTemplateUseCase {
+    return new DeleteSchoolMonthlyAssignmentTemplateUseCase();
+  }
+
+  get updateSchoolMonthlyAssignmentTemplateUseCase(): UpdateSchoolMonthlyAssignmentTemplateUseCase {
+    return new UpdateSchoolMonthlyAssignmentTemplateUseCase();
+  }
+
+  get updateQuarterGradePercentageUseCase(): UpdateQuarterGradePercentageUseCase {
+    return new UpdateQuarterGradePercentageUseCase();
+  }
+
+  get getQuarterGradePercentagesUseCase(): GetQuarterGradePercentagesUseCase {
+    return new GetQuarterGradePercentagesUseCase();
   }
 
   // Controllers
@@ -351,6 +384,18 @@ class Container {
       this.deleteSchoolYearUseCase,
       this.setActiveSchoolYearUseCase,
       this.getCurrentWeekUseCase
+    );
+  }
+
+  get schoolMonthlyAssignmentController() {
+    const { SchoolMonthlyAssignmentController } = require('../api/controllers');
+    return new SchoolMonthlyAssignmentController(
+      this.createSchoolMonthlyAssignmentTemplateUseCase,
+      this.getSchoolMonthlyAssignmentTemplatesUseCase,
+      this.deleteSchoolMonthlyAssignmentTemplateUseCase,
+      this.updateSchoolMonthlyAssignmentTemplateUseCase,
+      this.updateQuarterGradePercentageUseCase,
+      this.getQuarterGradePercentagesUseCase
     );
   }
 }

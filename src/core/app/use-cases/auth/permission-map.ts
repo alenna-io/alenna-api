@@ -46,6 +46,12 @@ export const PERMISSION_DEFINITIONS: Record<string, PermissionDefinition> = {
   'schoolYear.create': { module: 'configuration', scope: 'school' },
   'schoolYear.update': { module: 'configuration', scope: 'school' },
   'schoolYear.delete': { module: 'configuration', scope: 'school' },
+
+  // Monthly Assignments (school-level)
+  'monthlyAssignment.read': { module: 'configuration', scope: 'school' },
+  'monthlyAssignment.create': { module: 'configuration', scope: 'school' },
+  'monthlyAssignment.update': { module: 'configuration', scope: 'school' },
+  'monthlyAssignment.delete': { module: 'configuration', scope: 'school' },
 };
 
 export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
@@ -73,6 +79,10 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'schoolYear.create',
     'schoolYear.update',
     'schoolYear.delete',
+    'monthlyAssignment.read',
+    'monthlyAssignment.create',
+    'monthlyAssignment.update',
+    'monthlyAssignment.delete',
   ],
   TEACHER: [
     'students.read',
@@ -90,6 +100,10 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'paces.move',
     'schoolInfo.read',
     'schoolYear.read',
+    'monthlyAssignment.read',
+    'monthlyAssignment.create',
+    'monthlyAssignment.update',
+    'monthlyAssignment.delete',
   ],
   PARENT: [
     'students.readOwn',

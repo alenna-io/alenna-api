@@ -67,6 +67,8 @@ model SchoolYear {
   isActive  Boolean  @default(false) @map("is_active") // Only one active per school
 
   quarters Quarter[]
+  schoolMonthlyAssignmentTemplates SchoolMonthlyAssignmentTemplate[]
+  quarterGradePercentages QuarterGradePercentage[]
 
   deletedAt DateTime? @map("deleted_at")
   createdAt DateTime  @default(now()) @map("created_at")
@@ -505,4 +507,40 @@ model MonthlyAssignmentGradeHistory {
 
   @@index([monthlyAssignmentId])
   @@map("monthly_assignment_grade_history")
+}
+
+// School-level Monthly Assignment Templates - Templates that apply to all students
+model SchoolMonthlyAssignmentTemplate {
+  id         String     @id @default(cuid())
+  name       String     // Assignment name (e.g., "Oral Report", "Bible Verse")
+  quarter    String     // Q1, Q2, Q3, Q4
+  schoolYearId String   @map("school_year_id")
+  schoolYear SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([schoolYearId, quarter, name])
+  @@index([schoolYearId])
+  @@index([schoolYearId, quarter])
+  @@map("school_monthly_assignment_templates")
+}
+
+// Quarter Grade Percentage - Percentage that monthly assignments represent per quarter
+model QuarterGradePercentage {
+  id           String     @id @default(cuid())
+  percentage   Int        // Percentage (0-100) that monthly assignments represent
+  quarter      String     // Q1, Q2, Q3, Q4
+  schoolYearId String     @map("school_year_id")
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([schoolYearId, quarter])
+  @@index([schoolYearId])
+  @@index([schoolYearId, quarter])
+  @@map("quarter_grade_percentages")
 }
