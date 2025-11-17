@@ -88,8 +88,13 @@ export class DailyGoal {
     
     const trimmedText = this.text.trim();
     
-    // Check for "Self Test" (case insensitive)
-    if (/^self\s*test$/i.test(trimmedText)) {
+    // Check for "ST" (Self Test) - case insensitive
+    if (/^st$/i.test(trimmedText)) {
+      return true;
+    }
+    
+    // Check for "T" (Test) - case insensitive
+    if (/^t$/i.test(trimmedText)) {
       return true;
     }
     
@@ -116,9 +121,14 @@ export class DailyGoal {
 
     const trimmedText = this.text.trim();
 
-    // Check for "Self Test" (case insensitive)
-    if (/^self\s*test$/i.test(trimmedText)) {
+    // Check for "ST" (Self Test) - case insensitive
+    if (/^st$/i.test(trimmedText)) {
       return 3;
+    }
+
+    // Check for "T" (Test) - case insensitive
+    if (/^t$/i.test(trimmedText)) {
+      return 1;
     }
 
     // Check for range format (e.g., "45-46", "1-10")

@@ -24,7 +24,7 @@ export class UpdateDailyGoalUseCase {
 
     // Validate the goal text format if it's being updated
     if (data.text !== undefined && !updatedGoal.isValidText) {
-      throw new Error('Invalid goal text format. Use page ranges (1-1000) or "Self Test"');
+      throw new Error('Invalid goal text format. Use page ranges (1-1000), ST, or T');
     }
 
     return await this.dailyGoalRepository.update(updatedGoal);
