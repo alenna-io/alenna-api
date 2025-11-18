@@ -1,16 +1,17 @@
 /**
- * Projection Algorithm - Dynamic Pairing System
+ * Projection Algorithm - Balanced Distribution System
  * 
- * This algorithm generates academic year projections with dynamic subject pairs based on:
- * - User-provided subjects (1-6 subjects)
- * - notPairWith constraints
- * - Difficulty levels (future enhancement)
+ * Based on the Python algorithm, this generates balanced academic year projections:
+ * 1. Distributes paces evenly across 4 quarters
+ * 2. Creates balanced weekly schedules (2-3 paces per week)
+ * 3. Respects notPairWith constraints when possible
+ * 4. Handles any number of paces (up to 108 for year and a half)
  * 
- * Features:
- * - Dynamic pairing: Creates pairs based on constraints, not hardcoded rules
- * - Flexible rotation: Adapts week distribution based on number of pairs
- * - Handles any number of paces per subject
- * - Respects skipPaces and notPairWith constraints
+ * Key principles:
+ * - Quarterly balance: Each subject's paces distributed evenly across quarters
+ * - Weekly balance: 2-3 paces per week, balanced across subjects
+ * - When >72 paces: Maintain ~2 paces/week base, then fill with easier subjects
+ * - Pairing is for grouping, not forced during scheduling
  */
 
 export interface SubjectInput {
@@ -21,6 +22,7 @@ export interface SubjectInput {
   skipPaces: number[];
   notPairWith: string[]; // Array of other subSubjectIds
   extendToNextLevel?: boolean;
+  difficulty?: number; // 1-5, where 5 is hardest (default 3 if not provided)
 }
 
 interface SubjectWithPaces {
@@ -29,11 +31,7 @@ interface SubjectWithPaces {
   paces: number[];
   totalPaces: number;
   notPairWith: string[];
-}
-
-interface SubjectPair {
-  subject1: SubjectWithPaces;
-  subject2: SubjectWithPaces;
+  difficulty: number;
 }
 
 interface QuarterFormat {
@@ -41,6 +39,12 @@ interface QuarterFormat {
     quarters: string[][]; // 4 quarters, each with 9 weeks
     yearTotal: number;
   };
+}
+
+interface SubjectProgression {
+  quarters: number[]; // Paces per quarter [Q1, Q2, Q3, Q4]
+  yearTotal: number;
+  subject: SubjectWithPaces;
 }
 
 /**
@@ -59,104 +63,13 @@ function calculatePaces(subject: SubjectInput): number[] {
 }
 
 /**
- * Create subject pairs dynamically based on notPairWith constraints
- * Uses a greedy algorithm to maximize pairing while respecting constraints
- */
-function createDynamicPairs(subjects: SubjectInput[]): SubjectPair[] {
-  const pairs: SubjectPair[] = [];
-  const paired = new Set<string>();
-
-  // Convert subjects to SubjectWithPaces
-  const subjectsWithPaces: SubjectWithPaces[] = subjects.map(subject => {
-    const paces = calculatePaces(subject);
-    return {
-      subSubjectId: subject.subSubjectId,
-      name: subject.subSubjectName,
-      paces,
-      totalPaces: paces.length,
-      notPairWith: subject.notPairWith || [],
-    };
-  });
-
-  // Sort subjects by total paces (descending) to pair high-pace subjects first
-  const sortedSubjects = [...subjectsWithPaces].sort((a, b) => b.totalPaces - a.totalPaces);
-
-  // Try to pair each subject
-  for (const subject1 of sortedSubjects) {
-    if (paired.has(subject1.subSubjectId)) {
-      continue; // Already paired
-    }
-
-    // Find the best partner for this subject
-    let bestPartner: SubjectWithPaces | null = null;
-    let bestScore = -1;
-
-    for (const subject2 of sortedSubjects) {
-      if (subject2.subSubjectId === subject1.subSubjectId) {
-        continue; // Can't pair with itself
-      }
-      if (paired.has(subject2.subSubjectId)) {
-        continue; // Already paired
-      }
-
-      // Check notPairWith constraints
-      if (subject1.notPairWith.includes(subject2.subSubjectId)) {
-        continue; // Constraint violation
-      }
-      if (subject2.notPairWith.includes(subject1.subSubjectId)) {
-        continue; // Constraint violation
-      }
-
-      // Calculate compatibility score (prefer similar pace counts)
-      const paceDifference = Math.abs(subject1.totalPaces - subject2.totalPaces);
-      const score = 1000 - paceDifference; // Higher score = better match
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestPartner = subject2;
-      }
-    }
-
-    // If we found a partner, create the pair
-    if (bestPartner) {
-      pairs.push({
-        subject1,
-        subject2: bestPartner,
-      });
-      paired.add(subject1.subSubjectId);
-      paired.add(bestPartner.subSubjectId);
-    }
-  }
-
-  // Handle unpaired subjects by creating single-subject "pairs"
-  for (const subject of subjectsWithPaces) {
-    if (!paired.has(subject.subSubjectId)) {
-      // Create a dummy pair with just this subject
-      // subject2 will be null, and we'll handle it during distribution
-      pairs.push({
-        subject1: subject,
-        subject2: {
-          subSubjectId: '',
-          name: '',
-          paces: [],
-          totalPaces: 0,
-          notPairWith: [],
-        },
-      });
-      paired.add(subject.subSubjectId);
-    }
-  }
-
-  return pairs;
-}
-
-/**
- * Calculate how many paces each subject should have per quarter
+ * Calculate quarterly distribution for each subject
+ * Distributes paces evenly across 4 quarters, with remainder going to early quarters
  */
 function calculateQuarterlyDistribution(
   subjects: SubjectInput[]
-): Record<string, number[]> {
-  const distribution: Record<string, number[]> = {};
+): Record<string, SubjectProgression> {
+  const progressions: Record<string, SubjectProgression> = {};
   const quarters = 4;
 
   for (const subject of subjects) {
@@ -171,56 +84,317 @@ function calculateQuarterlyDistribution(
       quarterDistribution.push(basePacesPerQuarter + (q < remainder ? 1 : 0));
     }
 
-    distribution[subject.subSubjectName] = quarterDistribution;
+    progressions[subject.subSubjectName] = {
+      quarters: quarterDistribution,
+      yearTotal: totalPaces,
+      subject: {
+        subSubjectId: subject.subSubjectId,
+        name: subject.subSubjectName,
+        paces,
+        totalPaces,
+        notPairWith: subject.notPairWith || [],
+        difficulty: subject.difficulty || 3, // Default to 3 if not provided
+      },
+    };
   }
 
-  return distribution;
+  return progressions;
 }
 
 /**
  * Create a balanced weekly schedule for a quarter
- * Ensures 2-3 paces per week when possible
+ * Ensures 2-3 paces per week, balanced across subjects
+ * Based on Python's create_balanced_schedule function
  */
-function createBalancedSchedule(
-  pairs: SubjectPair[],
-  quarterNum: number,
-  quarterlyDistribution: Record<string, number[]>,
-  weeksByQuarter: number
-): Map<number, SubjectPair[]> {
-  const weeklySchedule = new Map<number, SubjectPair[]>();
+/**
+ * Calculate total difficulty for a week (sum of all subject difficulties)
+ */
+function calculateWeekDifficulty(
+  schedule: string[],
+  subjectProgressions: Record<string, SubjectProgression>
+): number {
+  return schedule.reduce((total, subjectName) => {
+    const progression = subjectProgressions[subjectName];
+    return total + (progression?.subject.difficulty || 3);
+  }, 0);
+}
+
+/**
+ * Check if adding a subject would make the week too hard
+ * Avoid placing subjects with combined difficulty > 8 in the same week
+ */
+function wouldExceedDifficultyLimit(
+  subjectName: string,
+  schedule: string[],
+  subjectProgressions: Record<string, SubjectProgression>,
+  maxCombinedDifficulty: number = 8
+): boolean {
+  const progression = subjectProgressions[subjectName];
+  if (!progression) return false;
+
+  const currentDifficulty = calculateWeekDifficulty(schedule, subjectProgressions);
+  const newDifficulty = currentDifficulty + progression.subject.difficulty;
   
+  return newDifficulty > maxCombinedDifficulty;
+}
+
+function createBalancedSchedule(
+  subjectProgressions: Record<string, SubjectProgression>,
+  quarterNum: number,
+  weeksByQuarter: number,
+  notPairWithConstraints: Map<string, Set<string>>
+): Map<number, string[]> {
+  const weeklySchedule = new Map<number, string[]>();
+  const maxPacesPerWeek = 3;
+  const minPacesPerWeek = 2;
+
   // Initialize all weeks
   for (let week = 1; week <= weeksByQuarter; week++) {
     weeklySchedule.set(week, []);
   }
 
-  // Calculate how many times each pair should appear this quarter
-  const pairFrequency = new Map<SubjectPair, number>();
-  for (const pair of pairs) {
-    const subject1Paces = quarterlyDistribution[pair.subject1.name]?.[quarterNum - 1] || 0;
-    const subject2Paces = pair.subject2.name ? (quarterlyDistribution[pair.subject2.name]?.[quarterNum - 1] || 0) : 0;
-    // A pair appears as many times as needed for both subjects (they share weeks)
-    const frequency = Math.max(subject1Paces, subject2Paces);
-    pairFrequency.set(pair, frequency);
+  // Get all subjects and their paces for this quarter
+  const subjectsData: Array<{ name: string; paces: number }> = [];
+  for (const [subjectName, progression] of Object.entries(subjectProgressions)) {
+    const pacesThisQuarter = progression.quarters[quarterNum - 1];
+    if (pacesThisQuarter > 0) {
+      subjectsData.push({ name: subjectName, paces: pacesThisQuarter });
+    }
   }
 
-  // Distribute pairs across weeks using round-robin with rotation
-  let weekNum = 1;
-  
-  for (const [pair, frequency] of pairFrequency.entries()) {
-    for (let i = 0; i < frequency; i++) {
-      const schedule = weeklySchedule.get(weekNum);
-      if (schedule) {
-        schedule.push(pair);
+  // Sort subjects by number of paces (highest first)
+  const sortedSubjects = [...subjectsData].sort((a, b) => b.paces - a.paces);
+
+  // First pass: distribute subjects with most paces first
+  for (const { name: subjectName, paces: totalPaces } of sortedSubjects) {
+    // Calculate optimal distribution for this subject
+    let weeksToPlace: number[];
+    
+    if (totalPaces <= weeksByQuarter) {
+      // Distribute evenly across weeks
+      const step = weeksByQuarter / totalPaces;
+      weeksToPlace = [];
+
+      for (let paceNum = 0; paceNum < totalPaces; paceNum++) {
+        const weekNum = Math.floor(paceNum * step) + 1;
+        if (weekNum <= weeksByQuarter) {
+          weeksToPlace.push(weekNum);
+        }
       }
-      
-      // Move to next week in rotation based on number of pairs
-      // If 3 pairs: rotate every 3 weeks (1,2,3,1,2,3...)
-      // If 2 pairs: alternate weeks (1,2,1,2...)
-      // If 1 pair: every week
-      weekNum++;
-      if (weekNum > weeksByQuarter) {
-        weekNum = 1; // Wrap around if needed
+
+      // Remove duplicates and sort
+      weeksToPlace = [...new Set(weeksToPlace)].sort((a, b) => a - b);
+
+      // Fill any missing weeks
+      while (weeksToPlace.length < totalPaces) {
+        for (let week = 1; week <= weeksByQuarter; week++) {
+          if (!weeksToPlace.includes(week) && weeksToPlace.length < totalPaces) {
+            weeksToPlace.push(week);
+            break;
+          }
+        }
+      }
+
+      weeksToPlace = weeksToPlace.slice(0, totalPaces).sort((a, b) => a - b);
+    } else {
+      // More paces than weeks - some weeks will have multiple
+      weeksToPlace = Array.from({ length: weeksByQuarter }, (_, i) => i + 1);
+      const extraPaces = totalPaces - weeksByQuarter;
+      for (let i = 0; i < extraPaces; i++) {
+        weeksToPlace.push((i % weeksByQuarter) + 1);
+      }
+      weeksToPlace = weeksToPlace.slice(0, totalPaces).sort((a, b) => a - b);
+    }
+
+    // Try to place subject in calculated weeks, but respect limits and constraints
+    let pacesPlaced = 0;
+    for (const week of weeksToPlace) {
+      if (pacesPlaced >= totalPaces) {
+        break;
+      }
+
+      const schedule = weeklySchedule.get(week);
+      if (!schedule) continue;
+
+      // Check if we can add this subject to this week
+      // 1. Check max paces per week limit
+      if (schedule.length >= maxPacesPerWeek) {
+        continue;
+      }
+
+      // 2. Check notPairWith constraints
+      const subjectConstraints = notPairWithConstraints.get(subjectName);
+      if (subjectConstraints) {
+        const hasConflict = schedule.some(scheduledSubject => 
+          subjectConstraints.has(scheduledSubject)
+        );
+        if (hasConflict) {
+          continue; // Skip this week due to constraint
+        }
+      }
+
+      // 3. Check difficulty - avoid placing too many hard subjects together
+      if (wouldExceedDifficultyLimit(subjectName, schedule, subjectProgressions)) {
+        continue; // Skip this week - would be too hard
+      }
+
+      schedule.push(subjectName);
+      pacesPlaced++;
+    }
+
+    // If we couldn't place all paces, find other weeks (respecting constraints)
+    while (pacesPlaced < totalPaces) {
+      // Find week with fewest subjects that doesn't violate constraints
+      let bestWeek: number | null = null;
+      let minSubjects = Infinity;
+
+      for (let week = 1; week <= weeksByQuarter; week++) {
+        const schedule = weeklySchedule.get(week);
+        if (!schedule) continue;
+
+        if (schedule.length >= maxPacesPerWeek) {
+          continue; // Week is full
+        }
+
+        // Check constraints
+        const subjectConstraints = notPairWithConstraints.get(subjectName);
+        if (subjectConstraints) {
+          const hasConflict = schedule.some(scheduledSubject => 
+            subjectConstraints.has(scheduledSubject)
+          );
+          if (hasConflict) {
+            continue; // Skip due to constraint
+          }
+        }
+
+        // Check difficulty
+        if (wouldExceedDifficultyLimit(subjectName, schedule, subjectProgressions)) {
+          continue; // Skip - would be too hard
+        }
+
+        if (schedule.length < minSubjects) {
+          minSubjects = schedule.length;
+          bestWeek = week;
+        }
+      }
+
+      if (bestWeek !== null) {
+        const schedule = weeklySchedule.get(bestWeek);
+        if (schedule) {
+          schedule.push(subjectName);
+          pacesPlaced++;
+        } else {
+          break; // Shouldn't happen, but safety check
+        }
+      } else {
+        // No valid week found - place anyway (constraint violation, but better than missing paces)
+        for (let week = 1; week <= weeksByQuarter; week++) {
+          const schedule = weeklySchedule.get(week);
+          if (schedule && schedule.length < maxPacesPerWeek && !schedule.includes(subjectName)) {
+            schedule.push(subjectName);
+            pacesPlaced++;
+            break;
+          }
+        }
+        if (pacesPlaced < totalPaces) {
+          break; // Can't place more
+        }
+      }
+    }
+  }
+
+  // Second pass: ensure minimum 2 paces per week
+  // Sort weeks by number of paces (fewest first) to prioritize filling empty weeks
+  const weeksByPaceCount = Array.from({ length: weeksByQuarter }, (_, i) => i + 1)
+    .sort((a, b) => {
+      const aSchedule = weeklySchedule.get(a) || [];
+      const bSchedule = weeklySchedule.get(b) || [];
+      return aSchedule.length - bSchedule.length;
+    });
+
+  for (const week of weeksByPaceCount) {
+    const schedule = weeklySchedule.get(week);
+    if (!schedule) continue;
+
+    while (schedule.length < minPacesPerWeek) {
+      // Find subject with most remaining paces that can be added
+      // Prefer easier subjects when filling minimum requirements
+      let bestSubject: string | null = null;
+      let bestScore = -1;
+
+      for (const { name: subjectName, paces: totalPaces } of sortedSubjects) {
+        // Count how many times this subject appears in the quarter
+        let pacesUsed = 0;
+        for (let w = 1; w <= weeksByQuarter; w++) {
+          const wSchedule = weeklySchedule.get(w);
+          if (wSchedule?.includes(subjectName)) {
+            pacesUsed++;
+          }
+        }
+
+        const remaining = totalPaces - pacesUsed;
+        if (remaining <= 0 || schedule.includes(subjectName)) {
+          continue; // No remaining paces or already in this week
+        }
+
+        // Check constraints
+        const subjectConstraints = notPairWithConstraints.get(subjectName);
+        if (subjectConstraints) {
+          const hasConflict = schedule.some(scheduledSubject => 
+            subjectConstraints.has(scheduledSubject)
+          );
+          if (hasConflict) {
+            continue; // Skip due to constraint
+          }
+        }
+
+        // Check difficulty - prefer easier subjects when filling minimum
+        if (wouldExceedDifficultyLimit(subjectName, schedule, subjectProgressions)) {
+          continue; // Skip - would be too hard
+        }
+
+        // Score: prioritize remaining paces, but prefer easier subjects
+        const difficulty = subjectProgressions[subjectName]?.subject.difficulty || 3;
+        // Higher score = better (more remaining, easier difficulty)
+        const score = remaining * 100 - difficulty; // More remaining is better, lower difficulty is better
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestSubject = subjectName;
+        }
+      }
+
+      if (bestSubject) {
+        schedule.push(bestSubject);
+      } else {
+        // If no subject found respecting constraints, try without difficulty check
+        // (but still respect notPairWith)
+        for (const { name: subjectName, paces: totalPaces } of sortedSubjects) {
+          if (schedule.includes(subjectName)) continue;
+
+          let pacesUsed = 0;
+          for (let w = 1; w <= weeksByQuarter; w++) {
+            const wSchedule = weeklySchedule.get(w);
+            if (wSchedule?.includes(subjectName)) {
+              pacesUsed++;
+            }
+          }
+
+          if (totalPaces - pacesUsed > 0) {
+            const subjectConstraints = notPairWithConstraints.get(subjectName);
+            if (subjectConstraints) {
+              const hasConflict = schedule.some(scheduledSubject => 
+                subjectConstraints.has(scheduledSubject)
+              );
+              if (hasConflict) {
+                continue;
+              }
+            }
+            schedule.push(subjectName);
+            break;
+          }
+        }
+        break; // Can't add more subjects
       }
     }
   }
@@ -232,60 +406,54 @@ function createBalancedSchedule(
  * Assign specific pace numbers to weeks based on the schedule
  */
 function assignPacesToWeeks(
-  subjects: SubjectInput[],
-  pairs: SubjectPair[],
-  quarterlyDistribution: Record<string, number[]>,
+  subjectProgressions: Record<string, SubjectProgression>,
   quarters: number,
-  weeksByQuarter: number
+  weeksByQuarter: number,
+  notPairWithConstraints: Map<string, Set<string>>
 ): QuarterFormat {
   const result: QuarterFormat = {};
-  
+
   // Initialize result structure
-  for (const subject of subjects) {
-    result[subject.subSubjectName] = {
+  for (const [subjectName] of Object.entries(subjectProgressions)) {
+    result[subjectName] = {
       quarters: [],
       yearTotal: 0,
     };
     for (let q = 0; q < quarters; q++) {
-      result[subject.subSubjectName].quarters.push(Array(weeksByQuarter).fill(''));
+      result[subjectName].quarters.push(Array(weeksByQuarter).fill(''));
     }
   }
 
   // Track current pace index for each subject
   const paceIndices: Record<string, number> = {};
-  const subjectPaces: Record<string, number[]> = {};
-  for (const subject of subjects) {
-    paceIndices[subject.subSubjectName] = 0;
-    subjectPaces[subject.subSubjectName] = calculatePaces(subject);
+  for (const [subjectName, progression] of Object.entries(subjectProgressions)) {
+    paceIndices[subjectName] = 0;
   }
 
   // Process each quarter
   for (let quarterNum = 1; quarterNum <= quarters; quarterNum++) {
-    const weeklySchedule = createBalancedSchedule(pairs, quarterNum, quarterlyDistribution, weeksByQuarter);
+    const weeklySchedule = createBalancedSchedule(
+      subjectProgressions,
+      quarterNum,
+      weeksByQuarter,
+      notPairWithConstraints
+    );
 
     // Assign paces to each week
     for (let weekNum = 1; weekNum <= weeksByQuarter; weekNum++) {
-      const pairsThisWeek = weeklySchedule.get(weekNum) || [];
+      const subjectsThisWeek = weeklySchedule.get(weekNum) || [];
 
-      for (const pair of pairsThisWeek) {
-        // Assign pace to subject1
-        const subject1Name = pair.subject1.name;
-        if (paceIndices[subject1Name] < subjectPaces[subject1Name].length) {
-          const pace = subjectPaces[subject1Name][paceIndices[subject1Name]];
-          result[subject1Name].quarters[quarterNum - 1][weekNum - 1] = String(pace);
-          paceIndices[subject1Name]++;
-          result[subject1Name].yearTotal++;
-        }
+      for (const subjectName of subjectsThisWeek) {
+        const progression = subjectProgressions[subjectName];
+        if (!progression) continue;
 
-        // Assign pace to subject2 (if it exists)
-        if (pair.subject2.name) {
-          const subject2Name = pair.subject2.name;
-          if (paceIndices[subject2Name] < subjectPaces[subject2Name].length) {
-            const pace = subjectPaces[subject2Name][paceIndices[subject2Name]];
-            result[subject2Name].quarters[quarterNum - 1][weekNum - 1] = String(pace);
-            paceIndices[subject2Name]++;
-            result[subject2Name].yearTotal++;
-          }
+        const currentIndex = paceIndices[subjectName];
+        const paces = progression.subject.paces;
+        if (currentIndex < paces.length) {
+          const pace = paces[currentIndex];
+          result[subjectName].quarters[quarterNum - 1][weekNum - 1] = String(pace);
+          paceIndices[subjectName]++;
+          result[subjectName].yearTotal++;
         }
       }
     }
@@ -295,7 +463,39 @@ function assignPacesToWeeks(
 }
 
 /**
- * Main projection function with dynamic pairing system
+ * Build notPairWith constraints map for efficient lookup
+ */
+function buildConstraintsMap(subjects: SubjectInput[]): Map<string, Set<string>> {
+  const constraints = new Map<string, Set<string>>();
+  
+  // Create a map of subSubjectId -> subjectName
+  const idToName = new Map<string, string>();
+  for (const subject of subjects) {
+    idToName.set(subject.subSubjectId, subject.subSubjectName);
+  }
+
+  // Build constraints map using subject names
+  for (const subject of subjects) {
+    const subjectName = subject.subSubjectName;
+    const constraintSet = new Set<string>();
+    
+    for (const restrictedId of subject.notPairWith || []) {
+      const restrictedName = idToName.get(restrictedId);
+      if (restrictedName) {
+        constraintSet.add(restrictedName);
+      }
+    }
+    
+    if (constraintSet.size > 0) {
+      constraints.set(subjectName, constraintSet);
+    }
+  }
+
+  return constraints;
+}
+
+/**
+ * Main projection function with balanced distribution system
  */
 export function generateProjection(subjects: SubjectInput[]): QuarterFormat {
   const quarters = 4;
@@ -305,14 +505,19 @@ export function generateProjection(subjects: SubjectInput[]): QuarterFormat {
     return {};
   }
 
-  // Step 1: Create dynamic pairs based on constraints
-  const pairs = createDynamicPairs(subjects);
+  // Step 1: Calculate quarterly distribution for each subject
+  const subjectProgressions = calculateQuarterlyDistribution(subjects);
 
-  // Step 2: Calculate quarterly distribution for each subject
-  const quarterlyDistribution = calculateQuarterlyDistribution(subjects);
+  // Step 2: Build constraints map for efficient lookup
+  const notPairWithConstraints = buildConstraintsMap(subjects);
 
-  // Step 3: Assign paces to weeks across all quarters
-  const result = assignPacesToWeeks(subjects, pairs, quarterlyDistribution, quarters, weeksByQuarter);
+  // Step 3: Assign paces to weeks across all quarters with balanced scheduling
+  const result = assignPacesToWeeks(
+    subjectProgressions,
+    quarters,
+    weeksByQuarter,
+    notPairWithConstraints
+  );
 
   return result;
 }
