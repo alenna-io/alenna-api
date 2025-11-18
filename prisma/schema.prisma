@@ -27,6 +27,7 @@ model School {
   schoolModules      SchoolModule[]
   roleModuleSchools  RoleModuleSchool[]
   schoolYears        SchoolYear[]
+  projectionTemplates ProjectionTemplate[]
 
   @@map("schools")
 }
@@ -176,6 +177,55 @@ model Projection {
   @@index([studentId])
   @@index([studentId, isActive])
   @@map("projections")
+}
+
+// Projection Template - Pre-configured templates for each level (L1-L8)
+model ProjectionTemplate {
+  id        String  @id @default(cuid())
+  name      String  // e.g., "Level 1 Template", "Standard L1"
+  level     String  // L1, L2, L3, L4, L5, L6, L7, L8
+  isDefault Boolean @default(false) @map("is_default")
+  isActive  Boolean @default(true) @map("is_active")
+
+  schoolId String @map("school_id")
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  templateSubjects ProjectionTemplateSubject[]
+
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([schoolId, level, name])
+  @@index([schoolId])
+  @@index([schoolId, level])
+  @@map("projection_templates")
+}
+
+// Projection Template Subject - Subjects and pace ranges for each template
+model ProjectionTemplateSubject {
+  id         String  @id @default(cuid())
+  templateId String  @map("template_id")
+  template   ProjectionTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  subSubjectId String    @map("sub_subject_id")
+  subSubject   SubSubject @relation(fields: [subSubjectId], references: [id], onDelete: Cascade)
+
+  startPace    Int       @map("start_pace")
+  endPace      Int       @map("end_pace")
+  skipPaces    Int[]     @default([]) @map("skip_paces")
+  notPairWith  String[]  @default([]) @map("not_pair_with") // Array of other subSubjectIds
+  extendToNext Boolean   @default(false) @map("extend_to_next")
+
+  order Int @default(0) // Display order within template
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([templateId, subSubjectId])
+  @@index([templateId])
+  @@index([subSubjectId])
+  @@map("projection_template_subjects")
 }
 
 // ============================================
@@ -352,7 +402,8 @@ model SubSubject {
   levelId String @map("level_id")
   level   Level  @relation(fields: [levelId], references: [id], onDelete: Restrict)
 
-  paces PaceCatalog[]
+  paces                    PaceCatalog[]
+  projectionTemplateSubjects ProjectionTemplateSubject[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

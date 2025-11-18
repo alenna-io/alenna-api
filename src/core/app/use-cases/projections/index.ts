@@ -10,4 +10,5 @@ export * from './RemovePaceFromProjectionUseCase';
 export * from './UpdatePaceGradeUseCase';
 export * from './MovePaceUseCase';
 export * from './MarkPaceIncompleteUseCase';
+export * from './GenerateProjectionUseCase';
 

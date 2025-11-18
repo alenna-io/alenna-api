@@ -5,6 +5,7 @@ export interface PaceCatalogItem {
   code: string;
   name: string;
   subSubjectName: string;
+  subSubjectId: string;
   categoryName: string;
   levelId: string;
   difficulty: number;
@@ -49,6 +50,7 @@ export class GetPaceCatalogUseCase {
       code: pace.code,
       name: pace.name,
       subSubjectName: pace.subSubject.name,
+      subSubjectId: pace.subSubjectId,
       categoryName: pace.subSubject.category.name,
       levelId: pace.subSubject.levelId,
       difficulty: pace.subSubject.difficulty,

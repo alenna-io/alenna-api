@@ -1,6 +1,8 @@
 import { ISchoolRepository } from '../../../adapters_interface/repositories';
 import { School } from '../../../domain/entities';
 import { CreateSchoolInput } from '../../dtos';
+import { CreateDefaultTemplatesUseCase } from '../projection-templates/CreateDefaultTemplatesUseCase';
+import { ProjectionTemplateRepository } from '../../../frameworks/database/repositories/ProjectionTemplateRepository';
 
 export class CreateSchoolUseCase {
   constructor(private schoolRepository: ISchoolRepository) {}
@@ -14,7 +16,19 @@ export class CreateSchoolUseCase {
       email: input.email,
     });
 
-    return this.schoolRepository.create(school);
+    const createdSchool = await this.schoolRepository.create(school);
+
+    // Create default projection templates for this school
+    try {
+      const templateRepository = new ProjectionTemplateRepository();
+      const createDefaultTemplatesUseCase = new CreateDefaultTemplatesUseCase(templateRepository);
+      await createDefaultTemplatesUseCase.execute(createdSchool.id);
+    } catch (error) {
+      console.error('Error creating default templates for school:', error);
+      // Don't fail school creation if templates fail - they can be created later
+    }
+
+    return createdSchool;
   }
 }
 

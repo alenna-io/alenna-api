@@ -6,6 +6,7 @@ import {
   UserRepository,
   StudentRepository,
   ProjectionRepository,
+  ProjectionTemplateRepository,
   SchoolYearRepository,
   DailyGoalRepository,
   RoleRepository
@@ -35,12 +36,17 @@ import {
   GetProjectionDetailUseCase,
   UpdateProjectionUseCase,
   DeleteProjectionUseCase,
+  GenerateProjectionUseCase,
   AddPaceToProjectionUseCase,
   RemovePaceFromProjectionUseCase,
   UpdatePaceGradeUseCase,
   MovePaceUseCase,
   MarkPaceIncompleteUseCase,
   GetPaceCatalogUseCase,
+  GetSubSubjectsUseCase,
+  GetProjectionTemplatesUseCase,
+  GetProjectionTemplateByLevelUseCase,
+  CreateDefaultTemplatesUseCase,
   CreateSchoolYearUseCase,
   GetSchoolYearsUseCase,
   GetSchoolYearByIdUseCase,
@@ -58,6 +64,7 @@ import {
   GetNoteHistoryUseCase,
   DeleteDailyGoalUseCase,
 } from '../../app/use-cases';
+import { GenerateProjectionFromDefaultTemplateUseCase } from '../../app/use-cases/projections/GenerateProjectionFromDefaultTemplateUseCase';
 import { GetReportCardUseCase } from '../../app/use-cases/report-cards';
 import {
   CreateSchoolMonthlyAssignmentTemplateUseCase,
@@ -82,6 +89,7 @@ class Container {
   private _userRepository?: UserRepository;
   private _studentRepository?: StudentRepository;
   private _projectionRepository?: ProjectionRepository;
+  private _projectionTemplateRepository?: ProjectionTemplateRepository;
   private _schoolYearRepository?: SchoolYearRepository;
   private _dailyGoalRepository?: DailyGoalRepository;
   private _roleRepository?: RoleRepository;
@@ -113,6 +121,13 @@ class Container {
       this._projectionRepository = new ProjectionRepository();
     }
     return this._projectionRepository;
+  }
+
+  get projectionTemplateRepository(): ProjectionTemplateRepository {
+    if (!this._projectionTemplateRepository) {
+      this._projectionTemplateRepository = new ProjectionTemplateRepository();
+    }
+    return this._projectionTemplateRepository;
   }
 
   get schoolYearRepository(): SchoolYearRepository {
@@ -237,6 +252,14 @@ class Container {
     return new DeleteProjectionUseCase(this.projectionRepository);
   }
 
+  get generateProjectionUseCase(): GenerateProjectionUseCase {
+    return new GenerateProjectionUseCase(this.projectionRepository);
+  }
+
+  get generateProjectionFromDefaultTemplateUseCase(): GenerateProjectionFromDefaultTemplateUseCase {
+    return new GenerateProjectionFromDefaultTemplateUseCase(this.projectionRepository);
+  }
+
   get addPaceToProjectionUseCase(): AddPaceToProjectionUseCase {
     return new AddPaceToProjectionUseCase(this.projectionRepository);
   }
@@ -260,6 +283,24 @@ class Container {
   // PACE Catalog Use Cases
   get getPaceCatalogUseCase(): GetPaceCatalogUseCase {
     return new GetPaceCatalogUseCase();
+  }
+
+  // SubSubject Use Cases
+  get getSubSubjectsUseCase(): GetSubSubjectsUseCase {
+    return new GetSubSubjectsUseCase();
+  }
+
+  // Projection Template Use Cases
+  get getProjectionTemplatesUseCase(): GetProjectionTemplatesUseCase {
+    return new GetProjectionTemplatesUseCase(this.projectionTemplateRepository);
+  }
+
+  get getProjectionTemplateByLevelUseCase(): GetProjectionTemplateByLevelUseCase {
+    return new GetProjectionTemplateByLevelUseCase(this.projectionTemplateRepository);
+  }
+
+  get createDefaultTemplatesUseCase(): CreateDefaultTemplatesUseCase {
+    return new CreateDefaultTemplatesUseCase(this.projectionTemplateRepository);
   }
 
   // School Year Use Cases

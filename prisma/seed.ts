@@ -76,6 +76,138 @@ async function main() {
 
   console.log('✅ Created school:', school.name);
 
+  // Create default projection templates for the school
+  console.log('📋 Creating default projection templates...');
+  // Pace ranges: L1 = 1001-1012, L2 = 1013-1024, L3 = 1025-1036, etc. (12 paces per level)
+  const defaultTemplates: Array<{ level: string; subjects: Array<{ subjectName: string; startPace: number; endPace: number }> }> = [];
+  
+  for (let levelNum = 1; levelNum <= 8; levelNum++) {
+    const startPace = 1001 + (levelNum - 1) * 12; // L1: 1001, L2: 1013, L3: 1025, etc.
+    const endPace = startPace + 11; // 12 paces total per level
+    
+    if (levelNum === 1) {
+      defaultTemplates.push({
+        level: 'L1',
+        subjects: [
+          { subjectName: 'Math L1', startPace, endPace },
+          { subjectName: 'English L1', startPace, endPace },
+          { subjectName: 'Science L1', startPace, endPace },
+          { subjectName: 'Social Studies L1', startPace, endPace },
+          { subjectName: 'Word Building L1', startPace, endPace },
+          { subjectName: 'Español L1', startPace, endPace },
+        ],
+      });
+    } else {
+      // L2-L8 use "Español y Ortografía"
+      defaultTemplates.push({
+        level: `L${levelNum}`,
+        subjects: [
+          { subjectName: `Math L${levelNum}`, startPace, endPace },
+          { subjectName: `English L${levelNum}`, startPace, endPace },
+          { subjectName: `Science L${levelNum}`, startPace, endPace },
+          { subjectName: `Social Studies L${levelNum}`, startPace, endPace },
+          { subjectName: `Word Building L${levelNum}`, startPace, endPace },
+          { subjectName: `Español y Ortografía L${levelNum}`, startPace, endPace },
+        ],
+      });
+    }
+  }
+
+  for (const templateConfig of defaultTemplates) {
+    // Check if template already exists (with or without isDefault flag)
+    const existing = await prisma.projectionTemplate.findFirst({
+      where: {
+        schoolId: school.id,
+        level: templateConfig.level,
+        name: `Plantilla ${templateConfig.level}`,
+        deletedAt: null,
+      },
+      include: {
+        templateSubjects: true,
+      },
+    });
+
+    if (existing) {
+      // Check if template has all required subjects (should have 6: Math, English, Science, Social Studies, Word Building, Spanish)
+      const expectedSubjectCount = 6;
+      if (existing.templateSubjects.length < expectedSubjectCount) {
+        console.log(`  🔄 Template ${templateConfig.level} is missing subjects (has ${existing.templateSubjects.length}, expected ${expectedSubjectCount}). Deleting and recreating...`);
+        // Delete existing template and its subjects
+        await prisma.projectionTemplate.delete({
+          where: { id: existing.id },
+        });
+        // Continue to create new template below
+      } else {
+        // Template exists and has all subjects, just ensure isDefault is true
+        if (!existing.isDefault) {
+          await prisma.projectionTemplate.update({
+            where: { id: existing.id },
+            data: { isDefault: true },
+          });
+          console.log(`  ✅ Updated template ${templateConfig.level} to mark as default`);
+        } else {
+          console.log(`  ⏭️  Template for ${templateConfig.level} already exists with all subjects, skipping...`);
+        }
+        continue;
+      }
+    }
+
+    // Find sub-subjects by name
+    type TemplateSubjectSeedInput = {
+      subSubjectId: string;
+      startPace: number;
+      endPace: number;
+      skipPaces: number[];
+      notPairWith: string[];
+      extendToNext: boolean;
+      order: number;
+    };
+
+    const templateSubjects: TemplateSubjectSeedInput[] = [];
+    for (const subjectConfig of templateConfig.subjects) {
+      const subSubject = await prisma.subSubject.findFirst({
+        where: {
+          name: subjectConfig.subjectName,
+        },
+      });
+
+      if (subSubject) {
+        templateSubjects.push({
+          subSubjectId: subSubject.id,
+          startPace: subjectConfig.startPace,
+          endPace: subjectConfig.endPace,
+          skipPaces: [],
+          notPairWith: [],
+          extendToNext: false,
+          order: templateSubjects.length,
+        });
+        console.log(`  ✅ Found subject: ${subjectConfig.subjectName}`);
+      } else {
+        console.log(`  ⚠️  SubSubject "${subjectConfig.subjectName}" not found, skipping...`);
+      }
+    }
+
+    // Only create template if we found at least one subject
+    if (templateSubjects.length > 0) {
+      await prisma.projectionTemplate.create({
+        data: {
+          id: randomUUID(),
+          name: `Plantilla ${templateConfig.level}`,
+          level: templateConfig.level,
+          isDefault: true,
+          isActive: true,
+          schoolId: school.id,
+          templateSubjects: {
+            create: templateSubjects,
+          },
+        },
+      });
+      console.log(`  ✅ Created template for ${templateConfig.level} with ${templateSubjects.length} subjects`);
+    } else {
+      console.log(`  ⚠️  No subjects found for ${templateConfig.level}, template not created`);
+    }
+  }
+
   // Create demo admin user
   const adminUser = await prisma.user.upsert({
     where: { clerkId: 'user_33skKBEkI8wMg70KnEwHwrjVP93' },
@@ -640,7 +772,7 @@ async function main() {
       graduationDate: new Date('2025-06-15'),
       contactPhone: '+52 555 123 4567',
       isLeveled: true,
-      expectedLevel: 'Secundaria',
+      expectedLevel: 'L8',
       currentLevel: 'L8',
       address: 'Calle Principal 123, Colonia Centro, Ciudad de México',
     },
@@ -663,7 +795,7 @@ async function main() {
       graduationDate: new Date('2025-06-15'),
       contactPhone: '+52 555 456 7890',
       isLeveled: true,
-      expectedLevel: 'Preparatoria',
+      expectedLevel: 'L10',
       currentLevel: 'L10',
       address: 'Calle Reforma 789, Colonia Sur, Monterrey',
     },
@@ -675,7 +807,7 @@ async function main() {
       graduationDate: new Date('2026-06-15'),
       contactPhone: '+52 555 321 0987',
       isLeveled: true,
-      expectedLevel: 'Primaria',
+      expectedLevel: 'L5',
       currentLevel: 'L5',
       address: 'Blvd. Universidad 321, Colonia Este, Puebla',
     },
@@ -687,7 +819,7 @@ async function main() {
       graduationDate: new Date('2025-06-15'),
       contactPhone: '+52 555 234 5678',
       isLeveled: true,
-      expectedLevel: 'Preparatoria',
+      expectedLevel: 'L11',
       currentLevel: 'L11',
       address: 'Calle Morelos 234, Colonia Sur, Mérida',
     },
@@ -796,22 +928,22 @@ async function main() {
       console.log(`   ✅ Created ${parentData.length} parent users and linked to student`);
     }
 
-    // Create a projection for this student (2025-2026 school year)
-    const projection = await prisma.projection.create({
-      data: {
-        id: randomUUID(),
-        studentId: student.id,
-        schoolYear: '2025-2026',
-        startDate: new Date('2024-08-01'),
-        endDate: new Date('2025-06-30'),
-        isActive: true,
-        notes: 'Initial projection for 2025-2026 school year',
-      },
-    });
-    console.log(`   ✅ Created projection: ${projection.schoolYear}`);
-
-    // Add sample ProjectionPaces for María (L8 student)
+    // Create a projection only for María (2025-2026 school year)
     if (restData.firstName === 'María' && restData.lastName === 'González López') {
+      const projection = await prisma.projection.create({
+        data: {
+          id: randomUUID(),
+          studentId: student.id,
+          schoolYear: '2025-2026',
+          startDate: new Date('2024-08-01'),
+          endDate: new Date('2025-06-30'),
+          isActive: true,
+          notes: 'Initial projection for 2025-2026 school year',
+        },
+      });
+      console.log(`   ✅ Created projection: ${projection.schoolYear}`);
+
+      // Add sample ProjectionPaces for María (L8 student)
       console.log('   🎯 Adding sample projection PACEs for María (L8)...');
       
       let projectionPacesCreated = 0;
@@ -953,6 +1085,13 @@ async function main() {
       }
 
       console.log(`   ✅ Created ${projectionPacesCreated} projection PACEs across all 4 quarters`);
+    } else {
+      // Delete any existing projections for other students (cleanup)
+      await prisma.projection.deleteMany({
+        where: {
+          studentId: student.id,
+        },
+      });
     }
   }
 
@@ -967,7 +1106,7 @@ async function main() {
   console.log(`   - 13 levels (L1-L12 + Electives)`);
   console.log(`   - ${certificationTypes.length} certification types`);
   console.log(`   - ${studentsData.length} students with current levels`);
-  console.log(`   - ${studentsData.length} projections`);
+  console.log(`   - 1 projection (María only)`);
   console.log(`   - Sample ProjectionPaces created for María`);
 }
 

@@ -114,6 +114,18 @@ export class ProjectionRepository implements IProjectionRepository {
     return projection ? ProjectionMapper.toDomain(projection) : null;
   }
 
+  async findByStudentIdAndSchoolYear(studentId: string, schoolYear: string): Promise<Projection | null> {
+    const projection = await prisma.projection.findFirst({
+      where: { 
+        studentId,
+        schoolYear,
+        deletedAt: null, // Soft delete filter
+      },
+    });
+
+    return projection ? ProjectionMapper.toDomain(projection) : null;
+  }
+
   async create(projection: Projection): Promise<Projection> {
     const created = await prisma.projection.create({
       data: {
@@ -161,6 +173,19 @@ export class ProjectionRepository implements IProjectionRepository {
     await prisma.projection.update({
       where: { id },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  async hardDelete(id: string, studentId: string): Promise<void> {
+    // First check if projection exists and belongs to student
+    const existing = await this.findById(id, studentId);
+    if (!existing) {
+      throw new Error('Projection not found');
+    }
+
+    // Hard delete - literally delete from DB
+    await prisma.projection.delete({
+      where: { id },
     });
   }
 }

@@ -1,5 +1,6 @@
 export * from './IDailyGoalRepository';
 export * from './IProjectionRepository';
+export * from './IProjectionTemplateRepository';
 export * from './IRoleRepository';
 export * from './ISchoolRepository';
 export * from './IUserRepository';

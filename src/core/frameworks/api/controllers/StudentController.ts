@@ -23,6 +23,7 @@ export class StudentController {
         contactPhone: student.contactPhone,
         isLeveled: student.isLeveled,
         expectedLevel: student.expectedLevel,
+        currentLevel: student.currentLevel,
         address: student.address,
         parents: student.parents,
       })));
@@ -53,6 +54,7 @@ export class StudentController {
         contactPhone: student.contactPhone,
         isLeveled: student.isLeveled,
         expectedLevel: student.expectedLevel,
+        currentLevel: student.currentLevel,
         address: student.address,
         parents: student.parents,
       });
@@ -124,6 +126,7 @@ export class StudentController {
         contactPhone: student.contactPhone,
         isLeveled: student.isLeveled,
         expectedLevel: student.expectedLevel,
+        currentLevel: student.currentLevel,
         address: student.address,
         parents: student.parents,
       });

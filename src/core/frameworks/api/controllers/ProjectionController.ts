@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { container } from '../../di/container';
-import { CreateProjectionDTO, UpdateProjectionDTO, AddPaceToProjectionDTO, UpdatePaceGradeDTO, MovePaceDTO } from '../../../app/dtos';
+import { CreateProjectionDTO, UpdateProjectionDTO, AddPaceToProjectionDTO, UpdatePaceGradeDTO, MovePaceDTO, GenerateProjectionDTO } from '../../../app/dtos';
 
 export class ProjectionController {
   async getProjectionsByStudent(req: Request, res: Response): Promise<void> {
@@ -461,6 +461,99 @@ export class ProjectionController {
     } catch (error: any) {
       console.error('Error getting all projections:', error);
       res.status(500).json({ error: error.message || 'Failed to get projections' });
+    }
+  }
+
+  async generateProjectionFromDefaultTemplate(req: Request, res: Response): Promise<void> {
+    try {
+      const schoolId = req.schoolId!;
+      const { studentId, schoolYear, templateId } = req.body;
+      
+      if (!studentId || !schoolYear || !templateId) {
+        res.status(400).json({ error: 'studentId, schoolYear, and templateId are required' });
+        return;
+      }
+      
+      // Verify student belongs to school
+      const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
+      if (!student) {
+        res.status(404).json({ error: 'Student not found' });
+        return;
+      }
+
+      const projection = await container.generateProjectionFromDefaultTemplateUseCase.execute({
+        studentId,
+        schoolYear,
+        templateId,
+      });
+
+      res.status(201).json({
+        id: projection.id,
+        studentId: projection.studentId,
+        schoolYear: projection.schoolYear,
+        startDate: projection.startDate.toISOString(),
+        endDate: projection.endDate.toISOString(),
+        isActive: projection.isActive,
+        notes: projection.notes,
+        createdAt: projection.createdAt?.toISOString(),
+        updatedAt: projection.updatedAt?.toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error generating projection from default template:', error);
+      
+      if (error.message.includes('no encontrada') || error.message.includes('not found')) {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('ya tiene') || error.message.includes('Ya existe')) {
+        res.status(409).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('solo es válido')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to generate projection from template' });
+    }
+  }
+
+  async generateProjection(req: Request, res: Response): Promise<void> {
+    try {
+      const schoolId = req.schoolId!;
+      const validatedData = GenerateProjectionDTO.parse(req.body);
+      
+      // Verify student belongs to school
+      const student = await container.getStudentByIdUseCase.execute(validatedData.studentId, schoolId);
+      if (!student) {
+        res.status(404).json({ error: 'Student not found' });
+        return;
+      }
+
+      const projection = await container.generateProjectionUseCase.execute(validatedData);
+
+      res.status(201).json({
+        id: projection.id,
+        studentId: projection.studentId,
+        schoolYear: projection.schoolYear,
+        startDate: projection.startDate.toISOString(),
+        endDate: projection.endDate.toISOString(),
+        isActive: projection.isActive,
+        notes: projection.notes,
+        createdAt: projection.createdAt?.toISOString(),
+        updatedAt: projection.updatedAt?.toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error generating projection:', error);
+      
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: error.errors });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to generate projection' });
     }
   }
 }

@@ -18,5 +18,11 @@ router.use(ensureTenantIsolation);
 // Get all projections (teachers and school admins only)
 router.get('/', requirePermission('projections.read'), projectionController.getAllProjections.bind(projectionController));
 
+// Generate projection from default template (L1-L8 only) - teachers and school admins only
+router.post('/generate-from-default-template', requirePermission('projections.create'), projectionController.generateProjectionFromDefaultTemplate.bind(projectionController));
+
+// Generate projection (custom/dynamic) - teachers and school admins only
+router.post('/generate', requirePermission('projections.create'), projectionController.generateProjection.bind(projectionController));
+
 export default router;
 

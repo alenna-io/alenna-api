@@ -14,6 +14,21 @@ export const UpdateProjectionDTO = CreateProjectionDTO.partial();
 export type CreateProjectionInput = z.infer<typeof CreateProjectionDTO>;
 export type UpdateProjectionInput = z.infer<typeof UpdateProjectionDTO>;
 
+// Generate Projection DTO
+export const GenerateProjectionDTO = z.object({
+  studentId: z.string().min(1, 'Student ID is required'),
+  schoolYear: z.string().min(1, 'School year is required'),
+  subjects: z.array(z.object({
+    subSubjectId: z.string().min(1, 'SubSubject ID is required'),
+    subSubjectName: z.string().min(1, 'SubSubject name is required'),
+    startPace: z.number().int().min(1001, 'Start pace must be at least 1001'),
+    endPace: z.number().int().min(1001, 'End pace must be at least 1001'),
+    skipPaces: z.array(z.number().int()).default([]),
+    notPairWith: z.array(z.string()).default([]),
+    groupedWith: z.array(z.string()).optional().default([]),
+  })).min(1, 'At least one subject is required').max(6, 'Maximum 6 subjects allowed'),
+});
+
 // Output DTOs (to API)
 export interface ProjectionOutput {
   id: string;
