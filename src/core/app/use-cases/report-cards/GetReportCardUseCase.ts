@@ -284,11 +284,8 @@ export class GetReportCardUseCase {
       : null;
 
     // Build monthly assignments list with percentages
-    // Each assignment gets equal percentage of the total MA percentage
+    // All assignments together represent the total MA percentage (not divided)
     const maPercentage = gradePercentages.get(quarter) || 0;
-    const assignmentPercentage = quarterTemplates.length > 0
-      ? maPercentage / quarterTemplates.length
-      : 0;
 
     const monthlyAssignmentsList: ReportCardMonthlyAssignment[] = quarterTemplates.map(template => {
       const assignment = quarterMAs.find(ma => ma.name === template.name);
@@ -296,7 +293,7 @@ export class GetReportCardUseCase {
         id: assignment?.id || template.id,
         name: template.name,
         grade: assignment?.grade ?? null,
-        percentage: assignmentPercentage,
+        percentage: maPercentage, // Total percentage for all assignments combined
       };
     });
 
