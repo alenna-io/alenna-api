@@ -31,12 +31,40 @@ export class DailyGoalsController {
 
       const dailyGoals = await container.getDailyGoalsUseCase.execute(validatedData);
 
-      // Transform to frontend format
-      const goalsData: { [subject: string]: any[] } = {};
-      const subjects = ['Math', 'English', 'Science', 'Social Studies', 'Word Building', 'Spanish'];
+      // Get projection with paces to extract sub-subject names and build category mapping
+      const projectionWithPaces = await container.projectionRepository.findByIdWithPaces(projectionId, studentId);
+      if (!projectionWithPaces) {
+        res.status(404).json({ error: 'Projection not found' });
+        return;
+      }
+
+      // Extract unique sub-subject names from projection paces
+      const subSubjectNames = new Set<string>();
+      const categoryToSubSubjects = new Map<string, string[]>();
       
-      // Initialize empty arrays for each subject
-      subjects.forEach(subject => {
+      projectionWithPaces.projectionPaces.forEach(pp => {
+        const subSubjectName = pp.paceCatalog.subSubject.name;
+        const categoryName = pp.paceCatalog.subSubject.category.name;
+        
+        subSubjectNames.add(subSubjectName);
+        
+        if (!categoryToSubSubjects.has(categoryName)) {
+          categoryToSubSubjects.set(categoryName, []);
+        }
+        const subSubjects = categoryToSubSubjects.get(categoryName)!;
+        if (!subSubjects.includes(subSubjectName)) {
+          subSubjects.push(subSubjectName);
+        }
+      });
+      
+      // Sort sub-subjects for consistent ordering
+      const sortedSubSubjects = Array.from(subSubjectNames).sort();
+
+      // Transform to frontend format using actual sub-subject names
+      const goalsData: { [subject: string]: any[] } = {};
+      
+      // Initialize empty arrays for each sub-subject
+      sortedSubSubjects.forEach(subject => {
         goalsData[subject] = Array(5).fill(null).map(() => ({
           text: '',
           isCompleted: false,
@@ -47,22 +75,32 @@ export class DailyGoalsController {
       });
 
       // Populate with actual data and load note history
+      // Map goals stored with category names to their corresponding sub-subjects
       for (const goal of dailyGoals) {
-        if (goalsData[goal.subject] && goal.dayOfWeek < 5) {
-          // Load note history for this goal
-          const noteHistory = await container.getNoteHistoryUseCase.execute(goal.id);
-          
-          goalsData[goal.subject][goal.dayOfWeek] = {
-            id: goal.id,
-            text: goal.text,
-            isCompleted: goal.isCompleted,
-            notes: goal.notes,
-            notesCompleted: goal.notesCompleted,
-            notesHistory: noteHistory.map(note => ({
-              text: note.text,
-              completedDate: note.completedDate.toISOString()
-            }))
-          };
+        const subSubjectsForCategory = categoryToSubSubjects.get(goal.subject) || [];
+        
+        // For each sub-subject in this category, populate the goal if it doesn't already exist
+        // We'll use the first sub-subject as the default, or distribute if needed
+        const targetSubSubject = subSubjectsForCategory[0] || goal.subject;
+        
+        if (goalsData[targetSubSubject] && goal.dayOfWeek < 5) {
+          // Only populate if this slot is empty (avoid overwriting existing goals)
+          if (!goalsData[targetSubSubject][goal.dayOfWeek]?.id) {
+            // Load note history for this goal
+            const noteHistory = await container.getNoteHistoryUseCase.execute(goal.id);
+            
+            goalsData[targetSubSubject][goal.dayOfWeek] = {
+              id: goal.id,
+              text: goal.text,
+              isCompleted: goal.isCompleted,
+              notes: goal.notes,
+              notesCompleted: goal.notesCompleted,
+              notesHistory: noteHistory.map(note => ({
+                text: note.text,
+                completedDate: note.completedDate.toISOString()
+              }))
+            };
+          }
         }
       }
 

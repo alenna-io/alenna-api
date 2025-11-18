@@ -41,7 +41,8 @@ export interface PaceOutput {
   id: string;
   paceCatalogId: string; // Added to identify which pace from catalog
   number: string;
-  subject: string;
+  subject: string; // Sub-subject name
+  category: string; // Category name
   quarter: string;
   week: number;
   grade: number | null;

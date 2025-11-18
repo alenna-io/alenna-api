@@ -25,29 +25,36 @@ export class GetProjectionDetailUseCase {
       throw new Error('Estudiante no encontrado');
     }
 
-    // Define all core categories
-    const categories = ['Math', 'English', 'Science', 'Social Studies', 'Word Building', 'Spanish'];
+    // Collect all unique sub-subject names from projection paces
+    const subSubjectNames = new Set<string>();
+    projectionPaces.forEach(pp => {
+      const subSubjectName = pp.paceCatalog.subSubject.name;
+      subSubjectNames.add(subSubjectName);
+    });
     
-    // Initialize quarters structure
+    // Sort sub-subjects by name for consistent ordering
+    const sortedSubSubjects = Array.from(subSubjectNames).sort();
+    
+    // Initialize quarters structure with actual sub-subject names
     const quarters: {
       Q1: QuarterPacesOutput;
       Q2: QuarterPacesOutput;
       Q3: QuarterPacesOutput;
       Q4: QuarterPacesOutput;
     } = {
-      Q1: this.initializeQuarter(categories),
-      Q2: this.initializeQuarter(categories),
-      Q3: this.initializeQuarter(categories),
-      Q4: this.initializeQuarter(categories),
+      Q1: this.initializeQuarter(sortedSubSubjects),
+      Q2: this.initializeQuarter(sortedSubSubjects),
+      Q3: this.initializeQuarter(sortedSubSubjects),
+      Q4: this.initializeQuarter(sortedSubSubjects),
     };
 
-    // Organize projection paces by quarter, category (subject), and week
+    // Organize projection paces by quarter, sub-subject name, and week
     projectionPaces.forEach(pp => {
       const quarter = pp.quarter as 'Q1' | 'Q2' | 'Q3' | 'Q4';
-      const categoryName = pp.paceCatalog.subSubject.category.name;
+      const subSubjectName = pp.paceCatalog.subSubject.name;
       const weekIndex = pp.week - 1; // Convert week 1-9 to index 0-8
 
-      if (quarters[quarter] && quarters[quarter][categoryName]) {
+      if (quarters[quarter] && quarters[quarter][subSubjectName]) {
         const gradeHistory: GradeHistoryOutput[] = pp.gradeHistory.map(gh => ({
           id: gh.id,
           grade: gh.grade,
@@ -59,7 +66,8 @@ export class GetProjectionDetailUseCase {
           id: pp.id,
           paceCatalogId: pp.paceCatalogId,
           number: pp.paceCatalog.code,
-          subject: categoryName,
+          subject: subSubjectName,
+          category: pp.paceCatalog.subSubject.category.name,
           quarter: pp.quarter,
           week: pp.week,
           grade: pp.grade,
@@ -71,7 +79,7 @@ export class GetProjectionDetailUseCase {
           updatedAt: pp.updatedAt?.toISOString() || new Date().toISOString(),
         };
 
-        quarters[quarter][categoryName][weekIndex] = paceOutput;
+        quarters[quarter][subSubjectName][weekIndex] = paceOutput;
       }
     });
 
