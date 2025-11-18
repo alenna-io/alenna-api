@@ -426,7 +426,7 @@ function assignPacesToWeeks(
 
   // Track current pace index for each subject
   const paceIndices: Record<string, number> = {};
-  for (const [subjectName, progression] of Object.entries(subjectProgressions)) {
+  for (const subjectName of Object.keys(subjectProgressions)) {
     paceIndices[subjectName] = 0;
   }
 
