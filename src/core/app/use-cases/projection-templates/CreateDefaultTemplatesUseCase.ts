@@ -81,6 +81,7 @@ export class CreateDefaultTemplatesUseCase {
 
         if (subSubject) {
           templateSubjects.push({
+            id: randomUUID(),
             subSubjectId: subSubject.id,
             subSubjectName: subSubject.name,
             startPace: subjectConfig.startPace,

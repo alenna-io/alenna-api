@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { container } from '../../di/container';
 
 export class SubSubjectController {
-  async getSubSubjects(req: Request, res: Response): Promise<void> {
+  async getSubSubjects(_req: Request, res: Response): Promise<void> {
     try {
       const subSubjects = await container.getSubSubjectsUseCase.execute();
       res.json(subSubjects);
