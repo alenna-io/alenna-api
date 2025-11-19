@@ -229,7 +229,7 @@ export class GetReportCardUseCase {
     const subjectsMap = new Map<string, ReportCardSubjectData>();
 
     quarterPaces.forEach(pp => {
-      const subjectName = pp.paceCatalog.subSubject.category.name;
+      const subjectName = pp.paceCatalog.subSubject.name;
       
       if (!subjectsMap.has(subjectName)) {
         subjectsMap.set(subjectName, {

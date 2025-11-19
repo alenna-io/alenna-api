@@ -527,12 +527,8 @@ async function main() {
     });
     console.log('✅ Enabled Users module for demo school');
 
-    const rolesToGrant = [schoolAdminRole]
-      .filter((role): role is NonNullable<typeof role> => Boolean(role))
-      .map((role) => ({ id: role.id, name: role.name }));
-
-    await grantModuleToRoles(usersModule.id, school.id, rolesToGrant);
-    console.log('✅ Granted Users module to school admins');
+    // Users module is only for Super Admins, not School Admins
+    // Note: No role assignment for demo school as it's only for Super Admins
   }
 
   // Enable Users module for Alenna school and assign to superadmin
