@@ -14,6 +14,8 @@ export class CreateSchoolUseCase {
       address: input.address,
       phone: input.phone,
       email: input.email,
+      teacherLimit: input.teacherLimit,
+      userLimit: input.userLimit,
     });
 
     const createdSchool = await this.schoolRepository.create(school);

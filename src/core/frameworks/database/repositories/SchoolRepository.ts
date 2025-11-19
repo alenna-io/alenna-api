@@ -30,6 +30,8 @@ export class SchoolRepository implements ISchoolRepository {
         address: school.address || null,
         phone: school.phone || null,
         email: school.email || null,
+        teacherLimit: school.teacherLimit || null,
+        userLimit: school.userLimit || null,
       },
     });
 
@@ -37,14 +39,17 @@ export class SchoolRepository implements ISchoolRepository {
   }
 
   async update(id: string, data: Partial<School>): Promise<School> {
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.address !== undefined) updateData.address = data.address || null;
+    if (data.phone !== undefined) updateData.phone = data.phone || null;
+    if (data.email !== undefined) updateData.email = data.email || null;
+    if (data.teacherLimit !== undefined) updateData.teacherLimit = data.teacherLimit || null;
+    if (data.userLimit !== undefined) updateData.userLimit = data.userLimit || null;
+
     const updated = await prisma.school.update({
       where: { id },
-      data: {
-        name: data.name,
-        address: data.address || undefined,
-        phone: data.phone || undefined,
-        email: data.email || undefined,
-      },
+      data: updateData,
     });
 
     return SchoolMapper.toDomain(updated);

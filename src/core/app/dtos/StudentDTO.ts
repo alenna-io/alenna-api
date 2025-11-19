@@ -12,6 +12,12 @@ export const CreateStudentDTO = z.object({
   expectedLevel: z.string().optional(),
   currentLevel: z.string().optional(),
   address: z.string().optional(),
+  parents: z.array(z.object({
+    firstName: z.string().min(1, 'Parent first name is required'),
+    lastName: z.string().min(1, 'Parent last name is required'),
+    email: z.string().email('Invalid parent email'),
+    relationship: z.string().min(1, 'Relationship is required'),
+  })).min(1, 'At least one parent is required').max(2, 'Maximum two parents allowed'),
 });
 
 export const UpdateStudentDTO = CreateStudentDTO.partial();

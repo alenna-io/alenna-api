@@ -72,7 +72,95 @@ export class CreateStudentUseCase {
     });
 
     // 6. Create Student record linked to User
-    return this.studentRepository.createWithUser(student, user.id);
+    const createdStudent = await this.studentRepository.createWithUser(student, user.id);
+
+    // 7. Create parent users and link them to the student (at least 1 required)
+    if (!input.parents || input.parents.length === 0) {
+      throw new Error('At least one parent is required when creating a student');
+    }
+
+    if (input.parents.length > 2) {
+      throw new Error('Maximum two parents allowed per student');
+    }
+
+    // Get PARENT role
+    const parentRole = await prisma.role.findFirst({
+      where: { name: 'PARENT', schoolId: null },
+    });
+
+    if (!parentRole) {
+      throw new Error('PARENT role not found in system');
+    }
+
+    // Create parent users and link them to the student
+    for (const parentData of input.parents) {
+      const parentUserId = randomUUID();
+      const parentEmail = parentData.email || `parent.${parentUserId.substring(0, 8)}@${schoolId}.alenna.io`;
+
+      // Check if parent email already exists
+      const existingParent = await prisma.user.findUnique({
+        where: { email: parentEmail },
+      });
+
+      let parentUser;
+      if (existingParent) {
+        // If parent already exists, use existing user
+        parentUser = existingParent;
+      } else {
+        // Create new parent user
+        parentUser = await prisma.user.create({
+          data: {
+            id: parentUserId,
+            clerkId: `parent_${parentUserId}_clerk`, // Placeholder - will be set on first login
+            email: parentEmail,
+            firstName: parentData.firstName,
+            lastName: parentData.lastName,
+            schoolId,
+          },
+        });
+
+        // Assign PARENT role if not already assigned
+        const hasParentRole = await prisma.userRole.findFirst({
+          where: {
+            userId: parentUser.id,
+            roleId: parentRole.id,
+          },
+        });
+
+        if (!hasParentRole) {
+          await prisma.userRole.create({
+            data: {
+              id: randomUUID(),
+              userId: parentUser.id,
+              roleId: parentRole.id,
+            },
+          });
+        }
+      }
+
+      // Link parent to student
+      const existingLink = await prisma.userStudent.findFirst({
+        where: {
+          userId: parentUser.id,
+          studentId: createdStudent.id,
+        },
+      });
+
+      if (!existingLink) {
+        await prisma.userStudent.create({
+          data: {
+            id: randomUUID(),
+            userId: parentUser.id,
+            studentId: createdStudent.id,
+            relationship: parentData.relationship || 'Parent',
+          },
+        });
+      }
+    }
+
+    // 8. Return student with updated parents list
+    const studentWithParents = await this.studentRepository.findById(createdStudent.id, schoolId);
+    return studentWithParents || createdStudent;
   }
 }
 

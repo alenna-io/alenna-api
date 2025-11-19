@@ -9,6 +9,8 @@ export class SchoolMapper {
       prismaSchool.address || undefined,
       prismaSchool.phone || undefined,
       prismaSchool.email || undefined,
+      prismaSchool.teacherLimit || undefined,
+      prismaSchool.userLimit || undefined,
       prismaSchool.createdAt,
       prismaSchool.updatedAt
     );
@@ -21,6 +23,8 @@ export class SchoolMapper {
       address: school.address || null,
       phone: school.phone || null,
       email: school.email || null,
+      teacherLimit: school.teacherLimit || null,
+      userLimit: school.userLimit || null,
       deletedAt: null,
     };
   }

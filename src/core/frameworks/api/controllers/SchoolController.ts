@@ -283,5 +283,36 @@ export class SchoolController {
       res.status(500).json({ error: error.message || 'Failed to get teachers' });
     }
   }
+
+  async getCertificationTypes(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const schoolId = req.schoolId!; // Use authenticated user's school
+      
+      // Verify the requested school matches the user's school (unless superadmin)
+      const requestedSchoolId = id === 'me' ? schoolId : id;
+      const userRoles = req.userRoles || [];
+      const isSuperAdmin = userRoles.includes('SUPERADMIN');
+      
+      if (!isSuperAdmin && requestedSchoolId !== schoolId) {
+        res.status(403).json({ error: 'No tienes permiso para acceder a esta información' });
+        return;
+      }
+      
+      const { GetCertificationTypesUseCase } = await import('../../../app/use-cases/certification-types/GetCertificationTypesUseCase');
+      const getCertificationTypesUseCase = new GetCertificationTypesUseCase();
+      const certificationTypes = await getCertificationTypesUseCase.execute(requestedSchoolId);
+
+      res.json(certificationTypes.map(ct => ({
+        id: ct.id,
+        name: ct.name,
+        description: ct.description,
+        isActive: ct.isActive,
+      })));
+    } catch (error: any) {
+      console.error('Error getting certification types:', error);
+      res.status(500).json({ error: error.message || 'Failed to get certification types' });
+    }
+  }
 }
 

@@ -74,6 +74,8 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'paces.update',
     'paces.delete',
     'paces.move',
+    'users.read',
+    'users.create',
     'schoolInfo.read',
     'schoolYear.read',
     'schoolYear.create',

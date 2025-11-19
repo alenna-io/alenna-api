@@ -6,6 +6,8 @@ export class School {
     public readonly address?: string,
     public readonly phone?: string,
     public readonly email?: string,
+    public readonly teacherLimit?: number,
+    public readonly userLimit?: number,
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date
   ) {}
@@ -16,6 +18,8 @@ export class School {
     address?: string;
     phone?: string;
     email?: string;
+    teacherLimit?: number;
+    userLimit?: number;
   }): School {
     return new School(
       props.id,
@@ -23,18 +27,22 @@ export class School {
       props.address,
       props.phone,
       props.email,
+      props.teacherLimit,
+      props.userLimit,
       new Date(),
       new Date()
     );
   }
 
-  update(props: Partial<Pick<School, 'name' | 'address' | 'phone' | 'email'>>): School {
+  update(props: Partial<Pick<School, 'name' | 'address' | 'phone' | 'email' | 'teacherLimit' | 'userLimit'>>): School {
     return new School(
       this.id,
       props.name ?? this.name,
       props.address ?? this.address,
       props.phone ?? this.phone,
       props.email ?? this.email,
+      props.teacherLimit ?? this.teacherLimit,
+      props.userLimit ?? this.userLimit,
       this.createdAt,
       new Date()
     );

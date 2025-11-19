@@ -53,5 +53,8 @@ router.get('/:id/teachers/count', requirePermission('users.read'), schoolControl
 // Get teachers for a school
 router.get('/:id/teachers', requirePermission('users.read'), schoolController.getTeachers.bind(schoolController));
 
+// Get certification types for a school
+router.get('/:id/certification-types', requirePermission('students.read'), schoolController.getCertificationTypes.bind(schoolController));
+
 export default router;
 

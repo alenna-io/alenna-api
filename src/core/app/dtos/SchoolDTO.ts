@@ -6,6 +6,8 @@ export const CreateSchoolDTO = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional(),
+  teacherLimit: z.number().int().positive().optional(),
+  userLimit: z.number().int().positive().optional(),
 });
 
 export const UpdateSchoolDTO = CreateSchoolDTO.partial();
@@ -20,6 +22,8 @@ export interface SchoolOutput {
   address?: string;
   phone?: string;
   email?: string;
+  teacherLimit?: number;
+  userLimit?: number;
   createdAt?: string;
   updatedAt?: string;
   userCount?: number;

@@ -190,7 +190,10 @@ export class CheckPermissionUseCase {
 
     const moduleKeys = new Set<ModuleKey>();
     if (isSuperAdmin) {
-      (Object.keys(MODULE_KEY_TO_DB_KEY) as ModuleKey[]).forEach((moduleKey) => moduleKeys.add(moduleKey));
+      // SUPERADMIN can only see: users, schools, and configuration modules
+      moduleKeys.add('users');
+      moduleKeys.add('schools');
+      moduleKeys.add('configuration');
     } else {
       for (const roleName of applicableRoles) {
         const permissions = ROLE_PERMISSION_MAP[roleName];
