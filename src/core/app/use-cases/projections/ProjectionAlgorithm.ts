@@ -12,6 +12,15 @@
  * - Weekly balance: 2-3 paces per week, balanced across subjects
  * - When >72 paces: Maintain ~2 paces/week base, then fill with easier subjects
  * - Pairing is for grouping, not forced during scheduling
+ * 
+ * IMPORTANT NOTE ON "NOT PAIR WITH" CONSTRAINTS:
+ * - "Not pair with" constraints work best when there are ~72 total paces (standard year)
+ *   and when paces are evenly distributed among subjects (12 paces each).
+ * - With more than 72 paces or uneven distributions, strict constraint enforcement
+ *   may make it impossible to place all paces without violating constraints.
+ * - The algorithm will respect constraints when possible, but may need to relax them
+ *   for weeks with >72 paces to ensure all paces are placed. A warning will be logged
+ *   when constraints are relaxed due to high pace counts.
  */
 
 export interface SubjectInput {
@@ -142,7 +151,8 @@ function createBalancedSchedule(
   subjectProgressions: Record<string, SubjectProgression>,
   quarterNum: number,
   weeksByQuarter: number,
-  notPairWithConstraints: Map<string, Set<string>>
+  notPairWithConstraints: Map<string, Set<string>>,
+  totalYearPaces: number = 72 // Default to standard year (72 paces)
 ): Map<number, string[]> {
   const weeklySchedule = new Map<number, string[]>();
   const maxPacesPerWeek = 3;
@@ -243,20 +253,18 @@ function createBalancedSchedule(
     }
 
     // If we couldn't place all paces, find other weeks (respecting constraints)
+    // Prioritize weeks with fewer paces to maintain balance
     while (pacesPlaced < totalPaces) {
       // Find week with fewest subjects that doesn't violate constraints
+      // Prefer weeks with 2 paces (ideal), then 1, then 3, avoiding weeks with 4+
       let bestWeek: number | null = null;
-      let minSubjects = Infinity;
+      let bestWeekScore = Infinity; // Lower is better
 
       for (let week = 1; week <= weeksByQuarter; week++) {
         const schedule = weeklySchedule.get(week);
         if (!schedule) continue;
 
-        if (schedule.length >= maxPacesPerWeek) {
-          continue; // Week is full
-        }
-
-        // Check constraints
+        // Check constraints first - must be respected
         const subjectConstraints = notPairWithConstraints.get(subjectName);
         if (subjectConstraints) {
           const hasConflict = schedule.some(scheduledSubject => 
@@ -267,13 +275,30 @@ function createBalancedSchedule(
           }
         }
 
-        // Check difficulty
-        if (wouldExceedDifficultyLimit(subjectName, schedule, subjectProgressions)) {
-          continue; // Skip - would be too hard
+        const currentPaceCount = schedule.length;
+
+        // Prioritize: weeks with 2 paces (ideal), then 1, then 0, then 3, avoid 4+
+        // Score: 0 paces = 0, 1 pace = 1, 2 paces = 2, 3 paces = 10, 4+ paces = 1000
+        let weekScore: number;
+        if (currentPaceCount === 0) {
+          weekScore = 0; // Empty weeks (shouldn't happen after initial placement, but prioritize)
+        } else if (currentPaceCount === 1) {
+          weekScore = 1; // Weeks with 1 pace (prefer to fill to 2)
+        } else if (currentPaceCount === 2) {
+          weekScore = 2; // Weeks with 2 paces (ideal for adding a 3rd)
+        } else if (currentPaceCount === 3) {
+          weekScore = 10; // Weeks with 3 paces (only if necessary)
+        } else {
+          weekScore = 1000; // Weeks with 4+ paces (avoid if possible)
         }
 
-        if (schedule.length < minSubjects) {
-          minSubjects = schedule.length;
+        // Check difficulty - add penalty if it would exceed difficulty
+        if (wouldExceedDifficultyLimit(subjectName, schedule, subjectProgressions)) {
+          weekScore += 5; // Penalize, but don't exclude
+        }
+
+        if (weekScore < bestWeekScore) {
+          bestWeekScore = weekScore;
           bestWeek = week;
         }
       }
@@ -287,24 +312,131 @@ function createBalancedSchedule(
           break; // Shouldn't happen, but safety check
         }
       } else {
-        // No valid week found - place anyway (constraint violation, but better than missing paces)
-        for (let week = 1; week <= weeksByQuarter; week++) {
+        // No valid week found - try to find any week that doesn't violate constraints
+        // For >72 paces, we may need to relax constraints to place all paces
+        let foundWeek = false;
+        // Try weeks with fewer paces first
+        const weeksByPaceCount = Array.from({ length: weeksByQuarter }, (_, i) => i + 1)
+          .sort((a, b) => {
+            const aCount = weeklySchedule.get(a)?.length || 0;
+            const bCount = weeklySchedule.get(b)?.length || 0;
+            return aCount - bCount;
+          });
+
+        for (const week of weeksByPaceCount) {
           const schedule = weeklySchedule.get(week);
-          if (schedule && schedule.length < maxPacesPerWeek && !schedule.includes(subjectName)) {
-            schedule.push(subjectName);
-            pacesPlaced++;
-            break;
+          if (!schedule || schedule.includes(subjectName)) continue;
+
+          // Check notPairWith constraints
+          const subjectConstraints = notPairWithConstraints.get(subjectName);
+          let hasConflict = false;
+          if (subjectConstraints) {
+            hasConflict = schedule.some(scheduledSubject => 
+              subjectConstraints.has(scheduledSubject)
+            );
           }
+
+          // If >72 paces, allow constraint violations when necessary (with warning)
+          // Otherwise, respect constraints strictly
+          if (hasConflict) {
+            if (totalYearPaces > 72) {
+              // Allow violation for high pace counts, but log warning
+              console.warn(
+                `[Q${quarterNum}] Constraint relaxed: "${subjectName}" paired with restricted subject(s) in week ${week}. ` +
+                `This occurs because total paces (${totalYearPaces}) > 72. ` +
+                `"Not pair with" constraints work best with ~72 paces and even distribution.`
+              );
+              // Proceed with placement despite constraint violation
+            } else {
+              continue; // Skip - constraint violation not allowed for standard pace counts
+            }
+          }
+
+          // Place it (even if it means exceeding difficulty, max paces, or constraints for >72 paces)
+          schedule.push(subjectName);
+          pacesPlaced++;
+          foundWeek = true;
+          break;
         }
-        if (pacesPlaced < totalPaces) {
+        if (!foundWeek || pacesPlaced >= totalPaces) {
           break; // Can't place more
         }
       }
     }
   }
 
-  // Second pass: ensure minimum 2 paces per week
-  // Sort weeks by number of paces (fewest first) to prioritize filling empty weeks
+  // Second pass: place any remaining unplaced paces (respecting constraints when possible)
+  // For >72 paces, constraints may be relaxed if necessary to place all paces
+  // Prioritize weeks with fewer paces to maintain balance
+  for (const { name: subjectName, paces: totalPaces } of sortedSubjects) {
+    // Count how many times this subject appears in the quarter
+    let pacesUsed = 0;
+    for (let w = 1; w <= weeksByQuarter; w++) {
+      const wSchedule = weeklySchedule.get(w);
+      if (wSchedule?.includes(subjectName)) {
+        pacesUsed++;
+      }
+    }
+
+    const remaining = totalPaces - pacesUsed;
+    if (remaining <= 0) continue; // All paces already placed
+
+    // Try to place remaining paces in weeks that don't violate constraints
+    // Sort weeks by current pace count (fewest first) to balance distribution
+    const weeksByPaceCount = Array.from({ length: weeksByQuarter }, (_, i) => i + 1)
+      .sort((a, b) => {
+        const aCount = weeklySchedule.get(a)?.length || 0;
+        const bCount = weeklySchedule.get(b)?.length || 0;
+        return aCount - bCount;
+      });
+
+    for (let i = 0; i < remaining; i++) {
+      let placed = false;
+      // Try weeks with fewer paces first to maintain balance
+      for (const week of weeksByPaceCount) {
+        const schedule = weeklySchedule.get(week);
+        if (!schedule || schedule.includes(subjectName)) continue;
+
+        // Check notPairWith constraints
+        const subjectConstraints = notPairWithConstraints.get(subjectName);
+        let hasConflict = false;
+        if (subjectConstraints) {
+          hasConflict = schedule.some(scheduledSubject => 
+            subjectConstraints.has(scheduledSubject)
+          );
+        }
+
+        // If >72 paces, allow constraint violations when necessary (with warning)
+        // Otherwise, respect constraints strictly
+        if (hasConflict) {
+          if (totalYearPaces > 72) {
+            // Allow violation for high pace counts, but log warning
+            console.warn(
+              `[Q${quarterNum}] Constraint relaxed: "${subjectName}" paired with restricted subject(s) in week ${week}. ` +
+              `This occurs because total paces (${totalYearPaces}) > 72. ` +
+              `"Not pair with" constraints work best with ~72 paces and even distribution.`
+            );
+            // Proceed with placement despite constraint violation
+          } else {
+            continue; // Skip - constraint violation not allowed for standard pace counts
+          }
+        }
+
+        // Place it (even if it exceeds max paces or difficulty)
+        schedule.push(subjectName);
+        placed = true;
+        break;
+      }
+      if (!placed) {
+        // If we can't place even with relaxed constraints, we skip this pace
+        // This should be very rare
+        console.warn(`Could not place all paces for ${subjectName} in quarter ${quarterNum}. ${remaining - i} paces remaining.`);
+        break;
+      }
+    }
+  }
+
+  // Now ensure minimum 2 paces per week (but still respect constraints)
   const weeksByPaceCount = Array.from({ length: weeksByQuarter }, (_, i) => i + 1)
     .sort((a, b) => {
       const aSchedule = weeklySchedule.get(a) || [];
@@ -337,14 +469,14 @@ function createBalancedSchedule(
           continue; // No remaining paces or already in this week
         }
 
-        // Check constraints
+        // Check constraints - STRICTLY enforce these
         const subjectConstraints = notPairWithConstraints.get(subjectName);
         if (subjectConstraints) {
           const hasConflict = schedule.some(scheduledSubject => 
             subjectConstraints.has(scheduledSubject)
           );
           if (hasConflict) {
-            continue; // Skip due to constraint
+            continue; // Skip due to constraint - never violate
           }
         }
 
@@ -368,7 +500,7 @@ function createBalancedSchedule(
         schedule.push(bestSubject);
       } else {
         // If no subject found respecting constraints, try without difficulty check
-        // (but still respect notPairWith)
+        // (but still STRICTLY respect notPairWith)
         for (const { name: subjectName, paces: totalPaces } of sortedSubjects) {
           if (schedule.includes(subjectName)) continue;
 
@@ -387,14 +519,95 @@ function createBalancedSchedule(
                 subjectConstraints.has(scheduledSubject)
               );
               if (hasConflict) {
-                continue;
+                continue; // Never violate constraints
               }
             }
             schedule.push(subjectName);
             break;
           }
         }
+        // If we can't fill minimum without violating constraints, that's okay
+        // Constraints are more important than minimum requirement
         break; // Can't add more subjects
+      }
+    }
+  }
+
+  // Third pass: rebalance to improve weekly distribution while respecting constraints
+  // Try to move subjects from weeks with 4+ paces to weeks with fewer paces
+  const weeksWithManyPaces = Array.from({ length: weeksByQuarter }, (_, i) => i + 1)
+    .filter(week => {
+      const schedule = weeklySchedule.get(week);
+      return schedule && schedule.length > 3; // 4+ paces
+    })
+    .sort((a, b) => {
+      const aCount = weeklySchedule.get(a)?.length || 0;
+      const bCount = weeklySchedule.get(b)?.length || 0;
+      return bCount - aCount; // Most paces first
+    });
+
+  const weeksWithFewPaces = Array.from({ length: weeksByQuarter }, (_, i) => i + 1)
+    .filter(week => {
+      const schedule = weeklySchedule.get(week);
+      return schedule && schedule.length < 2; // Less than 2 paces
+    })
+    .sort((a, b) => {
+      const aCount = weeklySchedule.get(a)?.length || 0;
+      const bCount = weeklySchedule.get(b)?.length || 0;
+      return aCount - bCount; // Fewest paces first
+    });
+
+  // Try to move subjects from weeks with 4+ paces to weeks with fewer paces
+  for (const fromWeek of weeksWithManyPaces) {
+    const fromSchedule = weeklySchedule.get(fromWeek);
+    if (!fromSchedule || fromSchedule.length <= 3) break; // Already balanced
+
+    // Try to move each subject from this week
+    for (let i = fromSchedule.length - 1; i >= 0; i--) {
+      const subjectToMove = fromSchedule[i];
+
+      // Find a week with fewer paces that can accept this subject
+      for (const toWeek of weeksWithFewPaces) {
+        const toSchedule = weeklySchedule.get(toWeek);
+        if (!toSchedule || toSchedule.includes(subjectToMove)) continue;
+
+        // Check constraints - respect when possible, but allow for >72 paces if needed
+        const subjectConstraints = notPairWithConstraints.get(subjectToMove);
+        let hasConflict = false;
+        if (subjectConstraints) {
+          hasConflict = toSchedule.some(scheduledSubject => 
+            subjectConstraints.has(scheduledSubject)
+          );
+        }
+        
+        // If >72 paces and we're rebalancing, allow constraint violations if it improves distribution
+        if (hasConflict && totalYearPaces > 72) {
+          // Allow violation for rebalancing when over 72 paces
+          // Don't log here to avoid spam - already logged during placement
+        } else if (hasConflict) {
+          continue; // Skip - constraint violation not allowed for standard pace counts
+        }
+
+        // Move the subject
+        fromSchedule.splice(i, 1);
+        toSchedule.push(subjectToMove);
+
+        // Re-sort weeks lists based on new counts
+        weeksWithFewPaces.sort((a, b) => {
+          const aCount = weeklySchedule.get(a)?.length || 0;
+          const bCount = weeklySchedule.get(b)?.length || 0;
+          return aCount - bCount;
+        });
+        weeksWithManyPaces.sort((a, b) => {
+          const aCount = weeklySchedule.get(a)?.length || 0;
+          const bCount = weeklySchedule.get(b)?.length || 0;
+          return bCount - aCount;
+        });
+
+        // Stop if this week now has acceptable pace count
+        if (fromSchedule.length <= 3) {
+          break;
+        }
       }
     }
   }
@@ -430,13 +643,20 @@ function assignPacesToWeeks(
     paceIndices[subjectName] = 0;
   }
 
+  // Calculate total paces for the year to determine if we should relax constraints
+  const totalYearPaces = Object.values(subjectProgressions).reduce(
+    (sum, progression) => sum + progression.yearTotal,
+    0
+  );
+
   // Process each quarter
   for (let quarterNum = 1; quarterNum <= quarters; quarterNum++) {
     const weeklySchedule = createBalancedSchedule(
       subjectProgressions,
       quarterNum,
       weeksByQuarter,
-      notPairWithConstraints
+      notPairWithConstraints,
+      totalYearPaces
     );
 
     // Assign paces to each week
@@ -464,6 +684,7 @@ function assignPacesToWeeks(
 
 /**
  * Build notPairWith constraints map for efficient lookup
+ * Makes constraints bidirectional: if A cannot pair with B, then B cannot pair with A
  */
 function buildConstraintsMap(subjects: SubjectInput[]): Map<string, Set<string>> {
   const constraints = new Map<string, Set<string>>();
@@ -477,12 +698,16 @@ function buildConstraintsMap(subjects: SubjectInput[]): Map<string, Set<string>>
   // Build constraints map using subject names
   for (const subject of subjects) {
     const subjectName = subject.subSubjectName;
-    const constraintSet = new Set<string>();
+    const constraintSet = constraints.get(subjectName) || new Set<string>();
     
     for (const restrictedId of subject.notPairWith || []) {
       const restrictedName = idToName.get(restrictedId);
       if (restrictedName) {
         constraintSet.add(restrictedName);
+        // Make bidirectional: if A cannot pair with B, then B cannot pair with A
+        const reverseConstraintSet = constraints.get(restrictedName) || new Set<string>();
+        reverseConstraintSet.add(subjectName);
+        constraints.set(restrictedName, reverseConstraintSet);
       }
     }
     

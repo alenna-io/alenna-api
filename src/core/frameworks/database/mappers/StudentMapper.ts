@@ -45,6 +45,10 @@ export class StudentMapper {
     const parents = prismaStudent.userStudents?.map(us => ({
       id: us.user.id,
       name: `${us.user.firstName || ''} ${us.user.lastName || ''}`.trim(),
+      email: us.user.email || undefined,
+      firstName: us.user.firstName || undefined,
+      lastName: us.user.lastName || undefined,
+      relationship: us.relationship || undefined,
     })) || [];
 
     return new Student(

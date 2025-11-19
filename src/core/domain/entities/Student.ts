@@ -4,6 +4,10 @@ import { CertificationType } from './CertificationType';
 export interface Parent {
   id: string;
   name: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  relationship?: string;
 }
 
 export class Student {

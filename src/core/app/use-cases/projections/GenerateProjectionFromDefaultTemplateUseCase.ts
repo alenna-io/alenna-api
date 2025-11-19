@@ -116,6 +116,8 @@ export class GenerateProjectionFromDefaultTemplateUseCase {
           }
 
           // Find the PaceCatalog entry by code
+          // Since paces can span multiple sub-subjects (e.g., Math L3 to Math L4),
+          // search across the category, not just the selected subSubjectId
           let paceCatalog = await prisma.paceCatalog.findFirst({
             where: {
               code: String(paceCode),
@@ -141,12 +143,17 @@ export class GenerateProjectionFromDefaultTemplateUseCase {
                 include: {
                   subSubject: true,
                 },
+                orderBy: {
+                  subSubject: {
+                    name: 'asc',
+                  },
+                },
               });
             }
           }
 
           if (!paceCatalog) {
-            console.warn(`PaceCatalog not found for code ${paceCode} in subject ${subjectName}`);
+            console.error(`PaceCatalog not found for code ${paceCode} in subject ${subjectName} (subSubjectId: ${subjectInput.subSubjectId}). This pace will be skipped.`);
             continue;
           }
 

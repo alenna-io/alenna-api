@@ -86,8 +86,8 @@ export class GenerateProjectionUseCase {
           }
 
           // Find the PaceCatalog entry by code
-          // Since paces can span multiple sub-subjects (e.g., Math 1 to Math 2),
-          // we search by code only, not by subSubjectId
+          // Since paces can span multiple sub-subjects (e.g., Math L3 to Math L4),
+          // we search by code across the category, not just the selected subSubjectId
           // First try to find in the selected subject's catalog
           let paceCatalog = await prisma.paceCatalog.findFirst({
             where: {
@@ -97,7 +97,7 @@ export class GenerateProjectionUseCase {
           });
 
           // If not found in selected subject, search across all sub-subjects in the same category
-          // This handles cases where paces span multiple levels (e.g., 1010-1020 spanning Math 1 and Math 2)
+          // This handles cases where paces span multiple levels (e.g., 1030-1048 spanning Math L3 and Math L4)
           if (!paceCatalog) {
             // Get the selected subject to find its category
             const selectedSubSubject = await prisma.subSubject.findUnique({
@@ -107,6 +107,7 @@ export class GenerateProjectionUseCase {
 
             if (selectedSubSubject) {
               // Search in all sub-subjects of the same category
+              // Order by subSubject name to prefer the one that matches the subject name pattern
               paceCatalog = await prisma.paceCatalog.findFirst({
                 where: {
                   code: String(paceCode),
@@ -117,13 +118,18 @@ export class GenerateProjectionUseCase {
                 include: {
                   subSubject: true,
                 },
+                orderBy: {
+                  subSubject: {
+                    name: 'asc',
+                  },
+                },
               });
             }
           }
 
           if (!paceCatalog) {
-            console.warn(
-              `PaceCatalog not found for code ${paceCode}`
+            console.error(
+              `PaceCatalog not found for code ${paceCode} in subject ${subjectName} (subSubjectId: ${subjectInput.subSubjectId}). This pace will be skipped.`
             );
             continue;
           }
