@@ -22,6 +22,7 @@ export const UpdateUserDTO = z.object({
   email: z.string().email().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  language: z.enum(['es', 'en']).optional(),
   schoolId: z.string().optional(),
   roleIds: z.array(z.string()).optional(),
 });

@@ -54,10 +54,10 @@ export async function seedRBAC() {
   console.log('📦 Creating modules...');
 
   const modulesData = [
-    { key: 'students', name: 'Estudiantes', description: 'Gestión de estudiantes, proyecciones y PACEs', displayOrder: 1 },
-    { key: 'users', name: 'Usuarios', description: 'Gestión de usuarios del sistema', displayOrder: 2 },
-    { key: 'schools', name: 'Escuelas', description: 'Gestión de escuelas y administración global', displayOrder: 3 },
-    { key: 'configuration', name: 'Configuración', description: 'Configuración académica y de la escuela', displayOrder: 4 },
+    { key: 'students', name: 'Students', description: 'Manage students, projections and PACEs', displayOrder: 1 },
+    { key: 'users', name: 'Users', description: 'Manage system users', displayOrder: 2 },
+    { key: 'schools', name: 'Schools', description: 'Manage schools and global administration', displayOrder: 3 },
+    { key: 'configuration', name: 'Configuration', description: 'Academic and school configuration', displayOrder: 4 },
   ];
 
   for (const moduleData of modulesData) {

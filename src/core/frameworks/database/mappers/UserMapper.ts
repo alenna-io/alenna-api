@@ -16,6 +16,7 @@ export class UserMapper {
       prismaUser.schoolId,
       prismaUser.firstName || undefined,
       prismaUser.lastName || undefined,
+      prismaUser.language || undefined,
       roles,
       prismaUser.createdAt,
       prismaUser.updatedAt
@@ -30,6 +31,7 @@ export class UserMapper {
       schoolId: user.schoolId,
       firstName: user.firstName || null,
       lastName: user.lastName || null,
+      language: user.language || null,
       deletedAt: null,
     };
   }
