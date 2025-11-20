@@ -137,6 +137,14 @@ export class UserRepository implements IUserRepository {
         schoolId: data.schoolId || undefined,
         firstName: data.firstName || undefined,
         lastName: data.lastName || undefined,
+        language: data.language || undefined,
+      },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
       },
     });
 

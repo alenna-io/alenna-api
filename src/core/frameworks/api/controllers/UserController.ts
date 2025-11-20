@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { container } from '../../di/container';
-import { CreateUserDTO, UpdateUserDTO } from '../../../app/dtos';
+import { CreateUserDTO, UpdateUserDTO, UpdateUserInput } from '../../../app/dtos';
 
 export class UserController {
   async getUsers(req: Request, res: Response): Promise<void> {
@@ -103,6 +103,7 @@ export class UserController {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        language: user.language,
         roles: user.roles,
         primaryRole: user.primaryRole,
       });
@@ -125,6 +126,63 @@ export class UserController {
       }
       
       res.status(500).json({ error: error.message || 'Failed to update user' });
+    }
+  }
+
+  async updateMyProfile(req: Request, res: Response): Promise<void> {
+    try {
+      const currentUserId = req.userId!;
+      const currentUserRoles = req.userRoles!;
+      const validatedData = UpdateUserDTO.parse(req.body);
+      
+      // Only allow updating language, firstName, lastName for own profile
+      // Prevent role changes and other sensitive fields
+      const allowedFields: Partial<UpdateUserInput> = {};
+      if (validatedData.language !== undefined) {
+        allowedFields.language = validatedData.language;
+      }
+      if (validatedData.firstName !== undefined) {
+        allowedFields.firstName = validatedData.firstName;
+      }
+      if (validatedData.lastName !== undefined) {
+        allowedFields.lastName = validatedData.lastName;
+      }
+      
+      const user = await container.updateUserUseCase.execute(
+        currentUserId,
+        allowedFields,
+        currentUserId,
+        currentUserRoles
+      );
+
+      res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        language: user.language,
+        roles: user.roles,
+        primaryRole: user.primaryRole,
+      });
+    } catch (error: any) {
+      console.error('Error updating own profile:', error);
+      
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: error.errors });
+        return;
+      }
+      
+      if (error.message.includes('not found')) {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      if (error.message.includes('Forbidden')) {
+        res.status(403).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to update profile' });
     }
   }
 

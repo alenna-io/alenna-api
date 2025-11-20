@@ -32,6 +32,7 @@ export interface UserInfoOutput {
   firstName?: string;
   lastName?: string;
   fullName: string;
+  language?: string;
   schoolId: string;
   schoolName: string;
   studentId?: string;
@@ -143,6 +144,7 @@ export class GetUserInfoUseCase {
       firstName: user.firstName || undefined,
       lastName: user.lastName || undefined,
       fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+      language: user.language || undefined,
       schoolId: schoolId,
       schoolName: schoolName,
       studentId: user.student?.id ?? studentData?.id,
