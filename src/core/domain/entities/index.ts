@@ -15,6 +15,9 @@ export * from './Module';
 export * from './Permission';
 export * from './Role';
 export * from './UserStudent';
+export * from './TeacherStudent';
+export * from './Group';
+export * from './GroupStudent';
 export * from './SchoolYear';
 export * from './MonthlyAssignment';
 

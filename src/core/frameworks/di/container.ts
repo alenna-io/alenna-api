@@ -9,7 +9,8 @@ import {
   ProjectionTemplateRepository,
   SchoolYearRepository,
   DailyGoalRepository,
-  RoleRepository
+  RoleRepository,
+  GroupRepository
 } from '../database/repositories';
 import {
   SyncUserUseCase,
@@ -19,10 +20,14 @@ import {
   GetAllSchoolsUseCase,
   UpdateSchoolUseCase,
   DeleteSchoolUseCase,
+  ActivateSchoolUseCase,
+  DeactivateSchoolUseCase,
   GetUsersUseCase,
   GetRolesUseCase,
   CreateUserUseCase,
   UpdateUserUseCase,
+  DeactivateUserUseCase,
+  ReactivateUserUseCase,
   DeleteUserUseCase,
   CreateStudentUseCase,
   GetStudentsUseCase,
@@ -83,6 +88,18 @@ import {
   GetMonthlyAssignmentsByProjectionUseCase,
 } from '../../app/use-cases/monthly-assignments';
 
+import {
+  GetGroupsBySchoolYearUseCase,
+  GetGroupByIdUseCase,
+  CreateGroupUseCase,
+  DeleteGroupUseCase,
+  GetStudentsByTeacherUseCase,
+  AddStudentsToGroupUseCase,
+  RemoveStudentFromGroupUseCase,
+  GetGroupStudentsUseCase,
+  GetStudentAssignmentsForSchoolYearUseCase,
+} from '../../app/use-cases/groups';
+
 class Container {
   // Repositories (Singleton instances)
   private _schoolRepository?: SchoolRepository;
@@ -93,6 +110,7 @@ class Container {
   private _schoolYearRepository?: SchoolYearRepository;
   private _dailyGoalRepository?: DailyGoalRepository;
   private _roleRepository?: RoleRepository;
+  private _groupRepository?: GroupRepository;
 
   // Repositories getters (Lazy initialization)
   get schoolRepository(): SchoolRepository {
@@ -151,6 +169,13 @@ class Container {
     return this._roleRepository;
   }
 
+  get groupRepository(): GroupRepository {
+    if (!this._groupRepository) {
+      this._groupRepository = new GroupRepository();
+    }
+    return this._groupRepository;
+  }
+
   // Auth Use Cases
   get syncUserUseCase(): SyncUserUseCase {
     return new SyncUserUseCase(this.userRepository);
@@ -181,6 +206,14 @@ class Container {
     return new DeleteSchoolUseCase(this.schoolRepository);
   }
 
+  get activateSchoolUseCase(): ActivateSchoolUseCase {
+    return new ActivateSchoolUseCase(this.schoolRepository, this.userRepository);
+  }
+
+  get deactivateSchoolUseCase(): DeactivateSchoolUseCase {
+    return new DeactivateSchoolUseCase(this.schoolRepository, this.userRepository);
+  }
+
   // User Use Cases
   get getUsersUseCase(): GetUsersUseCase {
     return new GetUsersUseCase(this.userRepository);
@@ -198,6 +231,14 @@ class Container {
     return new UpdateUserUseCase(this.userRepository);
   }
 
+  get deactivateUserUseCase(): DeactivateUserUseCase {
+    return new DeactivateUserUseCase(this.userRepository);
+  }
+
+  get reactivateUserUseCase(): ReactivateUserUseCase {
+    return new ReactivateUserUseCase(this.userRepository);
+  }
+
   get deleteUserUseCase(): DeleteUserUseCase {
     return new DeleteUserUseCase(this.userRepository);
   }
@@ -208,7 +249,7 @@ class Container {
   }
 
   get getStudentsUseCase(): GetStudentsUseCase {
-    return new GetStudentsUseCase(this.studentRepository);
+    return new GetStudentsUseCase(this.studentRepository, this.schoolYearRepository);
   }
 
   get getStudentByIdUseCase(): GetStudentByIdUseCase {
@@ -418,6 +459,43 @@ return new GetMonthlyAssignmentsByProjectionUseCase();
   // Report Cards Use Cases
   get getReportCardUseCase(): GetReportCardUseCase {
     return new GetReportCardUseCase();
+  }
+
+  // Groups Use Cases
+  get getGroupsBySchoolYearUseCase(): GetGroupsBySchoolYearUseCase {
+    return new GetGroupsBySchoolYearUseCase(this.groupRepository);
+  }
+
+  get getGroupByIdUseCase(): GetGroupByIdUseCase {
+    return new GetGroupByIdUseCase(this.groupRepository);
+  }
+
+  get createGroupUseCase(): CreateGroupUseCase {
+    return new CreateGroupUseCase(this.groupRepository);
+  }
+
+  get deleteGroupUseCase(): DeleteGroupUseCase {
+    return new DeleteGroupUseCase(this.groupRepository);
+  }
+
+  get getStudentsByTeacherUseCase(): GetStudentsByTeacherUseCase {
+    return new GetStudentsByTeacherUseCase(this.groupRepository);
+  }
+
+  get addStudentsToGroupUseCase(): AddStudentsToGroupUseCase {
+    return new AddStudentsToGroupUseCase(this.groupRepository);
+  }
+
+  get removeStudentFromGroupUseCase(): RemoveStudentFromGroupUseCase {
+    return new RemoveStudentFromGroupUseCase(this.groupRepository);
+  }
+
+  get getGroupStudentsUseCase(): GetGroupStudentsUseCase {
+    return new GetGroupStudentsUseCase(this.groupRepository);
+  }
+
+  get getStudentAssignmentsForSchoolYearUseCase(): GetStudentAssignmentsForSchoolYearUseCase {
+    return new GetStudentAssignmentsForSchoolYearUseCase(this.groupRepository);
   }
 
   // Controllers

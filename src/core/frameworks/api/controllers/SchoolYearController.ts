@@ -111,9 +111,18 @@ export class SchoolYearController {
   getCurrentWeek = async (req: Request, res: Response) => {
     try {
       const schoolId = (req as any).schoolId;
+      const userRoles = (req as any).userRoles || [];
+      const isSuperAdmin = userRoles.includes('SUPERADMIN');
+      
+      // Super admins don't have a school context, return 404 gracefully
+      if (!schoolId && isSuperAdmin) {
+        return res.status(404).json({ error: 'No hay un año escolar activo' });
+      }
+      
       if (!schoolId) {
         return res.status(400).json({ error: 'School ID no encontrado' });
       }
+      
       const currentWeek = await this.getCurrentWeekUseCase.execute(schoolId);
       
       if (!currentWeek) {

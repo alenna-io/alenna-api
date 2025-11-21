@@ -10,12 +10,13 @@ export interface UserRoleInfo {
 export class User {
   constructor(
     public readonly id: string,
-    public readonly clerkId: string,
+    public readonly clerkId: string | null,
     public readonly email: string,
     public readonly schoolId: string,
     public readonly firstName?: string,
     public readonly lastName?: string,
     public readonly language?: string,
+    public readonly isActive: boolean = true,
     public readonly roles: UserRoleInfo[] = [],
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date
@@ -23,29 +24,31 @@ export class User {
 
   static create(props: {
     id: string;
-    clerkId: string;
+    clerkId?: string | null;
     email: string;
     schoolId: string;
     firstName?: string;
     lastName?: string;
     language?: string;
+    isActive?: boolean;
     roles?: UserRoleInfo[];
   }): User {
     return new User(
       props.id,
-      props.clerkId,
+      props.clerkId ?? null,
       props.email,
       props.schoolId,
       props.firstName,
       props.lastName,
       props.language,
+      props.isActive ?? true,
       props.roles || [],
       new Date(),
       new Date()
     );
   }
 
-  update(props: Partial<Pick<User, 'firstName' | 'lastName' | 'language' | 'roles' | 'email' | 'schoolId'>>): User {
+  update(props: Partial<Pick<User, 'firstName' | 'lastName' | 'language' | 'isActive' | 'roles' | 'email' | 'schoolId'>>): User {
     return new User(
       this.id,
       this.clerkId,
@@ -54,6 +57,7 @@ export class User {
       props.firstName ?? this.firstName,
       props.lastName ?? this.lastName,
       props.language ?? this.language,
+      props.isActive !== undefined ? props.isActive : this.isActive,
       props.roles ?? this.roles,
       this.createdAt,
       new Date()
