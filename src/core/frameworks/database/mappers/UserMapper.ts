@@ -11,12 +11,13 @@ export class UserMapper {
 
     return new User(
       prismaUser.id,
-      prismaUser.clerkId,
+      prismaUser.clerkId || null,
       prismaUser.email,
       prismaUser.schoolId,
       prismaUser.firstName || undefined,
       prismaUser.lastName || undefined,
       prismaUser.language || undefined,
+      prismaUser.isActive ?? true,
       roles,
       prismaUser.createdAt,
       prismaUser.updatedAt
@@ -26,12 +27,13 @@ export class UserMapper {
   static toPrisma(user: User): Omit<PrismaUser, 'createdAt' | 'updatedAt'> {
     return {
       id: user.id,
-      clerkId: user.clerkId,
+      clerkId: user.clerkId || null,
       email: user.email,
       schoolId: user.schoolId,
       firstName: user.firstName || null,
       lastName: user.lastName || null,
       language: user.language || null,
+      isActive: user.isActive,
       deletedAt: null,
     };
   }

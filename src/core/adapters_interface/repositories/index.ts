@@ -6,4 +6,5 @@ export * from './ISchoolRepository';
 export * from './IUserRepository';
 export * from './IStudentRepository';
 export * from './ISchoolYearRepository';
+export * from './IGroupRepository';
 

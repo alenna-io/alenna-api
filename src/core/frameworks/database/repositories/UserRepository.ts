@@ -21,6 +21,9 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByClerkId(clerkId: string): Promise<User | null> {
+    if (!clerkId) {
+      return null;
+    }
     const user = await prisma.user.findUnique({
       where: { clerkId },
       include: {
@@ -36,7 +39,25 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
+      where: { 
+        email,
+        deletedAt: null, // Only find non-deleted users
+      },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    return user ? UserMapper.toDomain(user) : null;
+  }
+
+  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
+    const user = await prisma.user.findFirst({
       where: { email },
       include: {
         userRoles: {
@@ -45,6 +66,7 @@ export class UserRepository implements IUserRepository {
           },
         },
       },
+      orderBy: { updatedAt: 'desc' }, // Get most recent user with this email
     });
 
     return user ? UserMapper.toDomain(user) : null;
@@ -92,11 +114,13 @@ export class UserRepository implements IUserRepository {
       // Create the user
       const createdUser = await tx.user.create({
         data: {
-          clerkId: user.clerkId,
+          clerkId: user.clerkId || null,
           email: user.email,
           schoolId: user.schoolId,
           firstName: user.firstName || null,
           lastName: user.lastName || null,
+          language: user.language || null,
+          isActive: user.isActive ?? true, // Default to true for new users
         },
       });
 
@@ -138,6 +162,42 @@ export class UserRepository implements IUserRepository {
         firstName: data.firstName || undefined,
         lastName: data.lastName || undefined,
         language: data.language || undefined,
+        isActive: data.isActive !== undefined ? data.isActive : undefined,
+      },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    return UserMapper.toDomain(updated);
+  }
+
+  async deactivate(id: string): Promise<User> {
+    const updated = await prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    return UserMapper.toDomain(updated);
+  }
+
+  async reactivate(id: string): Promise<User> {
+    const updated = await prisma.user.update({
+      where: { id },
+      data: { 
+        isActive: true,
+        deletedAt: null, // Restore soft-deleted user
       },
       include: {
         userRoles: {
@@ -152,7 +212,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async delete(id: string): Promise<void> {
-    // Soft delete
+    // Soft delete (only for inactive users - this should be checked in the use case)
     await prisma.user.update({
       where: { id },
       data: { deletedAt: new Date() },

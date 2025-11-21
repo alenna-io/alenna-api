@@ -1,6 +1,6 @@
 export type RoleName = 'SUPERADMIN' | 'SCHOOL_ADMIN' | 'TEACHER' | 'PARENT' | 'STUDENT';
 
-export type ModuleKey = 'students' | 'users' | 'schools' | 'configuration';
+export type ModuleKey = 'students' | 'users' | 'schools' | 'configuration' | 'groups';
 
 export interface PermissionDefinition {
   module: ModuleKey;
@@ -55,6 +55,12 @@ export const PERMISSION_DEFINITIONS: Record<string, PermissionDefinition> = {
   'monthlyAssignment.create': { module: 'configuration', scope: 'school' },
   'monthlyAssignment.update': { module: 'configuration', scope: 'school' },
   'monthlyAssignment.delete': { module: 'configuration', scope: 'school' },
+
+  // Groups module (teacher-student assignments per school year)
+  'groups.read': { module: 'groups', scope: 'school' },
+  'groups.create': { module: 'groups', scope: 'school' },
+  'groups.update': { module: 'groups', scope: 'school' },
+  'groups.delete': { module: 'groups', scope: 'school' },
 };
 
 export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
@@ -86,12 +92,14 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'monthlyAssignment.create',
     'monthlyAssignment.update',
     'monthlyAssignment.delete',
+    'groups.read',
+    'groups.create',
+    'groups.update',
+    'groups.delete',
   ],
   TEACHER: [
     'students.read',
-    'students.create',
     'students.update',
-    'students.delete',
     'projections.read',
     'projections.create',
     'projections.update',
@@ -108,6 +116,7 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'monthlyAssignment.create',
     'monthlyAssignment.update',
     'monthlyAssignment.delete',
+    'groups.read',
   ],
   PARENT: [
     'students.readOwn',
@@ -127,4 +136,5 @@ export const MODULE_KEY_TO_DB_KEY: Record<ModuleKey, string> = {
   users: 'users',
   schools: 'schools',
   configuration: 'configuration',
+  groups: 'groups',
 };

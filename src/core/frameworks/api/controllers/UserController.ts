@@ -20,6 +20,7 @@ export class UserController {
         firstName: user.firstName,
         lastName: user.lastName,
         schoolId: user.schoolId,
+        isActive: user.isActive,
         roles: user.roles,
         primaryRole: user.primaryRole,
       })));
@@ -186,13 +187,84 @@ export class UserController {
     }
   }
 
+  async deactivateUser(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const currentUserId = req.userId!;
+      const schoolId = req.schoolId!;
+      const currentUserRoles = req.userRoles || [];
+      
+      await container.deactivateUserUseCase.execute(id, currentUserId, schoolId, currentUserRoles);
+
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error deactivating user:', error);
+      
+      if (error.message.includes('not found')) {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      if (error.message.includes('Cannot deactivate') || 
+          error.message.includes('permission') ||
+          error.message.includes('already inactive') ||
+          error.message.includes('Cannot deactivate parent directly')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      
+      if (error.message.includes('does not belong')) {
+        res.status(403).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to deactivate user' });
+    }
+  }
+
+  async reactivateUser(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const currentUserId = req.userId!;
+      const schoolId = req.schoolId!;
+      const currentUserRoles = req.userRoles || [];
+      
+      await container.reactivateUserUseCase.execute(id, currentUserId, schoolId, currentUserRoles);
+
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error reactivating user:', error);
+      
+      if (error.message.includes('not found')) {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      if (error.message.includes('Cannot reactivate') || 
+          error.message.includes('permission') ||
+          error.message.includes('already active') ||
+          error.message.includes('Cannot reactivate parent directly')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      
+      if (error.message.includes('does not belong')) {
+        res.status(403).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to reactivate user' });
+    }
+  }
+
   async deleteUser(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const currentUserId = req.userId!;
       const schoolId = req.schoolId!;
+      const currentUserRoles = req.userRoles || [];
       
-      await container.deleteUserUseCase.execute(id, currentUserId, schoolId);
+      await container.deleteUserUseCase.execute(id, currentUserId, schoolId, currentUserRoles);
 
       res.status(204).send();
     } catch (error: any) {
@@ -203,8 +275,16 @@ export class UserController {
         return;
       }
       
-      if (error.message.includes('Cannot delete')) {
+      if (error.message.includes('Cannot delete') || 
+          error.message.includes('permission') ||
+          error.message.includes('Cannot delete active user') ||
+          error.message.includes('Cannot delete parent with active students')) {
         res.status(400).json({ error: error.message });
+        return;
+      }
+      
+      if (error.message.includes('does not belong')) {
+        res.status(403).json({ error: error.message });
         return;
       }
       

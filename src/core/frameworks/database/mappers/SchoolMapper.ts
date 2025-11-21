@@ -11,6 +11,7 @@ export class SchoolMapper {
       prismaSchool.email || undefined,
       prismaSchool.teacherLimit || undefined,
       prismaSchool.userLimit || undefined,
+      prismaSchool.isActive ?? true,
       prismaSchool.createdAt,
       prismaSchool.updatedAt
     );
@@ -25,6 +26,7 @@ export class SchoolMapper {
       email: school.email || null,
       teacherLimit: school.teacherLimit || null,
       userLimit: school.userLimit || null,
+      isActive: school.isActive,
       deletedAt: null,
     };
   }

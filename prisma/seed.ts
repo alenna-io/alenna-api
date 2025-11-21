@@ -450,6 +450,7 @@ async function main() {
   const studentsModule = await prisma.module.findUnique({ where: { key: 'students' } });
   const configModule = await prisma.module.findUnique({ where: { key: 'configuration' } });
   const usersModule = await prisma.module.findUnique({ where: { key: 'users' } });
+  const groupsModule = await prisma.module.findUnique({ where: { key: 'groups' } });
   
   if (studentsModule) {
     await prisma.schoolModule.upsert({
@@ -529,6 +530,33 @@ async function main() {
 
     // Users module is only for Super Admins, not School Admins
     // Note: No role assignment for demo school as it's only for Super Admins
+  }
+
+  // Enable Groups module for school and assign to school admin and teacher
+  if (groupsModule) {
+    await prisma.schoolModule.upsert({
+      where: {
+        schoolId_moduleId: {
+          schoolId: school.id,
+          moduleId: groupsModule.id,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        schoolId: school.id,
+        moduleId: groupsModule.id,
+        isActive: true,
+      },
+    });
+    console.log('✅ Enabled Groups module for school');
+
+    const rolesToGrant = [schoolAdminRole, teacherRole]
+      .filter((role): role is NonNullable<typeof role> => Boolean(role))
+      .map((role) => ({ id: role.id, name: role.name }));
+
+    await grantModuleToRoles(groupsModule.id, school.id, rolesToGrant);
+    console.log('✅ Granted Groups module to school roles');
   }
 
   // Enable Users module for Alenna school and assign to superadmin
@@ -1089,6 +1117,134 @@ async function main() {
         },
       });
     }
+  }
+
+  // Create Teacher-Student Groups (Assignments)
+  console.log('\n👥 Creating teacher-student groups...');
+  
+  // Get the demo teacher
+  const demoTeacher = await prisma.user.findUnique({
+    where: { email: 'demo.teacher@alenna.io' },
+  });
+
+  if (demoTeacher) {
+    // Get all students for the school
+    const allStudents = await prisma.student.findMany({
+      where: {
+        schoolId: school.id,
+        deletedAt: null,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    // Assign students to teacher for the active school year (2025-2026)
+    // For historical data: assign some students to teacher for 2024-2025 school year
+    const studentsToAssign2025 = allStudents.slice(0, 3); // First 3 students for 2025-2026
+    const studentsToAssign2024 = allStudents.slice(0, 2); // First 2 students for 2024-2025 (historical)
+
+    // Create group for 2025-2026 (active school year)
+    const groupName2025 = "Grupo Principal 2025-2026";
+    let group2025 = await prisma.group.findFirst({
+      where: {
+        teacherId: demoTeacher.id,
+        schoolYearId: schoolYear.id,
+        name: groupName2025,
+        deletedAt: null,
+      },
+    });
+
+    if (!group2025) {
+      group2025 = await prisma.group.create({
+        data: {
+          id: randomUUID(),
+          teacherId: demoTeacher.id,
+          schoolYearId: schoolYear.id,
+          schoolId: school.id,
+          name: groupName2025,
+          deletedAt: null,
+        },
+      });
+      console.log(`   ✅ Created group "${groupName2025}" for Demo Teacher (2025-2026)`);
+    }
+
+    // Add students to the 2025-2026 group
+    for (const student of studentsToAssign2025) {
+      const existing = await prisma.groupStudent.findFirst({
+        where: {
+          groupId: group2025.id,
+          studentId: student.id,
+          deletedAt: null,
+        },
+      });
+
+      if (!existing) {
+        await prisma.groupStudent.create({
+          data: {
+            id: randomUUID(),
+            groupId: group2025.id,
+            studentId: student.id,
+            deletedAt: null,
+          },
+        });
+        console.log(`   ✅ Added ${student.user.firstName} ${student.user.lastName} to group "${groupName2025}"`);
+      }
+    }
+
+    // Create group for 2024-2025 (historical/inactive school year)
+    const groupName2024 = "Grupo Principal 2024-2025";
+    let group2024 = await prisma.group.findFirst({
+      where: {
+        teacherId: demoTeacher.id,
+        schoolYearId: schoolYear2023.id,
+        name: groupName2024,
+        deletedAt: null,
+      },
+    });
+
+    if (!group2024) {
+      group2024 = await prisma.group.create({
+        data: {
+          id: randomUUID(),
+          teacherId: demoTeacher.id,
+          schoolYearId: schoolYear2023.id,
+          schoolId: school.id,
+          name: groupName2024,
+          deletedAt: null,
+        },
+      });
+      console.log(`   ✅ Created group "${groupName2024}" for Demo Teacher (2024-2025 - historical)`);
+    }
+
+    // Add students to the 2024-2025 group
+    for (const student of studentsToAssign2024) {
+      const existing = await prisma.groupStudent.findFirst({
+        where: {
+          groupId: group2024.id,
+          studentId: student.id,
+          deletedAt: null,
+        },
+      });
+
+      if (!existing) {
+        await prisma.groupStudent.create({
+          data: {
+            id: randomUUID(),
+            groupId: group2024.id,
+            studentId: student.id,
+            deletedAt: null,
+          },
+        });
+        console.log(`   ✅ Added ${student.user.firstName} ${student.user.lastName} to group "${groupName2024}"`);
+      }
+    }
+
+    console.log(`✅ Created teacher-student groups for Demo Teacher`);
+    console.log(`   - ${studentsToAssign2025.length} students in group "${groupName2025}" (2025-2026 - active)`);
+    console.log(`   - ${studentsToAssign2024.length} students in group "${groupName2024}" (2024-2025 - historical)`);
+  } else {
+    console.log('⚠️  Demo Teacher not found, skipping teacher-student groups');
   }
 
   console.log('');

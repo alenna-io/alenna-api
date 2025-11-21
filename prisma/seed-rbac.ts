@@ -58,6 +58,7 @@ export async function seedRBAC() {
     { key: 'users', name: 'Users', description: 'Manage system users', displayOrder: 2 },
     { key: 'schools', name: 'Schools', description: 'Manage schools and global administration', displayOrder: 3 },
     { key: 'configuration', name: 'Configuration', description: 'Academic and school configuration', displayOrder: 4 },
+    { key: 'groups', name: 'Groups', description: 'Manage teacher-student assignments per school year', displayOrder: 5 },
   ];
 
   for (const moduleData of modulesData) {

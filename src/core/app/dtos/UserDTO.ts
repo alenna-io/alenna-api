@@ -10,12 +10,14 @@ export const SyncUserDTO = z.object({
 });
 
 export const CreateUserDTO = z.object({
-  clerkId: z.string().min(1),
+  clerkId: z.string().min(1).optional(), // Optional - will be created automatically if not provided
   email: z.string().email(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   schoolId: z.string().min(1),
   roleIds: z.array(z.string()).min(1, 'At least one role must be assigned'),
+  password: z.string().optional(), // Optional password for Clerk user creation
+  skipEmailVerification: z.boolean().optional(), // Optional - defaults to false
 });
 
 export const UpdateUserDTO = z.object({

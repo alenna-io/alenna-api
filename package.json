@@ -13,6 +13,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed:clean": "tsx prisma/seed-clean.ts && tsx prisma/seed.ts",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:reset": "docker-compose down -v && docker-compose up -d",
@@ -29,6 +30,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@clerk/backend": "^2.23.0",
     "@clerk/express": "^1.4.4",
     "@prisma/client": "^6.3.0",
     "cors": "^2.8.5",

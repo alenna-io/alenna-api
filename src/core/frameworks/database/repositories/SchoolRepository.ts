@@ -32,6 +32,7 @@ export class SchoolRepository implements ISchoolRepository {
         email: school.email || null,
         teacherLimit: school.teacherLimit || null,
         userLimit: school.userLimit || null,
+        isActive: school.isActive ?? true,
       },
     });
 
@@ -46,10 +47,29 @@ export class SchoolRepository implements ISchoolRepository {
     if (data.email !== undefined) updateData.email = data.email || null;
     if (data.teacherLimit !== undefined) updateData.teacherLimit = data.teacherLimit || null;
     if (data.userLimit !== undefined) updateData.userLimit = data.userLimit || null;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
     const updated = await prisma.school.update({
       where: { id },
       data: updateData,
+    });
+
+    return SchoolMapper.toDomain(updated);
+  }
+
+  async activate(id: string): Promise<School> {
+    const updated = await prisma.school.update({
+      where: { id },
+      data: { isActive: true },
+    });
+
+    return SchoolMapper.toDomain(updated);
+  }
+
+  async deactivate(id: string): Promise<School> {
+    const updated = await prisma.school.update({
+      where: { id },
+      data: { isActive: false },
     });
 
     return SchoolMapper.toDomain(updated);

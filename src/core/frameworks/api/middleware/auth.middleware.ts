@@ -50,6 +50,33 @@ export const attachUserContext = async (
       return;
     }
 
+    // Check if user is active (deactivated users cannot access the app)
+    if (!user.isActive) {
+      res.status(403).json({ 
+        error: 'Your account has been deactivated. Please contact your administrator.' 
+      });
+      return;
+    }
+
+    // Check if user is soft deleted
+    if (user.deletedAt) {
+      res.status(403).json({ 
+        error: 'Your account has been deleted. Please contact support.' 
+      });
+      return;
+    }
+
+    // Check if school is active (only for non-super-admin users)
+    if (user.school && !user.school.isActive) {
+      const isSuperAdmin = user.userRoles.some(ur => ur.role.name === 'SUPERADMIN');
+      if (!isSuperAdmin) {
+        res.status(403).json({ 
+          error: 'Your school account has been deactivated. Please contact your administrator.' 
+        });
+        return;
+      }
+    }
+
     // Attach user context to request
     req.userId = user.id;
     req.userEmail = user.email;

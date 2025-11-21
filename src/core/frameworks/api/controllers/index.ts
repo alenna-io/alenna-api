@@ -10,4 +10,5 @@ export * from './SchoolYearController';
 export * from './MonthlyAssignmentController';
 export * from './SchoolMonthlyAssignmentController';
 export * from './ReportCardController';
+export * from './GroupController';
 

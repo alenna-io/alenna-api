@@ -25,6 +25,13 @@ router.get('/me', requirePermission('schoolInfo.read'), schoolController.getMySc
 // Update current user's school (Admin only)
 router.put('/me', requirePermission('schoolInfo.update'), schoolController.updateSchool.bind(schoolController));
 
+// Get teachers for current user's school
+// Use schoolInfo.read permission since school admins have this and it's appropriate for /me endpoints
+router.get('/me/teachers', requirePermission('schoolInfo.read'), schoolController.getMyTeachers.bind(schoolController));
+
+// Get teachers count for current user's school
+router.get('/me/teachers/count', requirePermission('schoolInfo.read'), schoolController.getMyTeachersCount.bind(schoolController));
+
 // Superadmin-only routes for managing all schools
 // Get all schools
 router.get('/', requirePermission('schools.read'), schoolController.getAllSchools.bind(schoolController));
@@ -40,6 +47,12 @@ router.put('/:id', requirePermission('schools.update'), schoolController.updateS
 
 // Delete school
 router.delete('/:id', requirePermission('schools.delete'), schoolController.deleteSchool.bind(schoolController));
+
+// Activate school
+router.post('/:id/activate', requirePermission('schools.update'), schoolController.activateSchool.bind(schoolController));
+
+// Deactivate school
+router.post('/:id/deactivate', requirePermission('schools.update'), schoolController.deactivateSchool.bind(schoolController));
 
 // Get students count for a school
 router.get('/:id/students/count', requirePermission('students.read'), schoolController.getStudentsCount.bind(schoolController));

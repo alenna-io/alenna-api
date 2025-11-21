@@ -44,6 +44,7 @@ export class CheckPermissionUseCase {
   async execute(input: PermissionCheckInput): Promise<boolean> {
     const { userId, permission, resourceOwnerId } = input;
 
+
     const permissionDefinition = PERMISSION_DEFINITIONS[permission];
     if (!permissionDefinition) {
       return false;
@@ -57,9 +58,27 @@ export class CheckPermissionUseCase {
     const isSuperAdmin = userContext.roles.some((role) => role.name === 'SUPERADMIN');
     if (isSuperAdmin) {
       const superPermissions = ROLE_PERMISSION_MAP.SUPERADMIN;
-      return superPermissions.includes(permission);
+      const hasPermission = superPermissions.includes(permission);
+      return hasPermission;
     }
 
+    // For global scope permissions, only check if user has the permission in their role
+    if (permissionDefinition.scope === 'global') {
+      for (const role of userContext.roles) {
+        const roleName = this.toRoleName(role.name);
+        if (!roleName) {
+          continue;
+        }
+
+        const allowedPermissions = ROLE_PERMISSION_MAP[roleName];
+        if (allowedPermissions && allowedPermissions.includes(permission)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // For school and own scope permissions, check module activation and role assignments
     const moduleRecord = await this.getModule(permissionDefinition.module);
     if (!moduleRecord) {
       return false;
@@ -128,6 +147,7 @@ export class CheckPermissionUseCase {
         continue;
       }
 
+      // For school scope permissions, we've already verified module activation and role assignments
       return true;
     }
 
@@ -377,7 +397,7 @@ export class CheckPermissionUseCase {
       return null;
     }
 
-    return {
+    const context = {
       id: user.id,
       schoolId: user.schoolId,
       roles: user.userRoles.map((userRole) => ({
@@ -387,6 +407,8 @@ export class CheckPermissionUseCase {
       linkedStudentIds: new Set(user.userStudents.map((student) => student.studentId)),
       studentId: user.student?.id,
     };
+
+    return context;
   }
 
   private async getModule(moduleKey: ModuleKey): Promise<ModuleRecord | null> {

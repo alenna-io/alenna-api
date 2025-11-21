@@ -22,6 +22,8 @@ router.post('/', requirePermission('users.create'), userController.createUser.bi
 // Allow users to update their own profile without users.update permission
 router.put('/me', userController.updateMyProfile.bind(userController));
 router.put('/:id', requirePermission('users.update'), userController.updateUser.bind(userController));
+router.post('/:id/deactivate', requirePermission('users.delete'), userController.deactivateUser.bind(userController));
+router.post('/:id/reactivate', requirePermission('users.delete'), userController.reactivateUser.bind(userController));
 router.delete('/:id', requirePermission('users.delete'), userController.deleteUser.bind(userController));
 
 export default router;
