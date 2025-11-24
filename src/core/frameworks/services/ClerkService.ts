@@ -144,21 +144,31 @@ export class ClerkService {
 
   /**
    * Send an invitation email to a user so they can set their password
-   * @param clerkId The Clerk user ID (unused but kept for compatibility)
+   * @param _clerkId The Clerk user ID (kept for logging/future use)
    * @param email The user's email address
    */
   async sendInvitationEmail(_clerkId: string, email: string): Promise<void> {
     try {
       // Create an invitation which will trigger Clerk to send an invitation email
+      // Use ignoreExisting: true to allow invitations even if the user already exists
       // The user will receive an email with a link to verify their email and set their password
-      // This works even if the user already exists in Clerk - the invitation will be associated with that user
-      await this.client.invitations.createInvitation({
+      const invitation = await this.client.invitations.createInvitation({
         emailAddress: email,
+        ignoreExisting: true, // Important: allows invitation even if user already exists
         // Optional: specify a redirect URL after they accept the invitation
         // If not specified, Clerk will use the default redirect URL from your Clerk Dashboard
       });
+      
+      console.log(`✅ Invitation created and email sent to ${email}. Invitation ID: ${invitation.id}`);
     } catch (error: unknown) {
-      console.error('Error sending invitation email:', error);
+      console.error('❌ Error sending invitation email:', error);
+      
+      // Log detailed error information for debugging
+      if (error && typeof error === 'object' && 'errors' in error) {
+        const clerkErrors = (error as any).errors;
+        console.error('Clerk API errors:', JSON.stringify(clerkErrors, null, 2));
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to send invitation email: ${errorMessage}`);
     }
