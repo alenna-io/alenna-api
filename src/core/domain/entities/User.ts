@@ -17,6 +17,7 @@ export class User {
     public readonly lastName?: string,
     public readonly language?: string,
     public readonly isActive: boolean = true,
+    public readonly createdPassword: boolean = false,
     public readonly roles: UserRoleInfo[] = [],
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date
@@ -31,6 +32,7 @@ export class User {
     lastName?: string;
     language?: string;
     isActive?: boolean;
+    createdPassword?: boolean;
     roles?: UserRoleInfo[];
   }): User {
     return new User(
@@ -42,13 +44,14 @@ export class User {
       props.lastName,
       props.language,
       props.isActive ?? true,
+      props.createdPassword ?? false,
       props.roles || [],
       new Date(),
       new Date()
     );
   }
 
-  update(props: Partial<Pick<User, 'firstName' | 'lastName' | 'language' | 'isActive' | 'roles' | 'email' | 'schoolId'>>): User {
+  update(props: Partial<Pick<User, 'firstName' | 'lastName' | 'language' | 'isActive' | 'createdPassword' | 'roles' | 'email' | 'schoolId'>>): User {
     return new User(
       this.id,
       this.clerkId,
@@ -58,6 +61,7 @@ export class User {
       props.lastName ?? this.lastName,
       props.language ?? this.language,
       props.isActive !== undefined ? props.isActive : this.isActive,
+      props.createdPassword !== undefined ? props.createdPassword : this.createdPassword,
       props.roles ?? this.roles,
       this.createdAt,
       new Date()

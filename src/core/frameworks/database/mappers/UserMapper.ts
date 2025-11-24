@@ -18,6 +18,7 @@ export class UserMapper {
       prismaUser.lastName || undefined,
       prismaUser.language || undefined,
       prismaUser.isActive ?? true,
+      prismaUser.createdPassword ?? false,
       roles,
       prismaUser.createdAt,
       prismaUser.updatedAt
@@ -34,6 +35,7 @@ export class UserMapper {
       lastName: user.lastName || null,
       language: user.language || null,
       isActive: user.isActive,
+      createdPassword: user.createdPassword,
       deletedAt: null,
     };
   }

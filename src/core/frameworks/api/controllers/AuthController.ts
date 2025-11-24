@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { container } from '../../di/container';
-import { GetUserInfoUseCase } from '../../../app/use-cases/auth';
+import { GetUserInfoUseCase, UpdatePasswordUseCase } from '../../../app/use-cases/auth';
 
 export class AuthController {
   async syncUser(req: Request, res: Response): Promise<void> {
@@ -79,6 +79,42 @@ export class AuthController {
       console.error('Error getting user info:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Error al obtener información del usuario'
+      });
+    }
+  }
+
+  /**
+   * POST /api/v1/auth/password
+   * Update user password and mark createdPassword as true
+   */
+  async updatePassword(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.userId;
+      const { userId: clerkId } = (req as any).auth || {};
+      const { password } = req.body;
+
+      if (!userId || !clerkId) {
+        res.status(401).json({ error: 'No autenticado' });
+        return;
+      }
+
+      if (!password || typeof password !== 'string' || password.length < 8) {
+        res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+        return;
+      }
+
+      const updatePasswordUseCase = new UpdatePasswordUseCase();
+      await updatePasswordUseCase.execute({
+        userId,
+        clerkId,
+        password,
+      });
+
+      res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Error al actualizar la contraseña'
       });
     }
   }

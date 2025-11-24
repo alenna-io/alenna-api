@@ -38,15 +38,16 @@ model School {
 
 // Users belong to a school and are authenticated via Clerk
 model User {
-  id        String  @id @default(cuid())
-  clerkId   String? @unique @map("clerk_id") // Nullable to support deleted users
-  email     String  @unique
-  firstName String? @map("first_name")
-  lastName  String? @map("last_name")
-  language  String? @default("es") // User's preferred language (es, en)
-  schoolId  String  @map("school_id")
-  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  isActive  Boolean @default(true) @map("is_active") // User is active (can be deactivated before soft delete)
+  id              String  @id @default(cuid())
+  clerkId         String? @unique @map("clerk_id") // Nullable to support deleted users
+  email           String  @unique
+  firstName       String? @map("first_name")
+  lastName        String? @map("last_name")
+  language        String? @default("es") // User's preferred language (es, en)
+  schoolId        String  @map("school_id")
+  school          School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  isActive        Boolean @default(true) @map("is_active") // User is active (can be deactivated before soft delete)
+  createdPassword Boolean @default(false) @map("created_password") // Whether user has set their password
 
   userRoles       UserRole[]
   userStudents    UserStudent[]

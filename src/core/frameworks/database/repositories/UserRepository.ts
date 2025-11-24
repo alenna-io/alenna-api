@@ -121,6 +121,7 @@ export class UserRepository implements IUserRepository {
           lastName: user.lastName || null,
           language: user.language || null,
           isActive: user.isActive ?? true, // Default to true for new users
+          createdPassword: user.createdPassword ?? false, // Default to false for new users
         },
       });
 
@@ -159,6 +160,7 @@ export class UserRepository implements IUserRepository {
       data: {
         email: data.email,
         schoolId: data.schoolId || undefined,
+        createdPassword: data.createdPassword !== undefined ? data.createdPassword : undefined,
         firstName: data.firstName || undefined,
         lastName: data.lastName || undefined,
         language: data.language || undefined,

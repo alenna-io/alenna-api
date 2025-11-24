@@ -27,6 +27,7 @@ export class CreateStudentUseCase {
     const user = await prisma.user.create({
       data: {
         id: userId,
+        createdPassword: false,
         clerkId: `student_${userId}_clerk`, // Placeholder - will be set on first login
         email: userEmail,
         firstName: input.firstName,
@@ -133,6 +134,7 @@ export class CreateStudentUseCase {
             firstName: parentData.firstName,
             lastName: parentData.lastName,
             schoolId,
+            createdPassword: false,
           },
         });
 

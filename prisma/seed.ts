@@ -861,6 +861,7 @@ async function main() {
         firstName: restData.firstName,
         lastName: restData.lastName,
         schoolId: school.id,
+        createdPassword: false, // Students need to set password on first login
       },
     });
 
@@ -924,6 +925,7 @@ async function main() {
             firstName: parent.firstName,
             lastName: parent.lastName,
             schoolId: school.id,
+            createdPassword: false, // Parents need to set password on first login
           },
         });
 

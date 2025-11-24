@@ -256,6 +256,23 @@ export class ClerkService {
       throw new Error(`Failed to get Clerk user: ${error.message || 'Unknown error'}`);
     }
   }
+
+  /**
+   * Update a user's password in Clerk
+   * @param clerkId The Clerk user ID
+   * @param password The new password
+   */
+  async updateUserPassword(clerkId: string, password: string): Promise<void> {
+    try {
+      await this.client.users.updateUser(clerkId, {
+        password: password,
+      });
+      console.log(`✅ Password updated for Clerk user ${clerkId}`);
+    } catch (error: any) {
+      console.error('Error updating password in Clerk:', error);
+      throw new Error(`Failed to update password: ${error.message || 'Unknown error'}`);
+    }
+  }
 }
 
 // Export singleton instance

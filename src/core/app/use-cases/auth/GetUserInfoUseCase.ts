@@ -37,6 +37,7 @@ export interface UserInfoOutput {
   schoolName: string;
   studentId?: string;
   studentProfile?: StudentProfileOutput;
+  createdPassword: boolean;
   roles: Array<{
     id: string;
     name: string;
@@ -148,6 +149,7 @@ export class GetUserInfoUseCase {
       schoolId: schoolId,
       schoolName: schoolName,
       studentId: user.student?.id ?? studentData?.id,
+      createdPassword: user.createdPassword ?? false,
       studentProfile: studentData
         ? {
             id: studentData.id,

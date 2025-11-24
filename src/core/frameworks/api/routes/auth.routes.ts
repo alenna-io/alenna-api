@@ -21,5 +21,8 @@ router.get('/me', requireAuth(), attachUserContext, authController.getCurrentUse
 // Get current user info with roles (protected)
 router.get('/info', requireAuth(), attachUserContext, authController.getUserInfo.bind(authController));
 
+// Update user password (protected)
+router.post('/password', requireAuth(), attachUserContext, authController.updatePassword.bind(authController));
+
 export default router;
 
