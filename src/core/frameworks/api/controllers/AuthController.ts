@@ -98,8 +98,17 @@ export class AuthController {
         return;
       }
 
-      if (!password || typeof password !== 'string' || password.length < 8) {
-        res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+      if (!password || typeof password !== 'string' || password.length < 12) {
+        res.status(400).json({ error: 'La contraseña debe tener al menos 12 caracteres' });
+        return;
+      }
+      
+      // Validate password strength
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{12,}$/;
+      if (!passwordRegex.test(password)) {
+        res.status(400).json({ 
+          error: 'La contraseña debe tener al menos 12 caracteres, incluyendo mayúsculas, minúsculas, números y caracteres especiales' 
+        });
         return;
       }
 
@@ -113,8 +122,21 @@ export class AuthController {
       res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
     } catch (error) {
       console.error('Error updating password:', error);
-      res.status(500).json({ 
-        error: error instanceof Error ? error.message : 'Error al actualizar la contraseña'
+      
+      // Get error message and status code
+      let errorMessage = 'Error al actualizar la contraseña';
+      let statusCode = 500;
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        // Check if error has a statusCode property (from ClerkService)
+        if ('statusCode' in error && typeof (error as any).statusCode === 'number') {
+          statusCode = (error as any).statusCode;
+        }
+      }
+      
+      res.status(statusCode).json({ 
+        error: errorMessage
       });
     }
   }

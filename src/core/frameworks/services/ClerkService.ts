@@ -261,6 +261,7 @@ export class ClerkService {
    * Update a user's password in Clerk
    * @param clerkId The Clerk user ID
    * @param password The new password
+   * @throws Error with Clerk error message if password update fails
    */
   async updateUserPassword(clerkId: string, password: string): Promise<void> {
     try {
@@ -268,9 +269,46 @@ export class ClerkService {
         password: password,
       });
       console.log(`✅ Password updated for Clerk user ${clerkId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating password in Clerk:', error);
-      throw new Error(`Failed to update password: ${error.message || 'Unknown error'}`);
+      
+      // Extract detailed error message from Clerk API error
+      let errorMessage = 'Failed to update password';
+      let statusCode = 500;
+      
+      // Check if it's a Clerk API response error
+      if (error && typeof error === 'object') {
+        // Get status code first (Clerk errors have status property)
+        if ('status' in error && typeof (error as any).status === 'number') {
+          statusCode = (error as any).status;
+        }
+        
+        // Extract error message from errors array (Clerk's error structure)
+        if ('errors' in error && Array.isArray((error as any).errors) && (error as any).errors.length > 0) {
+          const clerkErrors = (error as any).errors;
+          const firstError = clerkErrors[0];
+          
+          // Get the most descriptive error message (longMessage is more detailed)
+          errorMessage = firstError.longMessage || firstError.message || errorMessage;
+          
+          // For known error codes, use the longMessage or a specific message
+          // The longMessage from Clerk is already user-friendly
+        } else if ('message' in error && typeof (error as any).message === 'string') {
+          // Fallback to message property if errors array is not available
+          errorMessage = (error as any).message;
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+        // Check if it's a Clerk API error with status
+        if ('status' in error && typeof (error as any).status === 'number') {
+          statusCode = (error as any).status;
+        }
+      }
+      
+      // Create error with status code info
+      const customError = new Error(errorMessage);
+      (customError as any).statusCode = statusCode;
+      throw customError;
     }
   }
 }
