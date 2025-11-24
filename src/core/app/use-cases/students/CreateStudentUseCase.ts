@@ -3,6 +3,7 @@ import { Student, CertificationType } from '../../../domain/entities';
 import { CreateStudentInput } from '../../dtos';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { clerkService } from '../../../frameworks/services/ClerkService';
 
 const prisma = new PrismaClient();
 
@@ -95,7 +96,8 @@ export class CreateStudentUseCase {
     // Create parent users and link them to the student
     for (const parentData of input.parents) {
       const parentUserId = randomUUID();
-      const parentEmail = parentData.email || `parent.${parentUserId.substring(0, 8)}@${schoolId}.alenna.io`;
+      // Parent email is required and should always be a real email (validated in DTO)
+      const parentEmail = parentData.email;
 
       // Check if parent email already exists
       const existingParent = await prisma.user.findUnique({
@@ -107,11 +109,26 @@ export class CreateStudentUseCase {
         // If parent already exists, use existing user
         parentUser = existingParent;
       } else {
-        // Create new parent user
+        // Create Clerk account for parent (they have a real email)
+        let clerkId: string | null = null;
+        try {
+          clerkId = await clerkService.createUser({
+            email: parentEmail,
+            firstName: parentData.firstName,
+            lastName: parentData.lastName,
+            skipEmailVerification: false, // Send invitation email
+          });
+        } catch (clerkError: any) {
+          console.error('Error creating Clerk account for parent:', clerkError);
+          // Continue with placeholder if Clerk creation fails - user can be created later
+          clerkId = `parent_${parentUserId}_clerk`;
+        }
+
+        // Create new parent user in database
         parentUser = await prisma.user.create({
           data: {
             id: parentUserId,
-            clerkId: `parent_${parentUserId}_clerk`, // Placeholder - will be set on first login
+            clerkId,
             email: parentEmail,
             firstName: parentData.firstName,
             lastName: parentData.lastName,
