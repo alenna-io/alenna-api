@@ -373,6 +373,50 @@ export class SchoolController {
     }
   }
 
+  async createCertificationType(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const schoolId = req.schoolId!;
+
+      const requestedSchoolId = id === 'me' ? schoolId : id;
+      const userRoles = req.userRoles || [];
+      const isSuperAdmin = userRoles.includes('SUPERADMIN');
+
+      if (!isSuperAdmin && requestedSchoolId !== schoolId) {
+        res.status(403).json({ error: 'No tienes permiso para modificar esta información' });
+        return;
+      }
+
+      const { CreateCertificationTypeDTO } = await import('../../../app/dtos');
+      const validatedData = CreateCertificationTypeDTO.parse(req.body);
+
+      const { CreateCertificationTypeUseCase } = await import('../../../app/use-cases/certification-types/CreateCertificationTypeUseCase');
+      const createCertificationTypeUseCase = new CreateCertificationTypeUseCase();
+      const certificationType = await createCertificationTypeUseCase.execute(requestedSchoolId, validatedData);
+
+      res.status(201).json({
+        id: certificationType.id,
+        name: certificationType.name,
+        description: certificationType.description,
+        isActive: certificationType.isActive,
+      });
+    } catch (error: any) {
+      console.error('Error creating certification type:', error);
+
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: error.errors });
+        return;
+      }
+
+      if (error.code === 'P2002') {
+        res.status(400).json({ error: 'Ya existe un tipo de certificación con este nombre para la escuela' });
+        return;
+      }
+
+      res.status(500).json({ error: error.message || 'Failed to create certification type' });
+    }
+  }
+
   async activateSchool(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;

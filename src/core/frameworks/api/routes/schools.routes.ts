@@ -68,6 +68,9 @@ router.get('/:id/teachers', requirePermission('teachers.read'), schoolController
 // Get certification types for a school
 router.get('/:id/certification-types', requirePermission('students.read'), schoolController.getCertificationTypes.bind(schoolController));
 
+// Create certification type for a school
+router.post('/:id/certification-types', requirePermission('schoolInfo.update'), schoolController.createCertificationType.bind(schoolController));
+
 // Module management routes (Super Admin only)
 // Get all available modules
 router.get('/modules/all', requirePermission('schools.read'), schoolController.getAllModules.bind(schoolController));
