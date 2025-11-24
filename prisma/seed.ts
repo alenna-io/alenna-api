@@ -448,7 +448,7 @@ async function main() {
 
   // Enable modules for school
   const studentsModule = await prisma.module.findUnique({ where: { key: 'students' } });
-  const configModule = await prisma.module.findUnique({ where: { key: 'configuration' } });
+  const schoolAdminModule = await prisma.module.findUnique({ where: { key: 'school_admin' } });
   const usersModule = await prisma.module.findUnique({ where: { key: 'users' } });
   const groupsModule = await prisma.module.findUnique({ where: { key: 'groups' } });
   
@@ -473,41 +473,38 @@ async function main() {
     // Grant Students module to roles that need access
     // This module includes permissions for:
     // - students.* (read, create, update, delete)
-    // - projections.* (read, readOwn, create, update, delete)
-    // - reportCards.* (read, readOwn) - Report Cards/Boletas feature
-    // - paces.* (read, create, update, delete, move)
     const rolesToGrant = [schoolAdminRole, teacherRole, parentRole, studentRole]
       .filter((role): role is NonNullable<typeof role> => Boolean(role))
       .map((role) => ({ id: role.id, name: role.name }));
 
     await grantModuleToRoles(studentsModule.id, school.id, rolesToGrant);
-    console.log('✅ Granted Students module to school roles (includes reportCards permissions)');
+    console.log('✅ Granted Students module to school roles');
   }
 
-  if (configModule) {
+  if (schoolAdminModule) {
     await prisma.schoolModule.upsert({
       where: {
         schoolId_moduleId: {
           schoolId: school.id,
-          moduleId: configModule.id,
+          moduleId: schoolAdminModule.id,
         },
       },
       update: {},
       create: {
         id: randomUUID(),
         schoolId: school.id,
-        moduleId: configModule.id,
+        moduleId: schoolAdminModule.id,
         isActive: true,
       },
     });
-    console.log('✅ Enabled Configuration module for school');
+    console.log('✅ Enabled School Admin module for school');
 
     const rolesToGrant = [schoolAdminRole, teacherRole]
       .filter((role): role is NonNullable<typeof role> => Boolean(role))
       .map((role) => ({ id: role.id, name: role.name }));
 
-    await grantModuleToRoles(configModule.id, school.id, rolesToGrant);
-    console.log('✅ Granted Configuration module to school roles');
+    await grantModuleToRoles(schoolAdminModule.id, school.id, rolesToGrant);
+    console.log('✅ Granted School Admin module to school roles');
   }
 
   if (usersModule) {

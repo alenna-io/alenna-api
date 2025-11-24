@@ -8,6 +8,7 @@ export const CreateSchoolDTO = z.object({
   email: z.string().email().optional(),
   teacherLimit: z.number().int().positive().optional(),
   userLimit: z.number().int().positive().optional(),
+  moduleIds: z.array(z.string()).optional(), // Optional array of module IDs to enable
 });
 
 export const UpdateSchoolDTO = CreateSchoolDTO.partial();

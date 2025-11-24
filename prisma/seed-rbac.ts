@@ -54,11 +54,16 @@ export async function seedRBAC() {
   console.log('📦 Creating modules...');
 
   const modulesData = [
-    { key: 'students', name: 'Students', description: 'Manage students, projections and PACEs', displayOrder: 1 },
-    { key: 'users', name: 'Users', description: 'Manage system users', displayOrder: 2 },
-    { key: 'schools', name: 'Schools', description: 'Manage schools and global administration', displayOrder: 3 },
-    { key: 'configuration', name: 'Configuration', description: 'Academic and school configuration', displayOrder: 4 },
-    { key: 'groups', name: 'Groups', description: 'Manage teacher-student assignments per school year', displayOrder: 5 },
+    { key: 'projections', name: 'Projections', description: 'Create and manage student academic projections', displayOrder: 1 },
+    { key: 'monthlyAssignments', name: 'Monthly Assignments', description: 'Create assignments and link to projections', displayOrder: 2 },
+    { key: 'reportCards', name: 'Report Cards', description: 'Generate and view student report cards', displayOrder: 3 },
+    { key: 'students', name: 'Students', description: 'Manage student personal and academic information', displayOrder: 4 },
+    { key: 'teachers', name: 'Teachers', description: 'Manage teachers and their assignments', displayOrder: 5 },
+    { key: 'groups', name: 'Groups', description: 'Manage teacher-student assignments per school year', displayOrder: 6 },
+    { key: 'paces', name: 'Lectures', description: 'View and browse lectures catalog (read-only)', displayOrder: 7 },
+    { key: 'school_admin', name: 'School Admin', description: 'School settings (info, years, certification types)', displayOrder: 8 },
+    { key: 'schools', name: 'Schools', description: 'Manage schools and global administration', displayOrder: 9 },
+    { key: 'users', name: 'Users', description: 'Manage system users', displayOrder: 10 },
   ];
 
   for (const moduleData of modulesData) {

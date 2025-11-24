@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import {
   MODULE_KEY_TO_DB_KEY,
+  MODULE_DEPENDENCIES,
   PERMISSION_DEFINITIONS,
   ROLE_PERMISSION_MAP,
   type ModuleKey,
@@ -95,6 +96,32 @@ export class CheckPermissionUseCase {
 
     if (!activeModule || !activeModule.isActive) {
       return false;
+    }
+
+    // Check module dependencies - parent modules must be enabled
+    const moduleKey = permissionDefinition.module;
+    const dependencies = MODULE_DEPENDENCIES[moduleKey] || [];
+    if (dependencies.length > 0) {
+      for (const dependencyKey of dependencies) {
+        const dependencyModuleRecord = await this.getModule(dependencyKey);
+        if (!dependencyModuleRecord) {
+          return false;
+        }
+
+        const dependencyEnabled = await prisma.schoolModule.findUnique({
+          where: {
+            schoolId_moduleId: {
+              schoolId: userContext.schoolId,
+              moduleId: dependencyModuleRecord.id,
+            },
+          },
+        });
+
+        if (!dependencyEnabled || !dependencyEnabled.isActive) {
+          // Parent module is not enabled - deny access
+          return false;
+        }
+      }
     }
 
     const roleAssignments = await prismaAny.roleModuleSchool.findMany({
@@ -210,10 +237,9 @@ export class CheckPermissionUseCase {
 
     const moduleKeys = new Set<ModuleKey>();
     if (isSuperAdmin) {
-      // SUPERADMIN can only see: users, schools, and configuration modules
+      // SUPERADMIN can only see: users, schools modules
       moduleKeys.add('users');
       moduleKeys.add('schools');
-      moduleKeys.add('configuration');
     } else {
       for (const roleName of applicableRoles) {
         const permissions = ROLE_PERMISSION_MAP[roleName];

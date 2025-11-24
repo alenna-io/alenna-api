@@ -420,5 +420,68 @@ export class SchoolController {
       res.status(500).json({ error: error.message || 'Failed to deactivate school' });
     }
   }
+
+  async getAllModules(_req: Request, res: Response): Promise<void> {
+    try {
+      const modules = await container.getAllModulesUseCase.execute();
+      res.json(modules);
+    } catch (error: any) {
+      console.error('Error getting all modules:', error);
+      res.status(500).json({ error: error.message || 'Failed to get modules' });
+    }
+  }
+
+  async getSchoolModules(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const modules = await container.getSchoolModulesUseCase.execute(id);
+      res.json(modules);
+    } catch (error: any) {
+      console.error('Error getting school modules:', error);
+      res.status(500).json({ error: error.message || 'Failed to get school modules' });
+    }
+  }
+
+  async enableSchoolModule(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { moduleId } = req.body;
+
+      if (!moduleId) {
+        res.status(400).json({ error: 'moduleId is required' });
+        return;
+      }
+
+      await container.enableSchoolModuleUseCase.execute(id, moduleId);
+      res.json({ message: 'Module enabled successfully' });
+    } catch (error: any) {
+      console.error('Error enabling school module:', error);
+      
+      if (error.message === 'Module not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to enable module' });
+    }
+  }
+
+  async disableSchoolModule(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { moduleId } = req.body;
+
+      if (!moduleId) {
+        res.status(400).json({ error: 'moduleId is required' });
+        return;
+      }
+
+      await container.disableSchoolModuleUseCase.execute(id, moduleId);
+      res.json({ message: 'Module disabled successfully' });
+    } catch (error: any) {
+      console.error('Error disabling school module:', error);
+      res.status(500).json({ error: error.message || 'Failed to disable module' });
+    }
+  }
 }
 

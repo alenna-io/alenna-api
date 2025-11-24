@@ -42,7 +42,6 @@ export class GetPaceCatalogUseCase {
       orderBy: {
         code: 'asc',
       },
-      take: 100, // Limit to prevent huge responses
     });
 
     return paces.map(pace => ({

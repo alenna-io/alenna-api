@@ -26,11 +26,10 @@ router.get('/me', requirePermission('schoolInfo.read'), schoolController.getMySc
 router.put('/me', requirePermission('schoolInfo.update'), schoolController.updateSchool.bind(schoolController));
 
 // Get teachers for current user's school
-// Use schoolInfo.read permission since school admins have this and it's appropriate for /me endpoints
-router.get('/me/teachers', requirePermission('schoolInfo.read'), schoolController.getMyTeachers.bind(schoolController));
+router.get('/me/teachers', requirePermission('teachers.read'), schoolController.getMyTeachers.bind(schoolController));
 
 // Get teachers count for current user's school
-router.get('/me/teachers/count', requirePermission('schoolInfo.read'), schoolController.getMyTeachersCount.bind(schoolController));
+router.get('/me/teachers/count', requirePermission('teachers.read'), schoolController.getMyTeachersCount.bind(schoolController));
 
 // Superadmin-only routes for managing all schools
 // Get all schools
@@ -61,13 +60,26 @@ router.get('/:id/students/count', requirePermission('students.read'), schoolCont
 router.get('/:id/students', requirePermission('students.read'), schoolController.getStudents.bind(schoolController));
 
 // Get teachers count for a school
-router.get('/:id/teachers/count', requirePermission('users.read'), schoolController.getTeachersCount.bind(schoolController));
+router.get('/:id/teachers/count', requirePermission('teachers.read'), schoolController.getTeachersCount.bind(schoolController));
 
 // Get teachers for a school
-router.get('/:id/teachers', requirePermission('users.read'), schoolController.getTeachers.bind(schoolController));
+router.get('/:id/teachers', requirePermission('teachers.read'), schoolController.getTeachers.bind(schoolController));
 
 // Get certification types for a school
 router.get('/:id/certification-types', requirePermission('students.read'), schoolController.getCertificationTypes.bind(schoolController));
+
+// Module management routes (Super Admin only)
+// Get all available modules
+router.get('/modules/all', requirePermission('schools.read'), schoolController.getAllModules.bind(schoolController));
+
+// Get modules for a specific school
+router.get('/:id/modules', requirePermission('schools.read'), schoolController.getSchoolModules.bind(schoolController));
+
+// Enable a module for a school
+router.post('/:id/modules/enable', requirePermission('schools.update'), schoolController.enableSchoolModule.bind(schoolController));
+
+// Disable a module for a school
+router.post('/:id/modules/disable', requirePermission('schools.update'), schoolController.disableSchoolModule.bind(schoolController));
 
 export default router;
 

@@ -100,6 +100,13 @@ import {
   GetStudentAssignmentsForSchoolYearUseCase,
 } from '../../app/use-cases/groups';
 
+import {
+  GetAllModulesUseCase,
+  GetSchoolModulesUseCase,
+  EnableSchoolModuleUseCase,
+  DisableSchoolModuleUseCase,
+} from '../../app/use-cases/modules';
+
 class Container {
   // Repositories (Singleton instances)
   private _schoolRepository?: SchoolRepository;
@@ -527,6 +534,23 @@ return new GetMonthlyAssignmentsByProjectionUseCase();
   get reportCardController() {
     const { ReportCardController } = require('../api/controllers');
     return new ReportCardController(this.getReportCardUseCase);
+  }
+
+  // Module Use Cases
+  get getAllModulesUseCase(): GetAllModulesUseCase {
+    return new GetAllModulesUseCase();
+  }
+
+  get getSchoolModulesUseCase(): GetSchoolModulesUseCase {
+    return new GetSchoolModulesUseCase();
+  }
+
+  get enableSchoolModuleUseCase(): EnableSchoolModuleUseCase {
+    return new EnableSchoolModuleUseCase();
+  }
+
+  get disableSchoolModuleUseCase(): DisableSchoolModuleUseCase {
+    return new DisableSchoolModuleUseCase();
   }
 }
 

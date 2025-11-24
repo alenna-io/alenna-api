@@ -3,6 +3,10 @@ import { School } from '../../../domain/entities';
 import { CreateSchoolInput } from '../../dtos';
 import { CreateDefaultTemplatesUseCase } from '../projection-templates/CreateDefaultTemplatesUseCase';
 import { ProjectionTemplateRepository } from '../../../frameworks/database/repositories/ProjectionTemplateRepository';
+import { EnableSchoolModuleUseCase } from '../modules/EnableSchoolModuleUseCase';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export class CreateSchoolUseCase {
   constructor(private schoolRepository: ISchoolRepository) {}
@@ -20,6 +24,20 @@ export class CreateSchoolUseCase {
 
     const createdSchool = await this.schoolRepository.create(school);
 
+    // Setup module access for the new school
+    // If moduleIds provided, only enable those modules; otherwise enable default modules
+    try {
+      if (input.moduleIds && input.moduleIds.length > 0) {
+        await this.setupSelectedModules(createdSchool.id, input.moduleIds);
+      } else {
+        // Default behavior: enable standard modules (students, school_admin, groups)
+        await this.setupModuleAccess(createdSchool.id);
+      }
+    } catch (error) {
+      console.error('Error setting up module access for school:', error);
+      // Don't fail school creation if module setup fails - it can be fixed manually
+    }
+
     // Create default projection templates for this school
     try {
       const templateRepository = new ProjectionTemplateRepository();
@@ -31,6 +49,47 @@ export class CreateSchoolUseCase {
     }
 
     return createdSchool;
+  }
+
+  /**
+   * Enable default modules for the school and grant role-module access
+   * Default modules: students, school_admin, groups
+   */
+  private async setupModuleAccess(schoolId: string): Promise<void> {
+    const enableModuleUseCase = new EnableSchoolModuleUseCase();
+    
+    // Default modules to enable for new schools
+    const defaultModuleKeys = ['students', 'school_admin', 'groups'];
+    
+    for (const moduleKey of defaultModuleKeys) {
+      const module = await prisma.module.findUnique({ where: { key: moduleKey } });
+      if (module) {
+        try {
+          await enableModuleUseCase.execute(schoolId, module.id);
+          console.log(`✅ Enabled ${moduleKey} module for school ${schoolId}`);
+        } catch (error) {
+          console.error(`❌ Error enabling ${moduleKey} module for school ${schoolId}:`, error);
+          // Continue with other modules even if one fails
+        }
+      }
+    }
+  }
+
+  /**
+   * Enable only the selected modules for the school
+   */
+  private async setupSelectedModules(schoolId: string, moduleIds: string[]): Promise<void> {
+    const enableModuleUseCase = new EnableSchoolModuleUseCase();
+    
+    for (const moduleId of moduleIds) {
+      try {
+        await enableModuleUseCase.execute(schoolId, moduleId);
+        console.log(`✅ Enabled module ${moduleId} for school ${schoolId}`);
+      } catch (error) {
+        console.error(`❌ Error enabling module ${moduleId} for school ${schoolId}:`, error);
+        // Continue with other modules even if one fails
+      }
+    }
   }
 }
 
