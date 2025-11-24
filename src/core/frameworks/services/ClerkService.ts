@@ -19,6 +19,30 @@ export class ClerkService {
   }
 
   /**
+   * Generate secure password that meets Clerk requirements
+   */
+  private generateSecurePassword(): string {
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    const special = '!@#$%^&*()_+[]{}';
+    const allChars = lowercase + uppercase + numbers + special;
+    const length = 16;
+
+    let password = '';
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += special[Math.floor(Math.random() * special.length)];
+
+    for (let i = password.length; i < length; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  }
+
+  /**
    * Generate a username from first name and last name (for Clerk username requirement)
    * Formats as: firstname_lastname (lowercase, underscores, no accents)
    * Falls back to email if names are not provided
@@ -76,24 +100,25 @@ export class ClerkService {
       // Generate username from first name and last name (Clerk requires username based on instance settings)
       createUserPayload.username = this.generateUsernameFromName(input.firstName, input.lastName, input.email);
 
-      // For invitation flow: Create user WITHOUT a password so they must set it via invitation email
-      // Only set password if explicitly provided (for special cases)
-      if (input.password) {
-        createUserPayload.password = input.password;
-      }
-      // If no password is provided, we don't set one - user will set it via invitation email
+      const shouldSendInvitation = !input.password;
+
+      // Clerk instances generally require password on user creation.
+      // Generate a secure temporary password when one is not provided.
+      createUserPayload.password = input.password || this.generateSecurePassword();
 
       // Skip email verification during user creation - we'll handle it via invitation email instead
       // This avoids conflicts between Clerk's automatic verification and our invitation flow
-      // If password is provided, use the skipEmailVerification setting; otherwise always skip (we'll send invitation)
-      createUserPayload.skipEmailVerification = input.password ? (input.skipEmailVerification ?? false) : true;
+      // If password provided, respect caller preference; otherwise skip so invitation handles verification.
+      createUserPayload.skipEmailVerification = shouldSendInvitation
+        ? true
+        : (input.skipEmailVerification ?? false);
 
       const clerkUser = await this.client.users.createUser(createUserPayload);
 
       // Always send an invitation email when no password is provided (the default flow)
       // This ensures the user receives a welcome email and can set their password
       // The invitation email can be customized in Clerk Dashboard to include "Welcome to Alenna" message
-      if (!input.password) {
+      if (shouldSendInvitation) {
         try {
           await this.sendInvitationEmail(clerkUser.id, input.email);
         } catch (inviteError: any) {
