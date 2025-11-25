@@ -51,7 +51,7 @@ export class DeleteUserUseCase {
 
     // If deleting a student, check if we need to delete parents
     if (isStudent) {
-      await this.handleStudentDeletion(userId);
+      await this.handleStudentDeletion(userId, isSuperAdmin);
     } else if (isParent) {
       // When deleting a parent, ensure the linked student is also inactive
       const linkedStudents = await prisma.userStudent.findMany({
@@ -103,7 +103,7 @@ export class DeleteUserUseCase {
    * - If the student is deleted, check all parents linked to this student
    * - If a parent has no more students (active or inactive), delete the parent as well
    */
-  private async handleStudentDeletion(studentUserId: string): Promise<void> {
+  private async handleStudentDeletion(studentUserId: string, isSuperAdmin: boolean): Promise<void> {
     // Find the student record
     const student = await prisma.student.findUnique({
       where: { userId: studentUserId },
@@ -147,7 +147,26 @@ export class DeleteUserUseCase {
       if (otherStudents.length === 0) {
         const parent = await this.userRepository.findById(parentUserId);
         if (parent) {
+          // If we're a super admin and the parent has a Clerk account, delete it in Clerk too
+          if (isSuperAdmin && parent.clerkId) {
+            try {
+              await clerkService.deleteUser(parent.clerkId);
+            } catch (clerkError: any) {
+              console.error(`Failed to delete Clerk parent user ${parent.clerkId}:`, clerkError);
+              throw new Error(`Failed to delete user from Clerk: ${clerkError.message || 'Unknown error'}`);
+            }
+          }
+
+          // Soft delete parent from database
           await this.userRepository.delete(parentUserId);
+
+          // Clear parent's clerkId if it was deleted from Clerk
+          if (isSuperAdmin && parent.clerkId) {
+            await prisma.user.update({
+              where: { id: parentUserId },
+              data: { clerkId: null },
+            });
+          }
         }
       }
     }

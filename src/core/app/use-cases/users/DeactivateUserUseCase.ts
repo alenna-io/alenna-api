@@ -134,7 +134,19 @@ export class DeactivateUserUseCase {
 
       // If parent has no other active students, deactivate the parent
       if (otherActiveStudents.length === 0) {
+        // Deactivate parent in our database
         await this.userRepository.deactivate(parentUserId);
+
+        // Also lock parent in Clerk so they cannot log in anymore
+        const parent = await this.userRepository.findById(parentUserId);
+        if (parent?.clerkId) {
+          try {
+            await clerkService.lockUser(parent.clerkId);
+          } catch (clerkError: any) {
+            console.error(`Failed to lock Clerk parent user ${parent.clerkId}:`, clerkError);
+            // Continue even if Clerk lock fails - parent is already inactive in DB
+          }
+        }
       }
     }
   }
