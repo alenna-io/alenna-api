@@ -40,6 +40,8 @@ export class SchoolController {
         address: school.address,
         phone: school.phone,
         email: school.email,
+        teacherLimit: school.teacherLimit,
+        userLimit: school.userLimit,
         isActive: school.isActive,
       });
     } catch (error: any) {
@@ -67,6 +69,8 @@ export class SchoolController {
         address: school.address,
         phone: school.phone,
         email: school.email,
+        teacherLimit: school.teacherLimit,
+        userLimit: school.userLimit,
         isActive: school.isActive,
       });
     } catch (error: any) {
@@ -96,6 +100,8 @@ export class SchoolController {
         address: school.address,
         phone: school.phone,
         email: school.email,
+        teacherLimit: school.teacherLimit,
+        userLimit: school.userLimit,
         isActive: school.isActive,
       })));
     } catch (error: any) {
@@ -125,6 +131,8 @@ export class SchoolController {
         address: school.address,
         phone: school.phone,
         email: school.email,
+        teacherLimit: school.teacherLimit,
+        userLimit: school.userLimit,
         isActive: school.isActive,
       });
     } catch (error: any) {
@@ -152,6 +160,8 @@ export class SchoolController {
         address: school.address,
         phone: school.phone,
         email: school.email,
+        teacherLimit: school.teacherLimit,
+        userLimit: school.userLimit,
         isActive: school.isActive,
       });
     } catch (error: any) {

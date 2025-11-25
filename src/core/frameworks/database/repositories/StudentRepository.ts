@@ -9,7 +9,10 @@ export class StudentRepository implements IStudentRepository {
       where: { 
         id,
         ...(schoolId && { schoolId }), // Only filter by schoolId if provided
-        deletedAt: null, // Soft delete filter
+        deletedAt: null, // Soft delete filter for student record
+        user: {
+          deletedAt: null, // Exclude students whose user has been soft-deleted
+        },
       },
       include: {
         user: true, // Student's user account
@@ -29,7 +32,10 @@ export class StudentRepository implements IStudentRepository {
     const students = await prisma.student.findMany({
       where: { 
         schoolId,
-        deletedAt: null, // Soft delete filter
+        deletedAt: null, // Soft delete filter for student record
+        user: {
+          deletedAt: null, // Exclude students whose user has been soft-deleted
+        },
       },
       include: {
         user: true, // Student's user account
