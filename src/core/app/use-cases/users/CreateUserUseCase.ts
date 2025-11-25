@@ -113,6 +113,7 @@ export class CreateUserUseCase {
       firstName: input.firstName,
       lastName: input.lastName,
       schoolId: input.schoolId,
+      createdPassword: false, // New teachers need to set password on first login
     });
 
     // Save user and assign roles

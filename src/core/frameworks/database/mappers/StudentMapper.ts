@@ -61,6 +61,7 @@ export class StudentMapper {
       certificationType,
       prismaStudent.graduationDate,
       prismaStudent.schoolId,
+      prismaStudent.user.isActive,
       prismaStudent.contactPhone || undefined,
       prismaStudent.isLeveled,
       prismaStudent.expectedLevel || undefined,

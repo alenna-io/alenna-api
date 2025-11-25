@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const CreateStudentDTO = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Valid student email is required'),
   birthDate: z.string().datetime(),
   certificationTypeId: z.string().min(1, 'Certification type is required'),
   graduationDate: z.string().datetime(),

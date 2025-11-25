@@ -112,8 +112,10 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'schoolYear.update',
     'schoolYear.delete',
     // Users (non-teacher users)
-    'users.read',
+'users.read',
     'users.create',
+    'users.update',
+    'users.delete',
     // Schools (read-only for school admin)
     'schools.read',
   ],

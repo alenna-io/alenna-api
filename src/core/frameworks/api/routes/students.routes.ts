@@ -20,7 +20,7 @@ router.get('/', requireAnyPermission('students.read', 'students.readOwn'), stude
 router.get('/:id', requireAnyPermission('students.read', 'students.readOwn'), studentController.getStudent.bind(studentController));
 router.post('/', requirePermission('students.create'), studentController.createStudent.bind(studentController));
 router.put('/:id', requirePermission('students.update'), studentController.updateStudent.bind(studentController));
+router.post('/:id/deactivate', requirePermission('students.delete'), studentController.deactivateStudent.bind(studentController));
 router.delete('/:id', requirePermission('students.delete'), studentController.deleteStudent.bind(studentController));
 
 export default router;
-

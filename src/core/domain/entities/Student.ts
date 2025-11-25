@@ -21,6 +21,7 @@ export class Student {
     public readonly certificationType: CertificationType,
     public readonly graduationDate: Date,
     public readonly schoolId: string,
+    public readonly isActive: boolean,
     public readonly contactPhone?: string,
     public readonly isLeveled: boolean = false,
     public readonly expectedLevel?: string,
@@ -41,6 +42,7 @@ export class Student {
     certificationType: CertificationType;
     graduationDate: Date;
     schoolId: string;
+    isActive?: boolean;
     contactPhone?: string;
     isLeveled?: boolean;
     expectedLevel?: string;
@@ -58,6 +60,7 @@ export class Student {
       props.certificationType,
       props.graduationDate,
       props.schoolId,
+      props.isActive ?? true,
       props.contactPhone,
       props.isLeveled || false,
       props.expectedLevel,
@@ -69,7 +72,7 @@ export class Student {
     );
   }
 
-  update(props: Partial<Omit<Student, 'id' | 'schoolId' | 'createdAt' | 'updatedAt'>>): Student {
+  update(props: Partial<Omit<Student, 'id' | 'schoolId' | 'createdAt' | 'updatedAt' | 'isActive'>>): Student {
     return new Student(
       this.id,
       props.firstName ?? this.firstName,
@@ -80,6 +83,7 @@ export class Student {
       props.certificationType ?? this.certificationType,
       props.graduationDate ?? this.graduationDate,
       this.schoolId,
+      this.isActive,
       props.contactPhone ?? this.contactPhone,
       props.isLeveled ?? this.isLeveled,
       props.expectedLevel ?? this.expectedLevel,
