@@ -30,6 +30,9 @@ export interface CreateQuarterData {
   endDate: Date;
   order: number;
   weeksCount?: number;
+  // Optional detailed configuration coming from the wizard
+  weeks?: QuarterWeekInput[];
+  holidays?: QuarterHolidayInput[];
 }
 
 export interface UpdateSchoolYearData {
@@ -48,5 +51,19 @@ export interface UpdateQuarterData {
   endDate?: Date;
   order?: number;
   weeksCount?: number;
+  weeks?: QuarterWeekInput[];
+  holidays?: QuarterHolidayInput[];
+}
+
+export interface QuarterWeekInput {
+  weekNumber: number;
+  startDate: Date;
+  endDate: Date;
+}
+
+export interface QuarterHolidayInput {
+  startDate: Date;
+  endDate: Date;
+  label?: string;
 }
 

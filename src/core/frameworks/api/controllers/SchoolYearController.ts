@@ -7,8 +7,9 @@ import type {
   DeleteSchoolYearUseCase,
   SetActiveSchoolYearUseCase,
   GetCurrentWeekUseCase,
+  PreviewQuarterWeeksUseCase,
 } from '../../../app/use-cases';
-import { CreateSchoolYearInputSchema, UpdateSchoolYearInputSchema } from '../../../app/dtos';
+import { CreateSchoolYearInputSchema, UpdateSchoolYearInputSchema, PreviewQuarterWeeksInputSchema } from '../../../app/dtos';
 
 export class SchoolYearController {
   constructor(
@@ -18,7 +19,8 @@ export class SchoolYearController {
     private updateSchoolYearUseCase: UpdateSchoolYearUseCase,
     private deleteSchoolYearUseCase: DeleteSchoolYearUseCase,
     private setActiveSchoolYearUseCase: SetActiveSchoolYearUseCase,
-    private getCurrentWeekUseCase: GetCurrentWeekUseCase
+    private getCurrentWeekUseCase: GetCurrentWeekUseCase,
+    private previewQuarterWeeksUseCase: PreviewQuarterWeeksUseCase
   ) {}
 
   createSchoolYear = async (req: Request, res: Response) => {
@@ -132,6 +134,19 @@ export class SchoolYearController {
       return res.json(currentWeek);
     } catch (error: any) {
       return res.status(400).json({ error: error.message || 'Error al obtener semana actual' });
+    }
+  };
+
+  previewQuarterWeeks = async (req: Request, res: Response) => {
+    try {
+      const validatedData = PreviewQuarterWeeksInputSchema.parse(req.body);
+      const weeks = await this.previewQuarterWeeksUseCase.execute(validatedData);
+      return res.json(weeks);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Datos inválidos', details: error.errors });
+      }
+      return res.status(400).json({ error: error.message || 'Error al previsualizar semanas' });
     }
   };
 }

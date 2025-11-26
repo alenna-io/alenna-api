@@ -59,6 +59,7 @@ import {
   DeleteSchoolYearUseCase,
   SetActiveSchoolYearUseCase,
   GetCurrentWeekUseCase,
+  PreviewQuarterWeeksUseCase,
   CreateDailyGoalUseCase,
   UpdateDailyGoalUseCase,
   GetDailyGoalsUseCase,
@@ -380,6 +381,10 @@ class Container {
     return new GetCurrentWeekUseCase(this.schoolYearRepository);
   }
 
+  get previewQuarterWeeksUseCase(): PreviewQuarterWeeksUseCase {
+    return new PreviewQuarterWeeksUseCase();
+  }
+
   // Daily Goals Use Cases
   get createDailyGoalUseCase(): CreateDailyGoalUseCase {
     return new CreateDailyGoalUseCase(this.dailyGoalRepository);
@@ -515,7 +520,8 @@ return new GetMonthlyAssignmentsByProjectionUseCase();
       this.updateSchoolYearUseCase,
       this.deleteSchoolYearUseCase,
       this.setActiveSchoolYearUseCase,
-      this.getCurrentWeekUseCase
+      this.getCurrentWeekUseCase,
+      this.previewQuarterWeeksUseCase
     );
   }
 

@@ -183,18 +183,6 @@ export class ClerkService {
       await this.client.users.deleteUser(clerkId);
     } catch (error: any) {
       console.error('Error deleting Clerk user:', error);
-
-      // If the user does not exist in Clerk, treat as already deleted
-      const status = error?.status;
-      const firstErrorCode =
-        Array.isArray(error?.errors) && error.errors.length > 0
-          ? error.errors[0].code
-          : undefined;
-
-      if (status === 404 || firstErrorCode === 'resource_not_found') {
-        return;
-      }
-
       throw new Error(`Failed to delete Clerk user: ${error.message || 'Unknown error'}`);
     }
   }
@@ -223,20 +211,8 @@ export class ClerkService {
         const errorData = await response.json().catch(() => ({}));
         throw new Error((errorData as { message?: string }).message || 'Failed to lock user in Clerk');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error locking Clerk user:', error);
-
-      // If the user does not exist in Clerk, treat as already locked/irrelevant
-      const status = error?.status;
-      const firstErrorCode =
-        Array.isArray(error?.errors) && error.errors.length > 0
-          ? error.errors[0].code
-          : undefined;
-
-      if (status === 404 || firstErrorCode === 'resource_not_found') {
-        return;
-      }
-
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to lock Clerk user: ${errorMessage}`);
     }

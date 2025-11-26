@@ -6,6 +6,7 @@ import type {
 import type { SchoolYear, CurrentWeekInfo } from '../../../domain/entities';
 import { SchoolYearMapper } from '../mappers'
 import prisma from '../prisma.client';
+import { generateSchoolWeeksForQuarter, type HolidayRange } from '../../../../utils';
 
 export class SchoolYearRepository implements ISchoolYearRepository {
   constructor() {}
@@ -93,6 +94,69 @@ export class SchoolYearRepository implements ISchoolYearRepository {
           },
         },
       });
+
+      // After creating quarters, create holidays and school weeks for each quarter
+      if (schoolYear && data.quarters.length > 0) {
+        for (const prismaQuarter of schoolYear.quarters) {
+          const inputQuarter = data.quarters.find((q) => q.order === prismaQuarter.order);
+          if (!inputQuarter) continue;
+
+          // Create holidays if provided
+          if (inputQuarter.holidays && inputQuarter.holidays.length > 0) {
+            await prisma.quarterHoliday.createMany({
+              data: inputQuarter.holidays.map((h) => ({
+                schoolYearId: schoolYear.id,
+                quarterId: prismaQuarter.id,
+                startDate: h.startDate,
+                endDate: h.endDate,
+                label: h.label ?? null,
+              })),
+            });
+          }
+
+          let weeksToCreate: { weekNumber: number; startDate: Date | string; endDate: Date | string }[] = [];
+          const explicitWeeks = (inputQuarter as any).weeks;
+
+          if (explicitWeeks && explicitWeeks.length > 0) {
+            weeksToCreate = explicitWeeks.map((w: any) => ({
+              weekNumber: w.weekNumber,
+              startDate: w.startDate,
+              endDate: w.endDate,
+            }));
+          } else {
+            // Determine holidays (ranges) for week generation
+            const holidayRanges: HolidayRange[] = (inputQuarter.holidays ?? []).map((h) => ({
+              startDate: new Date(h.startDate),
+              endDate: new Date(h.endDate),
+            }));
+
+            const weeksCount = inputQuarter.weeksCount ?? prismaQuarter.weeksCount ?? 9;
+            const generatedWeeks = generateSchoolWeeksForQuarter({
+              startDate: prismaQuarter.startDate,
+              endDate: prismaQuarter.endDate,
+              weeksCount,
+              holidays: holidayRanges,
+            });
+
+            weeksToCreate = generatedWeeks.map((w, index) => ({
+              weekNumber: index + 1,
+              startDate: w.startDate,
+              endDate: w.endDate,
+            }));
+          }
+
+          if (weeksToCreate.length > 0) {
+            await prisma.schoolWeek.createMany({
+              data: weeksToCreate.map((w) => ({
+                quarterId: prismaQuarter.id,
+                weekNumber: w.weekNumber,
+                startDate: w.startDate,
+                endDate: w.endDate,
+              })),
+            });
+          }
+        }
+      }
     } catch (error: any) {
       if (error.code === 'P2002' && error.meta?.target?.includes('name')) {
         throw new Error(`Ya existe un año escolar con el nombre "${data.name}". Por favor, elige un nombre diferente.`);
@@ -162,10 +226,96 @@ export class SchoolYearRepository implements ISchoolYearRepository {
           if (quarter.order !== undefined) quarterUpdateData.order = quarter.order;
           if (quarter.weeksCount !== undefined) quarterUpdateData.weeksCount = quarter.weeksCount;
 
-          await prisma.quarter.update({
+          const updatedQuarter = await prisma.quarter.update({
             where: { id: quarter.id },
             data: quarterUpdateData,
           });
+
+          // If weeks or holidays are provided, replace existing configuration
+          if (quarter.weeks || quarter.holidays) {
+            // Soft-delete existing holidays and weeks for this quarter
+            await prisma.quarterHoliday.updateMany({
+              where: { quarterId: updatedQuarter.id, deletedAt: null },
+              data: { deletedAt: new Date() },
+            });
+            await prisma.schoolWeek.updateMany({
+              where: { quarterId: updatedQuarter.id, deletedAt: null },
+              data: { deletedAt: new Date() },
+            });
+
+            // Recreate holidays if provided
+            if (quarter.holidays && quarter.holidays.length > 0) {
+              await prisma.quarterHoliday.createMany({
+                data: quarter.holidays.map((h) => ({
+                  schoolYearId: id,
+                  quarterId: updatedQuarter.id,
+                  startDate: h.startDate,
+                  endDate: h.endDate,
+                  label: h.label ?? null,
+                })),
+              });
+            }
+
+            // Determine holidays (ranges) for week generation
+            const holidayRanges: HolidayRange[] = (quarter.holidays ?? []).map((h) => ({
+              startDate: h.startDate,
+              endDate: h.endDate,
+            }));
+
+            // Use explicit weeks if provided; otherwise regenerate using algorithm
+            let weeksToCreate: { startDate: Date; endDate: Date; weekNumber: number }[] = [];
+
+            if (quarter.weeks && quarter.weeks.length > 0) {
+              // Basic validation: sorted by weekNumber and within quarter range
+              const sortedWeeks = [...quarter.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
+
+              // Ensure contiguity and non-overlap
+              let previousEnd: Date | null = null;
+              for (const w of sortedWeeks) {
+                if (w.startDate > w.endDate) {
+                  throw new Error('Week startDate must be before endDate');
+                }
+                if (w.startDate < updatedQuarter.startDate || w.endDate > updatedQuarter.endDate) {
+                  throw new Error('Week dates must be within quarter range');
+                }
+                if (previousEnd && w.startDate.getTime() !== previousEnd.getTime() + 24 * 60 * 60 * 1000) {
+                  throw new Error('Weeks must be contiguous without gaps or overlaps');
+                }
+                previousEnd = w.endDate;
+              }
+
+              weeksToCreate = sortedWeeks.map((w) => ({
+                weekNumber: w.weekNumber,
+                startDate: w.startDate,
+                endDate: w.endDate,
+              }));
+            } else {
+              const weeksCount = quarter.weeksCount ?? updatedQuarter.weeksCount ?? 9;
+              const generatedWeeks = generateSchoolWeeksForQuarter({
+                startDate: updatedQuarter.startDate,
+                endDate: updatedQuarter.endDate,
+                weeksCount,
+                holidays: holidayRanges,
+              });
+
+              weeksToCreate = generatedWeeks.map((w, index) => ({
+                weekNumber: index + 1,
+                startDate: w.startDate,
+                endDate: w.endDate,
+              }));
+            }
+
+            if (weeksToCreate.length > 0) {
+              await prisma.schoolWeek.createMany({
+                data: weeksToCreate.map((w) => ({
+                  quarterId: updatedQuarter.id,
+                  weekNumber: w.weekNumber,
+                  startDate: w.startDate,
+                  endDate: w.endDate,
+                })),
+              });
+            }
+          }
         }
       }
     }
@@ -252,7 +402,39 @@ export class SchoolYearRepository implements ISchoolYearRepository {
       };
     }
 
-    // Calculate current week within the quarter (1-9)
+    // First try to use explicitly stored school weeks for this quarter
+    const storedWeeks = await prisma.schoolWeek.findMany({
+      where: { quarterId: currentQuarter.id, deletedAt: null },
+      orderBy: { weekNumber: 'asc' },
+    });
+
+    if (storedWeeks.length > 0) {
+      const matchingWeek = storedWeeks.find(
+        (w) => now >= w.startDate && now <= w.endDate
+      );
+
+      if (matchingWeek) {
+        return {
+          schoolYear,
+          currentQuarter,
+          currentWeek: matchingWeek.weekNumber,
+          weekStartDate: matchingWeek.startDate,
+          weekEndDate: matchingWeek.endDate,
+        };
+      }
+
+      // If no exact match (e.g., today falls outside configured weeks but inside quarter),
+      // gracefully return null week but keep year/quarter context.
+      return {
+        schoolYear,
+        currentQuarter,
+        currentWeek: null,
+        weekStartDate: null,
+        weekEndDate: null,
+      };
+    }
+
+    // Fallback: calculate current week within the quarter using 7-day blocks
     const quarterStartTime = currentQuarter.startDate.getTime();
     const nowTime = now.getTime();
     const daysSinceQuarterStart = Math.floor((nowTime - quarterStartTime) / (1000 * 60 * 60 * 24));

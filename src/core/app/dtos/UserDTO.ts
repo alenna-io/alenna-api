@@ -10,8 +10,7 @@ export const SyncUserDTO = z.object({
 });
 
 export const CreateUserDTO = z.object({
-  // Optional Clerk ID - if omitted or empty, a new Clerk user will be created automatically
-  clerkId: z.string().min(1).optional().or(z.literal('')).optional(),
+  clerkId: z.string().min(1).optional(), // Optional - will be created automatically if not provided
   email: z.string().email(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),

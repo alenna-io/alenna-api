@@ -5,4 +5,4 @@ export * from './UpdateSchoolYearUseCase';
 export * from './DeleteSchoolYearUseCase';
 export * from './SetActiveSchoolYearUseCase';
 export * from './GetCurrentWeekUseCase';
-
+export * from './PreviewQuarterWeeksUseCase';

@@ -26,6 +26,9 @@ router.get('/:id', requirePermission('schoolYear.read'), schoolYearController.ge
 // POST /api/v1/school-years - Create school year (Admin only)
 router.post('/', requirePermission('schoolYear.create'), schoolYearController.createSchoolYear);
 
+// POST /api/v1/school-years/preview-weeks - Preview quarter weeks for wizard (Admin only)
+router.post('/preview-weeks', requirePermission('schoolYear.create'), schoolYearController.previewQuarterWeeks);
+
 // PUT /api/v1/school-years/:id - Update school year (Admin only)
 router.put('/:id', requirePermission('schoolYear.update'), schoolYearController.updateSchoolYear);
 

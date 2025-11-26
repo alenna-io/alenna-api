@@ -21,6 +21,16 @@ export class UpdateSchoolYearUseCase {
         endDate: q.endDate ? new Date(q.endDate) : undefined,
         order: q.order,
         weeksCount: q.weeksCount,
+        weeks: q.weeks?.map(w => ({
+          weekNumber: w.weekNumber,
+          startDate: new Date(w.startDate),
+          endDate: new Date(w.endDate),
+        })),
+        holidays: q.holidays?.map(h => ({
+          startDate: new Date(h.startDate),
+          endDate: new Date(h.endDate),
+          label: h.label,
+        })),
       }));
     }
 
