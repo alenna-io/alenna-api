@@ -4,6 +4,7 @@ import type {
   UpdateSchoolYearData,
 } from '../../../adapters_interface/repositories';
 import type { SchoolYear, CurrentWeekInfo } from '../../../domain/entities';
+import type { SchoolYear as PrismaSchoolYear, Quarter as PrismaQuarter, SchoolWeek as PrismaSchoolWeek } from '@prisma/client';
 import { SchoolYearMapper } from '../mappers'
 import prisma from '../prisma.client';
 import { generateSchoolWeeksForQuarter, type HolidayRange } from '../../../../utils';
@@ -68,7 +69,7 @@ export class SchoolYearRepository implements ISchoolYearRepository {
       throw new Error(`Ya existe un año escolar con el nombre "${data.name}". Por favor, elige un nombre diferente.`);
     }
 
-    let schoolYear;
+    let schoolYear: PrismaSchoolYear & { quarters: PrismaQuarter[] };
     try {
       schoolYear = await prisma.schoolYear.create({
         data: {
@@ -410,7 +411,7 @@ export class SchoolYearRepository implements ISchoolYearRepository {
 
     if (storedWeeks.length > 0) {
       const matchingWeek = storedWeeks.find(
-        (w) => now >= w.startDate && now <= w.endDate
+        (w: PrismaSchoolWeek) => now >= w.startDate && now <= w.endDate
       );
 
       if (matchingWeek) {

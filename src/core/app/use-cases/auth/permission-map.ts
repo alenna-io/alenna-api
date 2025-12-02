@@ -22,8 +22,12 @@ export const PERMISSION_DEFINITIONS: Record<string, PermissionDefinition> = {
   'projections.update': { module: 'projections', scope: 'school' },
   'projections.delete': { module: 'projections', scope: 'school' },
 
-  // PACEs module - PACE catalog (read-only for now)
+  // PACEs module - PACE catalog and projection PACEs
   'paces.read': { module: 'paces', scope: 'school' },
+  'paces.create': { module: 'paces', scope: 'school' },
+  'paces.update': { module: 'paces', scope: 'school' },
+  'paces.move': { module: 'paces', scope: 'school' },
+  'paces.delete': { module: 'paces', scope: 'school' },
 
   // Monthly Assignments module
   'monthlyAssignment.read': { module: 'monthlyAssignments', scope: 'school' },
@@ -83,8 +87,12 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'projections.create',
     'projections.update',
     'projections.delete',
-    // PACEs (read-only)
+    // PACEs
     'paces.read',
+    'paces.create',
+    'paces.update',
+    'paces.move',
+    'paces.delete',
     // Monthly Assignments
     'monthlyAssignment.read',
     'monthlyAssignment.create',
@@ -126,8 +134,12 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'projections.create',
     'projections.update',
     'projections.delete',
-    // PACEs (read-only)
+    // PACEs
     'paces.read',
+    'paces.create',
+    'paces.update',
+    'paces.move',
+    'paces.delete',
     // Monthly Assignments
     'monthlyAssignment.read',
     'monthlyAssignment.create',

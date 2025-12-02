@@ -6,7 +6,7 @@
   "scripts": {
     "setup": "node -e \"console.log('Run ./setup.sh to initialize the project')\"",
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && npx prisma generate",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/server.js",
     "postinstall": "npx prisma generate",
     "prisma:generate": "prisma generate",
