@@ -11,7 +11,26 @@ export class CreateStudentUseCase {
   constructor(private studentRepository: IStudentRepository) {}
 
   async execute(input: CreateStudentInput, schoolId: string): Promise<Student> {
-    // 1. Get STUDENT role
+    // 1. Check student limit if school has one set
+    const school = await prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { userLimit: true },
+    });
+
+    if (school?.userLimit) {
+      const currentStudentCount = await prisma.student.count({
+        where: {
+          schoolId,
+          deletedAt: null,
+        },
+      });
+
+      if (currentStudentCount >= school.userLimit) {
+        throw new Error(`Se ha alcanzado el límite de estudiantes permitidos (${school.userLimit}). No se pueden crear más estudiantes.`);
+      }
+    }
+
+    // 2. Get STUDENT role
     const studentRole = await prisma.role.findFirst({
       where: { name: 'STUDENT', schoolId: null },
     });
@@ -20,7 +39,7 @@ export class CreateStudentUseCase {
       throw new Error('STUDENT role not found in system');
     }
 
-    // 2. Ensure email is not already in use
+    // 3. Ensure email is not already in use
     const existingUser = await prisma.user.findUnique({
       where: { email: input.email },
     });

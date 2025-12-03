@@ -41,6 +41,8 @@ export class SchoolController {
         phone: school.phone,
         email: school.email,
         isActive: school.isActive,
+        teacherLimit: school.teacherLimit,
+        userLimit: school.userLimit,
       });
     } catch (error: any) {
       console.error('Error getting school:', error);
@@ -68,6 +70,8 @@ export class SchoolController {
         phone: school.phone,
         email: school.email,
         isActive: school.isActive,
+        teacherLimit: school.teacherLimit,
+        userLimit: school.userLimit,
       });
     } catch (error: any) {
       console.error('Error updating school:', error);
@@ -97,6 +101,8 @@ export class SchoolController {
         phone: school.phone,
         email: school.email,
         isActive: school.isActive,
+        teacherLimit: school.teacherLimit,
+        userLimit: school.userLimit,
       })));
     } catch (error: any) {
       console.error('Error getting all schools:', error);
@@ -126,6 +132,8 @@ export class SchoolController {
         phone: school.phone,
         email: school.email,
         isActive: school.isActive,
+        teacherLimit: school.teacherLimit,
+        userLimit: school.userLimit,
       });
     } catch (error: any) {
       console.error('Error getting school:', error);

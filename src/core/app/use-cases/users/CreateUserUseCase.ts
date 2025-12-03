@@ -9,6 +9,40 @@ export class CreateUserUseCase {
   constructor(private userRepository: IUserRepository) {}
 
   async execute(input: CreateUserInput): Promise<User> {
+    // Check if this is a teacher being created and validate teacher limit
+    if (input.schoolId && input.roleIds && input.roleIds.length > 0) {
+      const teacherRole = await prisma.role.findFirst({
+        where: { name: 'TEACHER', schoolId: null },
+      });
+
+      if (teacherRole && input.roleIds.includes(teacherRole.id)) {
+        // This is a teacher being created - check teacher limit
+        const school = await prisma.school.findUnique({
+          where: { id: input.schoolId },
+          select: { teacherLimit: true },
+        });
+
+        if (school?.teacherLimit) {
+          // Count current teachers for this school
+          const currentTeacherCount = await prisma.user.count({
+            where: {
+              schoolId: input.schoolId,
+              deletedAt: null,
+              userRoles: {
+                some: {
+                  roleId: teacherRole.id,
+                },
+              },
+            },
+          });
+
+          if (currentTeacherCount >= school.teacherLimit) {
+            throw new Error(`Se ha alcanzado el límite de maestros permitidos (${school.teacherLimit}). No se pueden crear más maestros.`);
+          }
+        }
+      }
+    }
+
     // Check if user with email already exists (not deleted)
     const existingUser = await this.userRepository.findByEmail(input.email);
     if (existingUser) {
