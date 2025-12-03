@@ -15,7 +15,7 @@ export class GetProjectionDetailUseCase {
       throw new Error('Proyección no encontrada');
     }
 
-    const { projection, projectionPaces } = projectionWithPaces;
+    const { projection, projectionPaces, categories } = projectionWithPaces;
 
     // Fetch student information
     // We use empty schoolId since we're already filtering by studentId in projection query
@@ -24,6 +24,26 @@ export class GetProjectionDetailUseCase {
     if (!student) {
       throw new Error('Estudiante no encontrado');
     }
+
+    // Get categories from projection (if available) or extract from paces
+    const projectionCategoryNames = categories && categories.length > 0
+      ? categories
+          .map(c => ({ name: c.name, displayOrder: c.displayOrder }))
+          .sort((a, b) => a.displayOrder - b.displayOrder)
+          .map(c => c.name)
+      : [];
+
+    // If no categories tracked, extract from paces (backward compatibility)
+    const categoryNamesFromPaces = new Set<string>();
+    projectionPaces.forEach(pp => {
+      const categoryName = pp.paceCatalog.subSubject.category.name;
+      categoryNamesFromPaces.add(categoryName);
+    });
+
+    // Use projection categories if available, otherwise use categories from paces
+    const categoryNames = projectionCategoryNames.length > 0
+      ? projectionCategoryNames
+      : Array.from(categoryNamesFromPaces).sort();
 
     // Collect all unique sub-subject names from projection paces
     const subSubjectNames = new Set<string>();
@@ -102,6 +122,7 @@ export class GetProjectionDetailUseCase {
       notes: projection.notes,
       createdAt: projection.createdAt?.toISOString() || new Date().toISOString(),
       updatedAt: projection.updatedAt?.toISOString() || new Date().toISOString(),
+      categories: categoryNames,
       quarters,
     };
   }

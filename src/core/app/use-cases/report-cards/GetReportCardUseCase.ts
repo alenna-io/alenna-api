@@ -71,6 +71,11 @@ export class GetReportCardUseCase {
             },
           },
         },
+        projectionCategories: {
+          include: {
+            category: true,
+          },
+        },
       },
     });
 
@@ -182,17 +187,28 @@ export class GetReportCardUseCase {
       },
     });
 
-    // 7. Organize data by quarter
+    // 7. Extract projection categories if available
+    const projectionCategoryNames = projection.projectionCategories
+      ?.map(pc => pc.category.name)
+      .sort((a, b) => {
+        const pcA = projection.projectionCategories!.find(pc => pc.category.name === a);
+        const pcB = projection.projectionCategories!.find(pc => pc.category.name === b);
+        const orderA = pcA?.category.displayOrder || 999;
+        const orderB = pcB?.category.displayOrder || 999;
+        return orderA - orderB;
+      }) || [];
+
+    // 8. Organize data by quarter
     const quarters: {
       Q1: ReportCardQuarterData;
       Q2: ReportCardQuarterData;
       Q3: ReportCardQuarterData;
       Q4: ReportCardQuarterData;
     } = {
-      Q1: this.buildQuarterData('Q1', projectionPaces, monthlyAssignments, templates, gradePercentages),
-      Q2: this.buildQuarterData('Q2', projectionPaces, monthlyAssignments, templates, gradePercentages),
-      Q3: this.buildQuarterData('Q3', projectionPaces, monthlyAssignments, templates, gradePercentages),
-      Q4: this.buildQuarterData('Q4', projectionPaces, monthlyAssignments, templates, gradePercentages),
+      Q1: this.buildQuarterData('Q1', projectionPaces, monthlyAssignments, templates, gradePercentages, projectionCategoryNames),
+      Q2: this.buildQuarterData('Q2', projectionPaces, monthlyAssignments, templates, gradePercentages, projectionCategoryNames),
+      Q3: this.buildQuarterData('Q3', projectionPaces, monthlyAssignments, templates, gradePercentages, projectionCategoryNames),
+      Q4: this.buildQuarterData('Q4', projectionPaces, monthlyAssignments, templates, gradePercentages, projectionCategoryNames),
     };
 
     // Construct student full name from user
@@ -214,7 +230,8 @@ export class GetReportCardUseCase {
     projectionPaces: any[],
     monthlyAssignments: any[],
     templates: any[],
-    gradePercentages: Map<string, number>
+    gradePercentages: Map<string, number>,
+    projectionCategories?: string[]
   ): ReportCardQuarterData {
     // Filter PACEs for this quarter
     const quarterPaces = projectionPaces.filter(pp => pp.quarter === quarter);
@@ -250,6 +267,20 @@ export class GetReportCardUseCase {
         isFailed: pp.isFailed,
       });
     });
+
+    // If projection has categories, ensure they're all included even if empty
+    if (projectionCategories && projectionCategories.length > 0) {
+      projectionCategories.forEach(categoryName => {
+        if (!subjectsMap.has(categoryName)) {
+          subjectsMap.set(categoryName, {
+            subject: categoryName,
+            paces: [],
+            average: null,
+            passedCount: 0,
+          });
+        }
+      });
+    }
 
     // Default category order for sorting
     const categoryOrder = ['Math', 'English', 'Word Building', 'Science', 'Social Studies', 'Spanish', 'Electives'];

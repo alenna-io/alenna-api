@@ -13,10 +13,16 @@ export const CreateStudentDTO = z.object({
   expectedLevel: z.string().optional(),
   currentLevel: z.string().optional(),
   address: z.string().optional(),
+  streetAddress: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
+  zipCode: z.string().optional(),
   parents: z.array(z.object({
     firstName: z.string().min(1, 'Parent first name is required'),
     lastName: z.string().min(1, 'Parent last name is required'),
     email: z.string().email('Invalid parent email'),
+    phone: z.string().min(1, 'Parent phone number is required'),
     relationship: z.string().min(1, 'Relationship is required'),
   })).min(1, 'At least one parent is required').max(2, 'Maximum two parents allowed'),
 });
@@ -41,6 +47,11 @@ export interface StudentOutput {
   expectedLevel?: string;
   currentLevel?: string;
   address?: string;
+  streetAddress?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zipCode?: string;
   parents: Array<{ id: string; name: string }>;
   createdAt?: string;
   updatedAt?: string;

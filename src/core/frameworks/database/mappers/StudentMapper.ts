@@ -48,6 +48,7 @@ export class StudentMapper {
       email: us.user.email || undefined,
       firstName: us.user.firstName || undefined,
       lastName: us.user.lastName || undefined,
+      phone: us.user.phone || undefined,
       relationship: us.relationship || undefined,
     })) || [];
 
@@ -67,6 +68,11 @@ export class StudentMapper {
       prismaStudent.expectedLevel || undefined,
       prismaStudent.currentLevel || undefined,
       prismaStudent.address || undefined,
+      prismaStudent.streetAddress || undefined,
+      prismaStudent.city || undefined,
+      prismaStudent.state || undefined,
+      prismaStudent.country || undefined,
+      prismaStudent.zipCode || undefined,
       parents,
       prismaStudent.createdAt,
       prismaStudent.updatedAt
@@ -86,6 +92,11 @@ export class StudentMapper {
       expectedLevel: student.expectedLevel || null,
       currentLevel: student.currentLevel || null,
       address: student.address || null,
+      streetAddress: student.streetAddress || null,
+      city: student.city || null,
+      state: student.state || null,
+      country: student.country || null,
+      zipCode: student.zipCode || null,
     };
   }
 }

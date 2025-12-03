@@ -114,6 +114,11 @@ export class CreateStudentUseCase {
       expectedLevel: input.expectedLevel,
       currentLevel: input.currentLevel,
       address: input.address,
+      streetAddress: input.streetAddress,
+      city: input.city,
+      state: input.state,
+      country: input.country,
+      zipCode: input.zipCode,
       parents: [],
     });
 
@@ -177,6 +182,7 @@ export class CreateStudentUseCase {
             email: parentEmail,
             firstName: parentData.firstName,
             lastName: parentData.lastName,
+            phone: parentData.phone,
             schoolId,
             createdPassword: false,
           },

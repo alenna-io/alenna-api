@@ -56,6 +56,11 @@ export class ProjectionRepository implements IProjectionRepository {
             { week: 'asc' },
           ],
         },
+        projectionCategories: {
+          include: {
+            category: true,
+          },
+        },
       },
     });
 
@@ -84,9 +89,15 @@ export class ProjectionRepository implements IProjectionRepository {
       });
     });
 
+    // Extract categories from projectionCategories
+    const categories = projection.projectionCategories
+      ?.map(pc => CategoryMapper.toDomain(pc.category))
+      .sort((a, b) => a.displayOrder - b.displayOrder) || [];
+
     return {
       projection: domainProjection,
       projectionPaces,
+      categories,
     };
   }
 

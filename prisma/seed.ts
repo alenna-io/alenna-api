@@ -657,13 +657,16 @@ async function main() {
   if (parentRole && studentsModule) {
     demoParentUser = await prisma.user.upsert({
       where: { email: 'demo.parent@alenna.io' },
-      update: {},
+      update: {
+        phone: '+52 555 000 1111',
+      },
       create: {
         id: randomUUID(),
         clerkId: 'user_34OKCyGRvnekmyY7ffTpLmYc57I',
         email: 'demo.parent@alenna.io',
         firstName: 'Demo',
         lastName: 'Parent',
+        phone: '+52 555 000 1111',
         schoolId: school.id,
       },
     });
@@ -775,6 +778,11 @@ async function main() {
         expectedLevel: null,
         currentLevel: null,
         address: 'Perfil demo del estudiante',
+        streetAddress: '123 Demo Street',
+        city: 'Demo City',
+        state: 'Demo State',
+        country: 'Mexico',
+        zipCode: '12345',
         certificationTypeId: getCertTypeId('Grace Christian'),
         schoolId: school.id,
       },
@@ -796,6 +804,11 @@ async function main() {
       expectedLevel: 'L8',
       currentLevel: 'L8',
       address: 'Calle Principal 123, Colonia Centro, Ciudad de México',
+      streetAddress: 'Calle Principal 123',
+      city: 'Ciudad de México',
+      state: 'CDMX',
+      country: 'Mexico',
+      zipCode: '06000',
     },
     {
       firstName: 'José Antonio',
@@ -807,6 +820,11 @@ async function main() {
       isLeveled: false,
       currentLevel: 'L7',
       address: 'Av. Libertad 456, Colonia Norte, Guadalajara',
+      streetAddress: 'Av. Libertad 456',
+      city: 'Guadalajara',
+      state: 'Jalisco',
+      country: 'Mexico',
+      zipCode: '44100',
     },
     {
       firstName: 'Sofía',
@@ -819,6 +837,11 @@ async function main() {
       expectedLevel: 'L10',
       currentLevel: 'L10',
       address: 'Calle Reforma 789, Colonia Sur, Monterrey',
+      streetAddress: 'Calle Reforma 789',
+      city: 'Monterrey',
+      state: 'Nuevo León',
+      country: 'Mexico',
+      zipCode: '64000',
     },
     {
       firstName: 'Diego Fernando',
@@ -831,6 +854,11 @@ async function main() {
       expectedLevel: 'L5',
       currentLevel: 'L5',
       address: 'Blvd. Universidad 321, Colonia Este, Puebla',
+      streetAddress: 'Blvd. Universidad 321',
+      city: 'Puebla',
+      state: 'Puebla',
+      country: 'Mexico',
+      zipCode: '72000',
     },
     {
       firstName: 'Camila',
@@ -843,13 +871,18 @@ async function main() {
       expectedLevel: 'L11',
       currentLevel: 'L11',
       address: 'Calle Morelos 234, Colonia Sur, Mérida',
+      streetAddress: 'Calle Morelos 234',
+      city: 'Mérida',
+      state: 'Yucatán',
+      country: 'Mexico',
+      zipCode: '97000',
     },
   ];
 
   // studentRole and parentRole already declared above
 
   for (const studentData of studentsData) {
-    const { certificationTypeName, currentLevel, ...restData } = studentData;
+    const { certificationTypeName, currentLevel, streetAddress, city, state, country, zipCode, address, ...restData } = studentData;
     const studentId = randomUUID();
     
     // Create User account for student (email must be unique)
@@ -887,7 +920,12 @@ async function main() {
         isLeveled: restData.isLeveled,
         expectedLevel: restData.expectedLevel,
         currentLevel: (currentLevel as string | undefined),
-        address: restData.address,
+        address: address,
+        streetAddress: streetAddress,
+        city: city,
+        state: state,
+        country: country,
+        zipCode: zipCode,
         certificationTypeId: getCertTypeId(certificationTypeName),
         schoolId: school.id,
       },
@@ -910,8 +948,8 @@ async function main() {
 
     // Create additional parent users for María
     const parentData = [
-      { firstName: 'Carlos', lastName: 'González', relationship: 'Father' },
-      { firstName: 'Ana', lastName: 'López', relationship: 'Mother' },
+      { firstName: 'Carlos', lastName: 'González', relationship: 'Father', phone: '+52 555 111 2222' },
+      { firstName: 'Ana', lastName: 'López', relationship: 'Mother', phone: '+52 555 111 3333' },
     ];
 
     if (restData.firstName === 'María' && parentRole) {
@@ -924,6 +962,7 @@ async function main() {
             email: `parent.${parentUserId.substring(0, 8)}@demo.alenna.io`, // Unique email
             firstName: parent.firstName,
             lastName: parent.lastName,
+            phone: parent.phone,
             schoolId: school.id,
             createdPassword: false, // Parents need to set password on first login
           },

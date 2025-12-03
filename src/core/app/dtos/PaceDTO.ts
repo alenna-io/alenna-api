@@ -80,6 +80,7 @@ export interface ProjectionDetailOutput {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  categories?: string[]; // Category names used in this projection
   quarters: {
     Q1: QuarterPacesOutput;
     Q2: QuarterPacesOutput;

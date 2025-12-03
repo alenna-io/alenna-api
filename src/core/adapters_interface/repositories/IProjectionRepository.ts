@@ -12,6 +12,7 @@ export interface ProjectionPaceWithDetails extends ProjectionPace {
 export interface ProjectionWithPaces {
   projection: Projection;
   projectionPaces: ProjectionPaceWithDetails[];
+  categories?: Category[];
 }
 
 export interface IProjectionRepository {

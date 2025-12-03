@@ -175,6 +175,36 @@ export class GenerateProjectionUseCase {
       });
     }
 
+    // 5. Track categories used in this projection
+    const categoryIds = new Set<string>();
+    for (const pace of projectionPacesToCreate) {
+      const paceCatalog = await prisma.paceCatalog.findUnique({
+        where: { id: pace.paceCatalogId },
+        include: {
+          subSubject: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      });
+      if (paceCatalog?.subSubject?.category) {
+        categoryIds.add(paceCatalog.subSubject.category.id);
+      }
+    }
+
+    // Create ProjectionCategory records
+    if (categoryIds.size > 0) {
+      await prisma.projectionCategory.createMany({
+        data: Array.from(categoryIds).map(categoryId => ({
+          id: randomUUID(),
+          projectionId: createdProjection.id,
+          categoryId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
     return createdProjection;
   }
 }

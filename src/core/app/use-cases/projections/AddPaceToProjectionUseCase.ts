@@ -114,7 +114,24 @@ export class AddPaceToProjectionUseCase {
       });
     }
 
-    // 6. Map to domain entity
+    // 6. Ensure category is tracked for this projection
+    const categoryId = paceCatalogWithDetails.subSubject.category.id;
+    await prisma.projectionCategory.upsert({
+      where: {
+        projectionId_categoryId: {
+          projectionId,
+          categoryId,
+        },
+      },
+      update: {},
+      create: {
+        id: randomUUID(),
+        projectionId,
+        categoryId,
+      },
+    });
+
+    // 7. Map to domain entity
     return new ProjectionPace(
       projectionPace.id,
       projectionPace.projectionId,
