@@ -251,8 +251,16 @@ export class GetReportCardUseCase {
       });
     });
 
+    // Default category order for sorting
+    const categoryOrder = ['Math', 'English', 'Word Building', 'Science', 'Social Studies', 'Spanish', 'Electives'];
+    const getCategoryOrder = (category: string): number => {
+      const index = categoryOrder.indexOf(category);
+      return index === -1 ? 999 : index;
+    };
+
     // Calculate averages and counts for each subject
-    const subjects: ReportCardSubjectData[] = Array.from(subjectsMap.values()).map(subject => {
+    const subjects: ReportCardSubjectData[] = Array.from(subjectsMap.values())
+      .map(subject => {
       const grades = subject.paces
         .filter(p => p.grade !== null)
         .map(p => p.grade!);
@@ -273,7 +281,8 @@ export class GetReportCardUseCase {
         average: average !== null ? Math.round(average * 100) / 100 : null,
         passedCount,
       };
-    });
+    })
+      .sort((a, b) => getCategoryOrder(a.subject) - getCategoryOrder(b.subject));
 
     // Calculate monthly assignment average
     const maGrades = quarterMAs
