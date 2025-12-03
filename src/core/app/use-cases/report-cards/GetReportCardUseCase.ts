@@ -225,22 +225,23 @@ export class GetReportCardUseCase {
     // Get templates for this quarter to know expected assignments
     const quarterTemplates = templates.filter(t => t.quarter === quarter);
 
-    // Organize PACEs by subject
+    // Organize PACEs by category (group sub-subjects by category)
     const subjectsMap = new Map<string, ReportCardSubjectData>();
 
     quarterPaces.forEach(pp => {
-      const subjectName = pp.paceCatalog.subSubject.name;
+      // Use category name instead of sub-subject name
+      const categoryName = pp.paceCatalog.subSubject.category.name;
       
-      if (!subjectsMap.has(subjectName)) {
-        subjectsMap.set(subjectName, {
-          subject: subjectName,
+      if (!subjectsMap.has(categoryName)) {
+        subjectsMap.set(categoryName, {
+          subject: categoryName,
           paces: [],
           average: null,
           passedCount: 0,
         });
       }
 
-      const subjectData = subjectsMap.get(subjectName)!;
+      const subjectData = subjectsMap.get(categoryName)!;
       subjectData.paces.push({
         id: pp.id,
         code: pp.paceCatalog.code,
