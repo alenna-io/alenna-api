@@ -63,16 +63,9 @@ export class StudentMapper {
       prismaStudent.graduationDate,
       prismaStudent.schoolId,
       prismaStudent.user.isActive,
-      prismaStudent.contactPhone || undefined,
       prismaStudent.isLeveled,
       prismaStudent.expectedLevel || undefined,
       prismaStudent.currentLevel || undefined,
-      prismaStudent.address || undefined,
-      prismaStudent.streetAddress || undefined,
-      prismaStudent.city || undefined,
-      prismaStudent.state || undefined,
-      prismaStudent.country || undefined,
-      prismaStudent.zipCode || undefined,
       parents,
       prismaStudent.createdAt,
       prismaStudent.updatedAt
@@ -87,16 +80,9 @@ export class StudentMapper {
       certificationTypeId: student.certificationTypeId,
       graduationDate: student.graduationDate,
       schoolId: student.schoolId,
-      contactPhone: student.contactPhone || null,
       isLeveled: student.isLeveled,
       expectedLevel: student.expectedLevel || null,
       currentLevel: student.currentLevel || null,
-      address: student.address || null,
-      streetAddress: student.streetAddress || null,
-      city: student.city || null,
-      state: student.state || null,
-      country: student.country || null,
-      zipCode: student.zipCode || null,
     };
   }
 }

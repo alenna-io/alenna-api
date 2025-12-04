@@ -104,7 +104,18 @@ export class ReactivateUserUseCase {
     for (const parentUserId of parentUserIds) {
       const parent = await this.userRepository.findById(parentUserId);
       if (parent && !parent.isActive) {
+        // Reactivate the parent in database
         await this.userRepository.reactivate(parentUserId);
+
+        // Unlock parent in Clerk to allow access
+        if (parent.clerkId) {
+          try {
+            await clerkService.unlockUser(parent.clerkId);
+          } catch (clerkError: any) {
+            console.error(`Failed to unlock Clerk user ${parent.clerkId}:`, clerkError);
+            // Continue even if Clerk unlock fails - user is already reactivated in DB
+          }
+        }
       }
     }
   }

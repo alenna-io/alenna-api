@@ -76,6 +76,12 @@ export class CreateStudentUseCase {
         email: input.email,
         firstName: input.firstName,
         lastName: input.lastName,
+        phone: input.phone || null,
+        streetAddress: input.streetAddress || null,
+        city: input.city || null,
+        state: input.state || null,
+        country: input.country || null,
+        zipCode: input.zipCode || null,
         schoolId,
       },
     });
@@ -109,16 +115,9 @@ export class CreateStudentUseCase {
       certificationType: new CertificationType(input.certificationTypeId, '', schoolId), // Will be populated by repository
       graduationDate: new Date(input.graduationDate),
       schoolId,
-      contactPhone: input.contactPhone,
       isLeveled: input.isLeveled || false,
       expectedLevel: input.expectedLevel,
       currentLevel: input.currentLevel,
-      address: input.address,
-      streetAddress: input.streetAddress,
-      city: input.city,
-      state: input.state,
-      country: input.country,
-      zipCode: input.zipCode,
       parents: [],
     });
 

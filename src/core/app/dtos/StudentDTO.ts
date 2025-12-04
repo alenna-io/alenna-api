@@ -8,11 +8,10 @@ export const CreateStudentDTO = z.object({
   birthDate: z.string().datetime(),
   certificationTypeId: z.string().min(1, 'Certification type is required'),
   graduationDate: z.string().datetime(),
-  contactPhone: z.string().optional(),
+  phone: z.string().optional(),
   isLeveled: z.boolean().optional().default(false),
   expectedLevel: z.string().optional(),
   currentLevel: z.string().optional(),
-  address: z.string().optional(),
   streetAddress: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -42,17 +41,17 @@ export interface StudentOutput {
   birthDate: string;
   certificationType: string;
   graduationDate: string;
-  contactPhone?: string;
+  email?: string;
+  phone?: string;
   isLeveled: boolean;
   expectedLevel?: string;
   currentLevel?: string;
-  address?: string;
   streetAddress?: string;
   city?: string;
   state?: string;
   country?: string;
   zipCode?: string;
-  parents: Array<{ id: string; name: string }>;
+  parents: Array<{ id: string; name: string; email?: string; phone?: string; firstName?: string; lastName?: string; relationship?: string }>;
   createdAt?: string;
   updatedAt?: string;
 }

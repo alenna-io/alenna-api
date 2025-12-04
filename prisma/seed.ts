@@ -767,22 +767,29 @@ async function main() {
   // Create student profile for demo student user (login account)
   if (studentRole && demoStudentUser) {
     const demoStudentId = randomUUID();
+    
+    // Update demo student user with contact info
+    await prisma.user.update({
+      where: { id: demoStudentUser.id },
+      data: {
+        phone: '+52 555 000 0000',
+        streetAddress: '123 Demo Street',
+        city: 'Demo City',
+        state: 'Demo State',
+        country: 'Mexico',
+        zipCode: '12345',
+      },
+    });
+    
     await prisma.student.create({
       data: {
         id: demoStudentId,
         userId: demoStudentUser.id,
         birthDate: new Date('2010-01-01'),
         graduationDate: new Date('2025-06-15'),
-        contactPhone: '+52 555 000 0000',
         isLeveled: false,
         expectedLevel: null,
         currentLevel: null,
-        address: 'Perfil demo del estudiante',
-        streetAddress: '123 Demo Street',
-        city: 'Demo City',
-        state: 'Demo State',
-        country: 'Mexico',
-        zipCode: '12345',
         certificationTypeId: getCertTypeId('Grace Christian'),
         schoolId: school.id,
       },
@@ -893,6 +900,12 @@ async function main() {
         email: `student.${studentId.substring(0, 8)}@demo.alenna.io`, // Unique email using student ID
         firstName: restData.firstName,
         lastName: restData.lastName,
+        phone: restData.contactPhone,
+        streetAddress: streetAddress,
+        city: city,
+        state: state,
+        country: country,
+        zipCode: zipCode,
         schoolId: school.id,
         createdPassword: false, // Students need to set password on first login
       },
@@ -916,16 +929,9 @@ async function main() {
         userId: studentUser.id,
         birthDate: restData.birthDate,
         graduationDate: restData.graduationDate,
-        contactPhone: restData.contactPhone,
         isLeveled: restData.isLeveled,
         expectedLevel: restData.expectedLevel,
         currentLevel: (currentLevel as string | undefined),
-        address: address,
-        streetAddress: streetAddress,
-        city: city,
-        state: state,
-        country: country,
-        zipCode: zipCode,
         certificationTypeId: getCertTypeId(certificationTypeName),
         schoolId: school.id,
       },

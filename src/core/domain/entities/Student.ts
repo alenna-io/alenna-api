@@ -23,16 +23,9 @@ export class Student {
     public readonly graduationDate: Date,
     public readonly schoolId: string,
     public readonly isActive: boolean,
-    public readonly contactPhone?: string,
     public readonly isLeveled: boolean = false,
     public readonly expectedLevel?: string,
     public readonly currentLevel?: string,
-    public readonly address?: string,
-    public readonly streetAddress?: string,
-    public readonly city?: string,
-    public readonly state?: string,
-    public readonly country?: string,
-    public readonly zipCode?: string,
     public readonly parents: Parent[] = [],
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date
@@ -49,16 +42,9 @@ export class Student {
     graduationDate: Date;
     schoolId: string;
     isActive?: boolean;
-    contactPhone?: string;
     isLeveled?: boolean;
     expectedLevel?: string;
     currentLevel?: string;
-    address?: string;
-    streetAddress?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-    zipCode?: string;
     parents?: Parent[];
   }): Student {
     return new Student(
@@ -72,16 +58,9 @@ export class Student {
       props.graduationDate,
       props.schoolId,
       props.isActive ?? true,
-      props.contactPhone,
       props.isLeveled || false,
       props.expectedLevel,
       props.currentLevel,
-      props.address,
-      props.streetAddress,
-      props.city,
-      props.state,
-      props.country,
-      props.zipCode,
       props.parents || [],
       new Date(),
       new Date()
@@ -100,16 +79,9 @@ export class Student {
       props.graduationDate ?? this.graduationDate,
       this.schoolId,
       this.isActive,
-      props.contactPhone ?? this.contactPhone,
       props.isLeveled ?? this.isLeveled,
       props.expectedLevel ?? this.expectedLevel,
       props.currentLevel ?? this.currentLevel,
-      props.address ?? this.address,
-      props.streetAddress ?? this.streetAddress,
-      props.city ?? this.city,
-      props.state ?? this.state,
-      props.country ?? this.country,
-      props.zipCode ?? this.zipCode,
       props.parents ?? this.parents,
       this.createdAt,
       new Date()

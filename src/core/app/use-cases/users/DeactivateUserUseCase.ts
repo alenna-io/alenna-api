@@ -134,7 +134,24 @@ export class DeactivateUserUseCase {
 
       // If parent has no other active students, deactivate the parent
       if (otherActiveStudents.length === 0) {
+        // Get parent user to access clerkId
+        const parentUser = await prisma.user.findUnique({
+          where: { id: parentUserId },
+          select: { clerkId: true },
+        });
+
+        // Deactivate the parent in database
         await this.userRepository.deactivate(parentUserId);
+
+        // Lock parent in Clerk to prevent access
+        if (parentUser?.clerkId) {
+          try {
+            await clerkService.lockUser(parentUser.clerkId);
+          } catch (clerkError: any) {
+            console.error(`Failed to lock Clerk user ${parentUser.clerkId}:`, clerkError);
+            // Continue even if Clerk lock fails - user is already deactivated in DB
+          }
+        }
       }
     }
   }

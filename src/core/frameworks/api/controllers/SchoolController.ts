@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { container } from '../../di/container';
 import { CreateSchoolDTO, UpdateSchoolDTO } from '../../../app/dtos';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export class SchoolController {
   async createSchool(req: Request, res: Response): Promise<void> {
@@ -226,22 +229,70 @@ export class SchoolController {
       
       const students = await container.getStudentsUseCase.execute(id, userId);
 
-      res.json(students.map(student => ({
-        id: student.id,
-        firstName: student.firstName,
-        lastName: student.lastName,
-        name: student.fullName,
-        age: student.age,
-        birthDate: student.birthDate.toISOString(),
-        certificationType: student.certificationType.name,
-        certificationTypeId: student.certificationTypeId,
-        graduationDate: student.graduationDate.toISOString(),
-        contactPhone: student.contactPhone,
-        isLeveled: student.isLeveled,
-        expectedLevel: student.expectedLevel,
-        address: student.address,
-        parents: student.parents,
-      })));
+      // Fetch user contact info for all students in one query
+      const studentIds = students.map(s => s.id);
+      const studentsWithUsers = await prisma.student.findMany({
+        where: { id: { in: studentIds } },
+        include: { 
+          user: { 
+            select: { 
+              email: true,
+              phone: true,
+              streetAddress: true,
+              city: true,
+              state: true,
+              country: true,
+              zipCode: true
+            } 
+          } 
+        }
+      });
+      const userInfoMap = new Map(studentsWithUsers.map(s => [
+        s.id, 
+        {
+          email: s.user?.email,
+          phone: s.user?.phone,
+          streetAddress: s.user?.streetAddress,
+          city: s.user?.city,
+          state: s.user?.state,
+          country: s.user?.country,
+          zipCode: s.user?.zipCode
+        }
+      ]));
+
+      res.json(students.map(student => {
+        const userInfo = userInfoMap.get(student.id) || {};
+        return {
+          id: student.id,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          name: student.fullName,
+          age: student.age,
+          birthDate: student.birthDate.toISOString(),
+          certificationType: student.certificationType.name,
+          certificationTypeId: student.certificationTypeId,
+          graduationDate: student.graduationDate.toISOString(),
+          email: userInfo.email,
+          phone: userInfo.phone,
+          isLeveled: student.isLeveled,
+          expectedLevel: student.expectedLevel,
+          currentLevel: student.currentLevel,
+          streetAddress: userInfo.streetAddress,
+          city: userInfo.city,
+          state: userInfo.state,
+          country: userInfo.country,
+          zipCode: userInfo.zipCode,
+          parents: student.parents.map(parent => ({
+            id: parent.id,
+            name: parent.name,
+            email: parent.email,
+            firstName: parent.firstName,
+            lastName: parent.lastName,
+            phone: parent.phone,
+            relationship: parent.relationship,
+          })),
+        };
+      }));
     } catch (error: any) {
       console.error('Error getting students:', error);
       
@@ -295,6 +346,7 @@ export class SchoolController {
         schoolId: teacher.schoolId,
         roles: teacher.roles,
         primaryRole: teacher.primaryRole,
+        isActive: teacher.isActive,
       })));
     } catch (error: any) {
       console.error('Error getting teachers:', error);

@@ -30,14 +30,21 @@ export class UpdateStudentUseCase {
       throw new Error('Student record not found');
     }
 
-    // Update User if firstName or lastName changed
-    if (input.firstName || input.lastName) {
+    // Update User if firstName, lastName, or contact info changed
+    const userUpdateData: any = {};
+    if (input.firstName !== undefined) userUpdateData.firstName = input.firstName;
+    if (input.lastName !== undefined) userUpdateData.lastName = input.lastName;
+    if (input.phone !== undefined) userUpdateData.phone = input.phone || null;
+    if (input.streetAddress !== undefined) userUpdateData.streetAddress = input.streetAddress || null;
+    if (input.city !== undefined) userUpdateData.city = input.city || null;
+    if (input.state !== undefined) userUpdateData.state = input.state || null;
+    if (input.country !== undefined) userUpdateData.country = input.country || null;
+    if (input.zipCode !== undefined) userUpdateData.zipCode = input.zipCode || null;
+
+    if (Object.keys(userUpdateData).length > 0) {
       await prisma.user.update({
         where: { id: studentRecord.userId },
-        data: {
-          firstName: input.firstName,
-          lastName: input.lastName,
-        },
+        data: userUpdateData,
       });
     }
 
