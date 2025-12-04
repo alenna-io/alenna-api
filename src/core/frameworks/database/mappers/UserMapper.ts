@@ -37,6 +37,12 @@ export class UserMapper {
       isActive: user.isActive,
       createdPassword: user.createdPassword,
       deletedAt: null,
+      phone: (user as any).phone || null,
+      streetAddress: (user as any).streetAddress || null,
+      city: (user as any).city || null,
+      state: (user as any).state || null,
+      country: (user as any).country || null,
+      zipCode: (user as any).zipCode || null,
     };
   }
 }

@@ -45,7 +45,15 @@ export class StudentController {
       ]));
 
       res.json(students.map(student => {
-        const userInfo = userInfoMap.get(student.id) || {};
+        const userInfo = userInfoMap.get(student.id) || {
+          email: undefined,
+          phone: undefined,
+          streetAddress: undefined,
+          city: undefined,
+          state: undefined,
+          country: undefined,
+          zipCode: undefined
+        };
         return {
           id: student.id,
           firstName: student.firstName,
@@ -162,6 +170,24 @@ export class StudentController {
       
       const student = await container.createStudentUseCase.execute(validatedData, schoolId);
 
+      // Fetch user info for the student
+      const studentWithUser = await prisma.student.findUnique({
+        where: { id: student.id },
+        include: {
+          user: {
+            select: {
+              email: true,
+              phone: true,
+              streetAddress: true,
+              city: true,
+              state: true,
+              country: true,
+              zipCode: true,
+            }
+          }
+        }
+      });
+
       res.status(201).json({
         id: student.id,
         firstName: student.firstName,
@@ -172,10 +198,16 @@ export class StudentController {
         certificationType: student.certificationType.name,
         certificationTypeId: student.certificationTypeId,
         graduationDate: student.graduationDate.toISOString(),
-        contactPhone: student.contactPhone,
+        email: studentWithUser?.user?.email || undefined,
+        phone: studentWithUser?.user?.phone || undefined,
         isLeveled: student.isLeveled,
         expectedLevel: student.expectedLevel,
-        address: student.address,
+        currentLevel: student.currentLevel,
+        streetAddress: studentWithUser?.user?.streetAddress || undefined,
+        city: studentWithUser?.user?.city || undefined,
+        state: studentWithUser?.user?.state || undefined,
+        country: studentWithUser?.user?.country || undefined,
+        zipCode: studentWithUser?.user?.zipCode || undefined,
         parents: student.parents,
       });
     } catch (error: any) {
@@ -198,6 +230,24 @@ export class StudentController {
       
       const student = await container.updateStudentUseCase.execute(id, validatedData, schoolId);
 
+      // Fetch user info for the student
+      const studentWithUser = await prisma.student.findUnique({
+        where: { id: student.id },
+        include: {
+          user: {
+            select: {
+              email: true,
+              phone: true,
+              streetAddress: true,
+              city: true,
+              state: true,
+              country: true,
+              zipCode: true,
+            }
+          }
+        }
+      });
+
       res.json({
         id: student.id,
         firstName: student.firstName,
@@ -208,11 +258,16 @@ export class StudentController {
         certificationType: student.certificationType.name,
         certificationTypeId: student.certificationTypeId,
         graduationDate: student.graduationDate.toISOString(),
-        contactPhone: student.contactPhone,
+        email: studentWithUser?.user?.email || undefined,
+        phone: studentWithUser?.user?.phone || undefined,
         isLeveled: student.isLeveled,
         expectedLevel: student.expectedLevel,
         currentLevel: student.currentLevel,
-        address: student.address,
+        streetAddress: studentWithUser?.user?.streetAddress || undefined,
+        city: studentWithUser?.user?.city || undefined,
+        state: studentWithUser?.user?.state || undefined,
+        country: studentWithUser?.user?.country || undefined,
+        zipCode: studentWithUser?.user?.zipCode || undefined,
         parents: student.parents,
       });
     } catch (error: any) {

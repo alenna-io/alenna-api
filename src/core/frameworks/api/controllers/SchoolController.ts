@@ -261,7 +261,15 @@ export class SchoolController {
       ]));
 
       res.json(students.map(student => {
-        const userInfo = userInfoMap.get(student.id) || {};
+        const userInfo = userInfoMap.get(student.id) || {
+          email: undefined,
+          phone: undefined,
+          streetAddress: undefined,
+          city: undefined,
+          state: undefined,
+          country: undefined,
+          zipCode: undefined
+        };
         return {
           id: student.id,
           firstName: student.firstName,

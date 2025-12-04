@@ -19,10 +19,15 @@ export interface StudentProfileOutput {
   birthDate: string;
   graduationDate: string;
   certificationType?: string;
-  contactPhone?: string;
+  phone?: string;
   isLeveled: boolean;
   expectedLevel?: string;
-  address?: string;
+  currentLevel?: string;
+  streetAddress?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zipCode?: string;
   parents: Array<{ id: string; name: string }>;
 }
 
@@ -159,10 +164,15 @@ export class GetUserInfoUseCase {
             birthDate: studentData.birthDate.toISOString(),
             graduationDate: studentData.graduationDate?.toISOString() ?? '',
             certificationType: studentData.certificationType?.name,
-            contactPhone: studentData.contactPhone ?? undefined,
+            phone: studentData.user?.phone ?? undefined,
             isLeveled: studentData.isLeveled,
             expectedLevel: studentData.expectedLevel ?? undefined,
-            address: studentData.address ?? undefined,
+            currentLevel: studentData.currentLevel ?? undefined,
+            streetAddress: studentData.user?.streetAddress ?? undefined,
+            city: studentData.user?.city ?? undefined,
+            state: studentData.user?.state ?? undefined,
+            country: studentData.user?.country ?? undefined,
+            zipCode: studentData.user?.zipCode ?? undefined,
             parents: studentData.userStudents
               .filter((userStudent) => userStudent.user.userRoles.some((role) => role.role.name === 'PARENT'))
               .map((userStudent) => ({
