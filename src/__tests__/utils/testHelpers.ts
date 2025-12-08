@@ -1,4 +1,4 @@
-import { Student, CertificationType, User, Group, GroupStudent } from '../../core/domain/entities';
+import { Student, CertificationType, User, Group, GroupStudent, MonthlyAssignment } from '../../core/domain/entities';
 import { CreateStudentInput } from '../../core/app/dtos';
 
 /**
@@ -236,6 +236,37 @@ export function createTestGroupStudent(overrides?: Partial<GroupStudent>): Group
 }
 
 /**
+ * Creates a test MonthlyAssignment entity with default values
+ */
+export function createTestMonthlyAssignment(overrides?: Partial<MonthlyAssignment>): MonthlyAssignment {
+  const defaultAssignment = new MonthlyAssignment(
+    'assignment-1',
+    'projection-1',
+    'Test Assignment',
+    'Q1',
+    null,
+    new Date(),
+    new Date(),
+    undefined
+  );
+
+  if (!overrides) {
+    return defaultAssignment;
+  }
+
+  return new MonthlyAssignment(
+    overrides.id ?? defaultAssignment.id,
+    overrides.projectionId ?? defaultAssignment.projectionId,
+    overrides.name ?? defaultAssignment.name,
+    overrides.quarter ?? defaultAssignment.quarter,
+    overrides.grade ?? defaultAssignment.grade,
+    overrides.createdAt ?? defaultAssignment.createdAt,
+    overrides.updatedAt ?? defaultAssignment.updatedAt,
+    overrides.deletedAt ?? defaultAssignment.deletedAt
+  );
+}
+
+/**
  * Common test constants
  */
 export const TEST_CONSTANTS = {
@@ -248,5 +279,7 @@ export const TEST_CONSTANTS = {
   TEACHER_ID: 'teacher-1',
   SCHOOL_YEAR_ID: 'school-year-1',
   GROUP_ID: 'group-1',
+  PROJECTION_ID: 'projection-1',
+  ASSIGNMENT_ID: 'assignment-1',
 } as const;
 
