@@ -1,4 +1,4 @@
-import { Student, CertificationType } from '../../core/domain/entities';
+import { Student, CertificationType, User } from '../../core/domain/entities';
 import { CreateStudentInput } from '../../core/app/dtos';
 
 /**
@@ -95,6 +95,42 @@ export function createTestCertificationType(
 }
 
 /**
+ * Creates a test User entity with default values
+ * Override specific properties as needed
+ */
+export function createTestUser(overrides?: Partial<User>): User {
+  const defaultUser = User.create({
+    id: 'user-1',
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'User',
+    schoolId: 'school-1',
+    clerkId: 'clerk-user-1',
+    isActive: true,
+  });
+
+  if (!overrides) {
+    return defaultUser;
+  }
+
+  // Merge overrides - User constructor: id, clerkId, email, schoolId, firstName?, lastName?, language?, isActive, createdPassword, roles, createdAt?, updatedAt?
+  return new User(
+    overrides.id ?? defaultUser.id,
+    overrides.clerkId ?? defaultUser.clerkId,
+    overrides.email ?? defaultUser.email,
+    overrides.schoolId ?? defaultUser.schoolId,
+    overrides.firstName ?? defaultUser.firstName,
+    overrides.lastName ?? defaultUser.lastName,
+    overrides.language ?? defaultUser.language,
+    overrides.isActive ?? defaultUser.isActive,
+    overrides.createdPassword ?? defaultUser.createdPassword,
+    overrides.roles ?? defaultUser.roles,
+    overrides.createdAt ?? defaultUser.createdAt,
+    overrides.updatedAt ?? defaultUser.updatedAt
+  );
+}
+
+/**
  * Common test constants
  */
 export const TEST_CONSTANTS = {
@@ -102,5 +138,6 @@ export const TEST_CONSTANTS = {
   USER_ID: 'user-1',
   STUDENT_ID: 'student-1',
   CERTIFICATION_TYPE_ID: 'cert-1',
+  CLERK_ID: 'clerk-user-1',
 } as const;
 

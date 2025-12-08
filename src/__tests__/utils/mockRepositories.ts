@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { IStudentRepository } from '../../core/adapters_interface/repositories';
+import { IStudentRepository, IUserRepository } from '../../core/adapters_interface/repositories';
 import { Student } from '../../core/domain/entities';
 
 /**
@@ -13,6 +13,26 @@ export function createMockStudentRepository(): IStudentRepository {
     create: vi.fn(),
     createWithUser: vi.fn(),
     update: vi.fn(),
+    delete: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock UserRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockUserRepository(): IUserRepository {
+  return {
+    findById: vi.fn(),
+    findByClerkId: vi.fn(),
+    findByEmail: vi.fn(),
+    findByEmailIncludingDeleted: vi.fn(),
+    findBySchoolId: vi.fn(),
+    findAll: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    deactivate: vi.fn(),
+    reactivate: vi.fn(),
     delete: vi.fn(),
   };
 }
