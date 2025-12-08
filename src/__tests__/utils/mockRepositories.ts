@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
-import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository } from '../../core/adapters_interface/repositories';
+import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository, IProjectionRepository } from '../../core/adapters_interface/repositories';
 import { IProjectionTemplateRepository } from '../../core/adapters_interface/repositories/IProjectionTemplateRepository';
-import { Student } from '../../core/domain/entities';
+import { Student, Projection } from '../../core/domain/entities';
 
 /**
  * Creates a mock StudentRepository with all methods mocked
@@ -122,6 +122,24 @@ export function createMockRoleRepository(): IRoleRepository {
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock ProjectionRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockProjectionRepository(): IProjectionRepository {
+  return {
+    findById: vi.fn(),
+    findByIdWithPaces: vi.fn(),
+    findByStudentId: vi.fn(),
+    findActiveByStudentId: vi.fn(),
+    findByStudentIdAndSchoolYear: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    hardDelete: vi.fn(),
   };
 }
 
