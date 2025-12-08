@@ -64,6 +64,7 @@ export function createTestCreateStudentInput(
     birthDate: '2010-01-01T00:00:00.000Z',
     certificationTypeId: 'cert-1',
     graduationDate: '2028-06-01T00:00:00.000Z',
+    isLeveled: false,
     parents: [
       {
         firstName: 'Jane',

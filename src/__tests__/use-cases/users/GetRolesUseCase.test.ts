@@ -16,8 +16,8 @@ describe('GetRolesUseCase', () => {
   describe('execute', () => {
     it('should return all roles', async () => {
       const roles = [
-        new Role('role-1', 'TEACHER', 'Teacher', 'Teacher role', true, true, null),
-        new Role('role-2', 'SCHOOL_ADMIN', 'School Admin', 'School admin role', true, true, null),
+        new Role('role-1', 'TEACHER', 'Teacher', 'Teacher role', true, true, undefined),
+        new Role('role-2', 'SCHOOL_ADMIN', 'School Admin', 'School admin role', true, true, undefined),
       ];
 
       vi.mocked(mockRepository.findAll).mockResolvedValue(roles);
@@ -39,9 +39,9 @@ describe('GetRolesUseCase', () => {
 
     it('should return multiple roles', async () => {
       const roles = [
-        new Role('role-1', 'TEACHER', 'Teacher', 'Teacher role', true, true, null),
-        new Role('role-2', 'SCHOOL_ADMIN', 'School Admin', 'School admin role', true, true, null),
-        new Role('role-3', 'PARENT', 'Parent', 'Parent role', true, true, null),
+        new Role('role-1', 'TEACHER', 'Teacher', 'Teacher role', true, true, undefined),
+        new Role('role-2', 'SCHOOL_ADMIN', 'School Admin', 'School admin role', true, true, undefined),
+        new Role('role-3', 'PARENT', 'Parent', 'Parent role', true, true, undefined),
       ];
 
       vi.mocked(mockRepository.findAll).mockResolvedValue(roles);

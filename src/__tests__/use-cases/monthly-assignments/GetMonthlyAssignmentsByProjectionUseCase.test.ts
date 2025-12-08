@@ -120,10 +120,11 @@ describe('GetMonthlyAssignmentsByProjectionUseCase', () => {
         deletedAt: null,
       };
 
+      // Mock should return data in the order Prisma would return after sorting by quarter (asc), then name (asc)
       const assignments = [
         {
-          id: 'assignment-1',
-          name: 'B Assignment',
+          id: 'assignment-2',
+          name: 'A Assignment',
           quarter: 'Q1',
           grade: null,
           createdAt: new Date(),
@@ -131,8 +132,8 @@ describe('GetMonthlyAssignmentsByProjectionUseCase', () => {
           gradeHistory: [],
         },
         {
-          id: 'assignment-2',
-          name: 'A Assignment',
+          id: 'assignment-1',
+          name: 'B Assignment',
           quarter: 'Q1',
           grade: null,
           createdAt: new Date(),
@@ -158,6 +159,17 @@ describe('GetMonthlyAssignmentsByProjectionUseCase', () => {
         TEST_CONSTANTS.STUDENT_ID
       );
 
+      expect(result.length).toBe(3);
+      // Should be ordered by quarter (Q1 first), then by name (alphabetically)
+      expect(result[0].id).toBe('assignment-2');
+      expect(result[0].name).toBe('A Assignment');
+      expect(result[0].quarter).toBe('Q1');
+      expect(result[1].id).toBe('assignment-1');
+      expect(result[1].name).toBe('B Assignment');
+      expect(result[1].quarter).toBe('Q1');
+      expect(result[2].id).toBe('assignment-3');
+      expect(result[2].name).toBe('C Assignment');
+      expect(result[2].quarter).toBe('Q2');
       expect(mockPrisma.monthlyAssignment.findMany).toHaveBeenCalledWith({
         where: {
           projectionId: TEST_CONSTANTS.PROJECTION_ID,

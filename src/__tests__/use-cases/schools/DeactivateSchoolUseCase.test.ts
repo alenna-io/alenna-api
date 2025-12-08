@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DeactivateSchoolUseCase } from '../../../core/app/use-cases/schools/DeactivateSchoolUseCase';
 import { createMockSchoolRepository, createMockUserRepository } from '../../utils/mockRepositories';
-import { School } from '../../../core/domain/entities';
+import { School, User } from '../../../core/domain/entities';
 
 // Mock Prisma Client
 const { mockPrismaInstance } = vi.hoisted(() => {
@@ -91,7 +91,8 @@ describe('DeactivateSchoolUseCase', () => {
       vi.mocked(mockSchoolRepository.findById).mockResolvedValue(school);
       vi.mocked(mockSchoolRepository.deactivate).mockResolvedValue(deactivatedSchool);
       mockPrisma.user.findMany.mockResolvedValue(users);
-      vi.mocked(mockUserRepository.deactivate).mockResolvedValue(undefined);
+      const deactivatedUser = User.create({ id: 'user-1', email: 'user1@test.com', schoolId: 'school-1', isActive: false });
+      vi.mocked(mockUserRepository.deactivate).mockResolvedValue(deactivatedUser);
 
       // Act
       await useCase.execute('school-1');
@@ -173,7 +174,8 @@ describe('DeactivateSchoolUseCase', () => {
       vi.mocked(mockSchoolRepository.findById).mockResolvedValue(school);
       vi.mocked(mockSchoolRepository.deactivate).mockResolvedValue(deactivatedSchool);
       mockPrisma.user.findMany.mockResolvedValue(users);
-      vi.mocked(mockUserRepository.deactivate).mockResolvedValue(undefined);
+      const deactivatedUser = User.create({ id: 'user-1', email: 'user1@test.com', schoolId: 'school-1', isActive: false });
+      vi.mocked(mockUserRepository.deactivate).mockResolvedValue(deactivatedUser);
 
       // Act
       await useCase.execute('school-1');
@@ -211,7 +213,8 @@ describe('DeactivateSchoolUseCase', () => {
       vi.mocked(mockSchoolRepository.findById).mockResolvedValue(school);
       vi.mocked(mockSchoolRepository.deactivate).mockResolvedValue(deactivatedSchool);
       mockPrisma.user.findMany.mockResolvedValue(users);
-      vi.mocked(mockUserRepository.deactivate).mockResolvedValue(undefined);
+      const deactivatedUser = User.create({ id: 'user-1', email: 'user1@test.com', schoolId: 'school-1', isActive: false });
+      vi.mocked(mockUserRepository.deactivate).mockResolvedValue(deactivatedUser);
       mockLockUser.mockRejectedValue(new Error('Clerk lock failed'));
 
       // Act

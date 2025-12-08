@@ -99,10 +99,10 @@ describe('GetSchoolYearByIdUseCase', () => {
       // Assert
       expect(result.startDate).toBe('2024-09-01T08:00:00.000Z');
       expect(result.endDate).toBe('2025-06-30T18:30:00.000Z');
-      expect(result.quarters[0].startDate).toBe('2024-09-01T00:00:00.000Z');
-      expect(result.quarters[0].endDate).toBe('2024-11-15T23:59:59.999Z');
-      expect(result.quarters[0].createdAt).toBe('2024-01-01T10:00:00.000Z');
-      expect(result.quarters[0].updatedAt).toBe('2024-01-02T15:30:00.000Z');
+      expect(result.quarters![0].startDate).toBe('2024-09-01T00:00:00.000Z');
+      expect(result.quarters![0].endDate).toBe('2024-11-15T23:59:59.999Z');
+      expect(result.quarters![0].createdAt).toBe('2024-01-01T10:00:00.000Z');
+      expect(result.quarters![0].updatedAt).toBe('2024-01-02T15:30:00.000Z');
       expect(result.createdAt).toBe('2024-01-01T12:00:00.000Z');
       expect(result.updatedAt).toBe('2024-01-02T16:45:00.000Z');
     });
@@ -140,11 +140,11 @@ describe('GetSchoolYearByIdUseCase', () => {
       const result = await useCase.execute('school-year-1');
 
       // Assert
-      expect(result.quarters[0].id).toBe('quarter-1');
-      expect(result.quarters[0].name).toBe('Q1');
-      expect(result.quarters[0].displayName).toBe('First Quarter');
-      expect(result.quarters[0].order).toBe(1);
-      expect(result.quarters[0].weeksCount).toBe(10);
+      expect(result.quarters![0].id).toBe('quarter-1');
+      expect(result.quarters![0].name).toBe('Q1');
+      expect(result.quarters![0].displayName).toBe('First Quarter');
+      expect(result.quarters![0].order).toBe(1);
+      expect(result.quarters![0].weeksCount).toBe(10);
     });
   });
 });

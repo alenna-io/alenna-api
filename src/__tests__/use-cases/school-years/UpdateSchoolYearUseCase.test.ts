@@ -42,8 +42,8 @@ describe('UpdateSchoolYearUseCase', () => {
       const updateCall = vi.mocked(mockRepository.update).mock.calls[0][1];
       expect(updateCall.startDate).toBeInstanceOf(Date);
       expect(updateCall.endDate).toBeInstanceOf(Date);
-      expect(updateCall.startDate.getTime()).toBe(new Date('2024-09-01T00:00:00.000Z').getTime());
-      expect(updateCall.endDate.getTime()).toBe(new Date('2025-06-30T23:59:59.999Z').getTime());
+      expect(updateCall.startDate!.getTime()).toBe(new Date('2024-09-01T00:00:00.000Z').getTime());
+      expect(updateCall.endDate!.getTime()).toBe(new Date('2025-06-30T23:59:59.999Z').getTime());
     });
 
     it('should convert quarter date strings to Date objects', async () => {
@@ -83,8 +83,8 @@ describe('UpdateSchoolYearUseCase', () => {
       const updateCall = vi.mocked(mockRepository.update).mock.calls[0][1];
       expect(updateCall.quarters![0].startDate).toBeInstanceOf(Date);
       expect(updateCall.quarters![0].endDate).toBeInstanceOf(Date);
-      expect(updateCall.quarters![0].startDate.getTime()).toBe(new Date('2024-09-01T00:00:00.000Z').getTime());
-      expect(updateCall.quarters![0].endDate.getTime()).toBe(new Date('2024-11-15T23:59:59.999Z').getTime());
+      expect(updateCall.quarters![0].startDate!.getTime()).toBe(new Date('2024-09-01T00:00:00.000Z').getTime());
+      expect(updateCall.quarters![0].endDate!.getTime()).toBe(new Date('2024-11-15T23:59:59.999Z').getTime());
     });
 
     it('should convert week date strings to Date objects', async () => {
@@ -262,10 +262,10 @@ describe('UpdateSchoolYearUseCase', () => {
       // Assert
       expect(result.startDate).toBe('2024-09-01T08:15:30.500Z');
       expect(result.endDate).toBe('2025-06-30T17:45:00.250Z');
-      expect(result.quarters[0].startDate).toBe('2024-09-01T00:00:00.000Z');
-      expect(result.quarters[0].endDate).toBe('2024-11-15T23:59:59.999Z');
-      expect(result.quarters[0].createdAt).toBe('2024-01-01T10:00:00.000Z');
-      expect(result.quarters[0].updatedAt).toBe('2024-01-02T15:30:00.000Z');
+      expect(result.quarters![0].startDate).toBe('2024-09-01T00:00:00.000Z');
+      expect(result.quarters![0].endDate).toBe('2024-11-15T23:59:59.999Z');
+      expect(result.quarters![0].createdAt).toBe('2024-01-01T10:00:00.000Z');
+      expect(result.quarters![0].updatedAt).toBe('2024-01-02T15:30:00.000Z');
       expect(result.createdAt).toBe('2024-01-01T12:00:00.000Z');
       expect(result.updatedAt).toBe('2024-01-02T16:45:00.000Z');
     });

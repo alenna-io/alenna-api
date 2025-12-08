@@ -22,6 +22,8 @@ describe('CreateDailyGoalUseCase', () => {
         week: 1,
         dayOfWeek: 1,
         text: '45-67',
+        isCompleted: false,
+        notesCompleted: false,
       };
 
       const createdGoal = createTestDailyGoal(input);
@@ -51,6 +53,8 @@ describe('CreateDailyGoalUseCase', () => {
         week: 1,
         dayOfWeek: 2,
         text: '100',
+        isCompleted: false,
+        notesCompleted: false,
       };
 
       const createdGoal = createTestDailyGoal(input);
@@ -69,6 +73,8 @@ describe('CreateDailyGoalUseCase', () => {
         week: 1,
         dayOfWeek: 3,
         text: 'ST',
+        isCompleted: false,
+        notesCompleted: false,
       };
 
       const createdGoal = createTestDailyGoal(input);
@@ -87,6 +93,8 @@ describe('CreateDailyGoalUseCase', () => {
         week: 1,
         dayOfWeek: 4,
         text: 'T',
+        isCompleted: false,
+        notesCompleted: false,
       };
 
       const createdGoal = createTestDailyGoal(input);
@@ -105,6 +113,8 @@ describe('CreateDailyGoalUseCase', () => {
         week: 1,
         dayOfWeek: 5,
         text: '',
+        isCompleted: false,
+        notesCompleted: false,
       };
 
       const createdGoal = createTestDailyGoal(input);
@@ -123,6 +133,8 @@ describe('CreateDailyGoalUseCase', () => {
         week: 1,
         dayOfWeek: 1,
         text: 'invalid',
+        isCompleted: false,
+        notesCompleted: false,
       };
 
       await expect(useCase.execute(input)).rejects.toThrow('Invalid goal text format');
@@ -136,6 +148,8 @@ describe('CreateDailyGoalUseCase', () => {
         week: 1,
         dayOfWeek: 1,
         text: '100-50',
+        isCompleted: false,
+        notesCompleted: false,
       };
 
       await expect(useCase.execute(input)).rejects.toThrow('Invalid goal text format');
@@ -149,6 +163,8 @@ describe('CreateDailyGoalUseCase', () => {
         week: 1,
         dayOfWeek: 1,
         text: '1001',
+        isCompleted: false,
+        notesCompleted: false,
       };
 
       await expect(useCase.execute(input)).rejects.toThrow('Invalid goal text format');
@@ -163,6 +179,7 @@ describe('CreateDailyGoalUseCase', () => {
         dayOfWeek: 1,
         text: '50-60',
         notes: 'Review pages carefully',
+        isCompleted: false,
         notesCompleted: false,
       };
 
@@ -188,6 +205,7 @@ describe('CreateDailyGoalUseCase', () => {
         dayOfWeek: 1,
         text: '45-67',
         isCompleted: true,
+        notesCompleted: false,
       };
 
       const createdGoal = createTestDailyGoal({

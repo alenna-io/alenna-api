@@ -165,7 +165,7 @@ describe('PreviewQuarterWeeksUseCase', () => {
         startDate: '2024-09-01T00:00:00.000Z',
         endDate: '2024-11-15T00:00:00.000Z',
         weeksCount: 10,
-        holidays: null,
+        holidays: undefined,
       };
 
       const mockWeeks = [

@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetStudentsUseCase } from '../../../core/app/use-cases/students/GetStudentsUseCase';
 import { createMockStudentRepository } from '../../utils/mockRepositories';
 import { createTestStudent, TEST_CONSTANTS } from '../../utils/testHelpers';
-import { ISchoolYearRepository } from '../../../core/adapters_interface/repositories';
 
 // Mock Prisma Client
 const { mockPrismaInstance } = vi.hoisted(() => {
@@ -288,11 +287,8 @@ describe('GetStudentsUseCase', () => {
         id: 'student-1',
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
       });
-      const deletedStudent = createTestStudent({
-        id: 'student-2',
-        schoolId: TEST_CONSTANTS.SCHOOL_ID,
-        deletedAt: new Date(),
-      });
+      // Note: Student entity doesn't have deletedAt property - soft deletion is handled at repository level
+      // The repository filters out deleted students, so we just verify the active student is returned
 
       // Repository should only return non-deleted students
       vi.mocked(mockStudentRepository.findBySchoolId).mockResolvedValue([activeStudent]);
@@ -302,7 +298,7 @@ describe('GetStudentsUseCase', () => {
 
       // Assert
       expect(result).toEqual([activeStudent]);
-      expect(result).not.toContainEqual(deletedStudent);
+      // Repository filters out deleted students, so only active student is returned
     });
   });
 });

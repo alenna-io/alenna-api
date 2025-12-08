@@ -259,7 +259,7 @@ describe('UpdateStudentUseCase', () => {
       vi.mocked(mockRepository.update).mockResolvedValue(updatedStudent);
 
       // Act
-      const result = await useCase.execute(
+      await useCase.execute(
         TEST_CONSTANTS.STUDENT_ID,
         updateInput,
         TEST_CONSTANTS.SCHOOL_ID
@@ -302,7 +302,7 @@ describe('UpdateStudentUseCase', () => {
       vi.mocked(mockRepository.update).mockResolvedValue(updatedStudent);
 
       // Act
-      const result = await useCase.execute(
+      await useCase.execute(
         TEST_CONSTANTS.STUDENT_ID,
         updateInput,
         TEST_CONSTANTS.SCHOOL_ID

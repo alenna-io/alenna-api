@@ -75,9 +75,9 @@ describe('SetActiveSchoolYearUseCase', () => {
       expect(result.startDate).toBe('2024-09-01T08:15:30.500Z');
       expect(result.endDate).toBe('2025-06-30T17:45:00.250Z');
       expect(result.quarters).toHaveLength(1);
-      expect(result.quarters[0].name).toBe('Q1');
-      expect(result.quarters[0].startDate).toBe('2024-09-01T00:00:00.000Z');
-      expect(result.quarters[0].endDate).toBe('2024-11-15T23:59:59.999Z');
+      expect(result.quarters![0].name).toBe('Q1');
+      expect(result.quarters![0].startDate).toBe('2024-09-01T00:00:00.000Z');
+      expect(result.quarters![0].endDate).toBe('2024-11-15T23:59:59.999Z');
     });
   });
 });

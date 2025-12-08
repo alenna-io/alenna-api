@@ -170,7 +170,6 @@ describe('ProjectionAlgorithm', () => {
 
       // Check each quarter
       for (let q = 0; q < 4; q++) {
-        const quarter = `Q${q + 1}`;
         const weekCounts: number[] = [];
 
         // Count paces per week across all subjects

@@ -83,7 +83,7 @@ describe('CreateSchoolYearUseCase', () => {
       expect(result.schoolId).toBe(TEST_CONSTANTS.SCHOOL_ID);
       expect(result.isActive).toBe(false);
       expect(result.quarters).toHaveLength(1);
-      expect(result.quarters[0].name).toBe('Q1');
+      expect(result.quarters![0].name).toBe('Q1');
       expect(mockRepository.create).toHaveBeenCalledWith({
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
         name: '2024-2025',
@@ -241,10 +241,10 @@ describe('CreateSchoolYearUseCase', () => {
 
       // Assert
       const createCall = vi.mocked(mockRepository.create).mock.calls[0][0];
-      expect(createCall.quarters[0].weeks[0].startDate).toBeInstanceOf(Date);
-      expect(createCall.quarters[0].weeks[0].endDate).toBeInstanceOf(Date);
-      expect(createCall.quarters[0].weeks[0].startDate.getTime()).toBe(new Date('2024-09-01T08:00:00.000Z').getTime());
-      expect(createCall.quarters[0].weeks[0].endDate.getTime()).toBe(new Date('2024-09-07T17:30:00.000Z').getTime());
+      expect(createCall.quarters![0].weeks![0].startDate).toBeInstanceOf(Date);
+      expect(createCall.quarters![0].weeks![0].endDate).toBeInstanceOf(Date);
+      expect(createCall.quarters![0].weeks![0].startDate.getTime()).toBe(new Date('2024-09-01T08:00:00.000Z').getTime());
+      expect(createCall.quarters![0].weeks![0].endDate.getTime()).toBe(new Date('2024-09-07T17:30:00.000Z').getTime());
     });
 
     it('should convert holiday date strings to Date objects', async () => {
@@ -292,10 +292,10 @@ describe('CreateSchoolYearUseCase', () => {
 
       // Assert
       const createCall = vi.mocked(mockRepository.create).mock.calls[0][0];
-      expect(createCall.quarters[0].holidays[0].startDate).toBeInstanceOf(Date);
-      expect(createCall.quarters[0].holidays[0].endDate).toBeInstanceOf(Date);
-      expect(createCall.quarters[0].holidays[0].startDate.getTime()).toBe(new Date('2024-10-10T00:00:00.000Z').getTime());
-      expect(createCall.quarters[0].holidays[0].endDate.getTime()).toBe(new Date('2024-10-12T23:59:59.999Z').getTime());
+      expect(createCall.quarters![0].holidays![0].startDate).toBeInstanceOf(Date);
+      expect(createCall.quarters![0].holidays![0].endDate).toBeInstanceOf(Date);
+      expect(createCall.quarters![0].holidays![0].startDate.getTime()).toBe(new Date('2024-10-10T00:00:00.000Z').getTime());
+      expect(createCall.quarters![0].holidays![0].endDate.getTime()).toBe(new Date('2024-10-12T23:59:59.999Z').getTime());
     });
 
     it('should output dates as ISO strings', async () => {
@@ -382,10 +382,10 @@ describe('CreateSchoolYearUseCase', () => {
       const result = await useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID);
 
       // Assert
-      expect(result.quarters[0].startDate).toBe('2024-09-01T00:00:00.000Z');
-      expect(result.quarters[0].endDate).toBe('2024-11-15T00:00:00.000Z');
-      expect(result.quarters[0].createdAt).toBe('2024-01-01T00:00:00.000Z');
-      expect(result.quarters[0].updatedAt).toBe('2024-01-02T00:00:00.000Z');
+      expect(result.quarters![0].startDate).toBe('2024-09-01T00:00:00.000Z');
+      expect(result.quarters![0].endDate).toBe('2024-11-15T00:00:00.000Z');
+      expect(result.quarters![0].createdAt).toBe('2024-01-01T00:00:00.000Z');
+      expect(result.quarters![0].updatedAt).toBe('2024-01-02T00:00:00.000Z');
     });
 
     it('should handle dates with different timezone formats', async () => {
@@ -503,8 +503,8 @@ describe('CreateSchoolYearUseCase', () => {
 
       // Assert
       expect(result.quarters).toHaveLength(2);
-      expect(result.quarters[0].order).toBe(1);
-      expect(result.quarters[1].order).toBe(2);
+      expect(result.quarters![0].order).toBe(1);
+      expect(result.quarters![1].order).toBe(2);
     });
   });
 });

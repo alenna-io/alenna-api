@@ -89,6 +89,7 @@ describe('CreateCertificationTypeUseCase', () => {
       const input = {
         name: 'Grace Christian',
         description: 'Grace Christian School Program',
+        isActive: true,
       };
 
       const createdCertType = {
@@ -122,6 +123,7 @@ describe('CreateCertificationTypeUseCase', () => {
       // Arrange
       const input = {
         name: 'Otro',
+        isActive: true,
       };
 
       const createdCertType = {
@@ -191,6 +193,7 @@ describe('CreateCertificationTypeUseCase', () => {
       const input = {
         name: 'Lighthouse',
         description: 'Lighthouse Christian Academy',
+        isActive: true,
       };
 
       const createdCertType = {
@@ -222,6 +225,7 @@ describe('CreateCertificationTypeUseCase', () => {
       const input = {
         name: 'Home Life',
         description: 'Home Life Academy Program',
+        isActive: true,
       };
 
       const createdCertType = {

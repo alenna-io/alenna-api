@@ -1,7 +1,6 @@
 import { vi } from 'vitest';
 import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository, IProjectionRepository, IDailyGoalRepository } from '../../core/adapters_interface/repositories';
 import { IProjectionTemplateRepository } from '../../core/adapters_interface/repositories/IProjectionTemplateRepository';
-import { Student, Projection } from '../../core/domain/entities';
 
 /**
  * Creates a mock StudentRepository with all methods mocked

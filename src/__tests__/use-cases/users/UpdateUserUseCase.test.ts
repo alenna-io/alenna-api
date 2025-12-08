@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UpdateUserUseCase } from '../../../core/app/use-cases/users/UpdateUserUseCase';
 import { createMockUserRepository } from '../../utils/mockRepositories';
-import { createTestUser, TEST_CONSTANTS } from '../../utils/testHelpers';
+import { createTestUser } from '../../utils/testHelpers';
 
 describe('UpdateUserUseCase', () => {
   let useCase: UpdateUserUseCase;

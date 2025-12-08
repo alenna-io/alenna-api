@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CreateSchoolUseCase } from '../../../core/app/use-cases/schools/CreateSchoolUseCase';
 import { createMockSchoolRepository } from '../../utils/mockRepositories';
 import { School } from '../../../core/domain/entities';
-import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
 // Mock Prisma Client
 const { mockPrismaInstance } = vi.hoisted(() => {

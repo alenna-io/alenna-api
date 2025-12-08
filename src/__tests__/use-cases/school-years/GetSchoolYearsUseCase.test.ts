@@ -100,10 +100,10 @@ describe('GetSchoolYearsUseCase', () => {
       // Assert
       expect(result[0].startDate).toBe('2024-09-01T08:30:15.123Z');
       expect(result[0].endDate).toBe('2025-06-30T17:45:30.456Z');
-      expect(result[0].quarters[0].startDate).toBe('2024-09-01T00:00:00.000Z');
-      expect(result[0].quarters[0].endDate).toBe('2024-11-15T23:59:59.999Z');
-      expect(result[0].quarters[0].createdAt).toBe('2024-01-01T00:00:00.000Z');
-      expect(result[0].quarters[0].updatedAt).toBe('2024-01-02T00:00:00.000Z');
+      expect(result[0].quarters![0].startDate).toBe('2024-09-01T00:00:00.000Z');
+      expect(result[0].quarters![0].endDate).toBe('2024-11-15T23:59:59.999Z');
+      expect(result[0].quarters![0].createdAt).toBe('2024-01-01T00:00:00.000Z');
+      expect(result[0].quarters![0].updatedAt).toBe('2024-01-02T00:00:00.000Z');
       expect(result[0].createdAt).toBe('2024-01-01T12:00:00.000Z');
       expect(result[0].updatedAt).toBe('2024-01-02T14:30:00.000Z');
     });

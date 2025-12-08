@@ -209,7 +209,6 @@ describe('CreateTeacherUseCase (via CreateUserUseCase with TEACHER role)', () =>
     });
 
     it('should not check teacher limit when creating non-teacher user', async () => {
-      const adminRole = { id: 'admin-role-id', name: 'SCHOOL_ADMIN', schoolId: null };
       const newUser = User.create({
         id: 'user-1',
         email: 'admin@test.com',
