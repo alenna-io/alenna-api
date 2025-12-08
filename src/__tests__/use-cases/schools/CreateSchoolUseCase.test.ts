@@ -64,6 +64,9 @@ describe('CreateSchoolUseCase', () => {
     vi.clearAllMocks();
     mockEnableModule.mockResolvedValue(undefined);
     mockCreateTemplates.mockResolvedValue(undefined);
+    // Suppress console.error and console.log for cleaner test output
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   describe('execute', () => {

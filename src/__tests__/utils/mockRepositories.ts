@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository } from '../../core/adapters_interface/repositories';
+import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository } from '../../core/adapters_interface/repositories';
 import { IProjectionTemplateRepository } from '../../core/adapters_interface/repositories/IProjectionTemplateRepository';
 import { Student } from '../../core/domain/entities';
 
@@ -84,6 +84,29 @@ export function createMockSchoolYearRepository(): ISchoolYearRepository {
     delete: vi.fn(),
     setActive: vi.fn(),
     getCurrentWeek: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock GroupRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockGroupRepository(): IGroupRepository {
+  return {
+    findBySchoolYearId: vi.fn(),
+    findByTeacherIdAndSchoolYearId: vi.fn(),
+    findById: vi.fn(),
+    findByTeacherSchoolYearAndName: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    getGroupStudents: vi.fn(),
+    addStudentToGroup: vi.fn(),
+    removeStudentFromGroup: vi.fn(),
+    addStudentsToGroup: vi.fn(),
+    exists: vi.fn(),
+    isStudentInGroupForSchoolYear: vi.fn(),
+    getStudentAssignmentsForSchoolYear: vi.fn(),
   };
 }
 

@@ -1,4 +1,4 @@
-import { Student, CertificationType, User } from '../../core/domain/entities';
+import { Student, CertificationType, User, Group, GroupStudent } from '../../core/domain/entities';
 import { CreateStudentInput } from '../../core/app/dtos';
 
 /**
@@ -184,6 +184,58 @@ export function createTestProjectionTemplate(overrides?: {
 }
 
 /**
+ * Creates a test Group entity with default values
+ */
+export function createTestGroup(overrides?: Partial<Group>): Group {
+  const defaultGroup = Group.create({
+    id: 'group-1',
+    teacherId: 'teacher-1',
+    schoolYearId: 'school-year-1',
+    schoolId: TEST_CONSTANTS.SCHOOL_ID,
+    name: 'Test Group',
+  });
+
+  if (!overrides) {
+    return defaultGroup;
+  }
+
+  return new Group(
+    overrides.id ?? defaultGroup.id,
+    overrides.name ?? defaultGroup.name,
+    overrides.teacherId ?? defaultGroup.teacherId,
+    overrides.schoolYearId ?? defaultGroup.schoolYearId,
+    overrides.schoolId ?? defaultGroup.schoolId,
+    overrides.deletedAt ?? defaultGroup.deletedAt,
+    overrides.createdAt ?? defaultGroup.createdAt,
+    overrides.updatedAt ?? defaultGroup.updatedAt
+  );
+}
+
+/**
+ * Creates a test GroupStudent entity with default values
+ */
+export function createTestGroupStudent(overrides?: Partial<GroupStudent>): GroupStudent {
+  const defaultGroupStudent = GroupStudent.create({
+    id: 'group-student-1',
+    groupId: 'group-1',
+    studentId: TEST_CONSTANTS.STUDENT_ID,
+  });
+
+  if (!overrides) {
+    return defaultGroupStudent;
+  }
+
+  return new GroupStudent(
+    overrides.id ?? defaultGroupStudent.id,
+    overrides.groupId ?? defaultGroupStudent.groupId,
+    overrides.studentId ?? defaultGroupStudent.studentId,
+    overrides.deletedAt ?? defaultGroupStudent.deletedAt,
+    overrides.createdAt ?? defaultGroupStudent.createdAt,
+    overrides.updatedAt ?? defaultGroupStudent.updatedAt
+  );
+}
+
+/**
  * Common test constants
  */
 export const TEST_CONSTANTS = {
@@ -193,5 +245,8 @@ export const TEST_CONSTANTS = {
   CERTIFICATION_TYPE_ID: 'cert-1',
   CLERK_ID: 'clerk-user-1',
   TEMPLATE_ID: 'template-1',
+  TEACHER_ID: 'teacher-1',
+  SCHOOL_YEAR_ID: 'school-year-1',
+  GROUP_ID: 'group-1',
 } as const;
 
