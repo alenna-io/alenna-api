@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository, IProjectionRepository } from '../../core/adapters_interface/repositories';
+import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository, IProjectionRepository, IDailyGoalRepository } from '../../core/adapters_interface/repositories';
 import { IProjectionTemplateRepository } from '../../core/adapters_interface/repositories/IProjectionTemplateRepository';
 import { Student, Projection } from '../../core/domain/entities';
 
@@ -140,6 +140,26 @@ export function createMockProjectionRepository(): IProjectionRepository {
     update: vi.fn(),
     delete: vi.fn(),
     hardDelete: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock DailyGoalRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockDailyGoalRepository(): IDailyGoalRepository {
+  return {
+    create: vi.fn(),
+    findById: vi.fn(),
+    findByProjectionQuarterWeek: vi.fn(),
+    findByProjection: vi.fn(),
+    update: vi.fn(),
+    updateCompletionStatus: vi.fn(),
+    updateNotes: vi.fn(),
+    delete: vi.fn(),
+    softDelete: vi.fn(),
+    addNoteToHistory: vi.fn(),
+    getNoteHistoryByDailyGoalId: vi.fn(),
   };
 }
 

@@ -1,4 +1,4 @@
-import { Student, CertificationType, User, Group, GroupStudent, MonthlyAssignment } from '../../core/domain/entities';
+import { Student, CertificationType, User, Group, GroupStudent, MonthlyAssignment, DailyGoal } from '../../core/domain/entities';
 import { CreateStudentInput } from '../../core/app/dtos';
 
 /**
@@ -281,5 +281,41 @@ export const TEST_CONSTANTS = {
   GROUP_ID: 'group-1',
   PROJECTION_ID: 'projection-1',
   ASSIGNMENT_ID: 'assignment-1',
+  DAILY_GOAL_ID: 'daily-goal-1',
 } as const;
+
+/**
+ * Creates a test DailyGoal entity with default values
+ */
+export function createTestDailyGoal(overrides?: Partial<DailyGoal>): DailyGoal {
+  const defaultGoal = DailyGoal.create({
+    id: 'daily-goal-1',
+    projectionId: TEST_CONSTANTS.PROJECTION_ID,
+    subject: 'Math',
+    quarter: 'Q1',
+    week: 1,
+    dayOfWeek: 1,
+    text: '45-67',
+  });
+
+  if (!overrides) {
+    return defaultGoal;
+  }
+
+  return new DailyGoal(
+    overrides.id ?? defaultGoal.id,
+    overrides.projectionId ?? defaultGoal.projectionId,
+    overrides.subject ?? defaultGoal.subject,
+    overrides.quarter ?? defaultGoal.quarter,
+    overrides.week ?? defaultGoal.week,
+    overrides.dayOfWeek ?? defaultGoal.dayOfWeek,
+    overrides.text ?? defaultGoal.text,
+    overrides.isCompleted ?? defaultGoal.isCompleted,
+    overrides.notes ?? defaultGoal.notes,
+    overrides.notesCompleted ?? defaultGoal.notesCompleted,
+    overrides.deletedAt ?? defaultGoal.deletedAt,
+    overrides.createdAt ?? defaultGoal.createdAt,
+    overrides.updatedAt ?? defaultGoal.updatedAt
+  );
+}
 
