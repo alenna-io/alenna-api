@@ -65,14 +65,14 @@ describe('GetSchoolYearsUseCase', () => {
       expect(result).toEqual([]);
     });
 
-    it('should map school year properties correctly', async () => {
+    it('should convert dates to ISO strings correctly', async () => {
       // Arrange
       const schoolYear = {
         id: 'school-year-1',
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
         name: '2024-2025',
-        startDate: new Date('2024-09-01T00:00:00.000Z'),
-        endDate: new Date('2025-06-30T00:00:00.000Z'),
+        startDate: new Date('2024-09-01T08:30:15.123Z'),
+        endDate: new Date('2025-06-30T17:45:30.456Z'),
         isActive: true,
         quarters: [
           {
@@ -81,15 +81,15 @@ describe('GetSchoolYearsUseCase', () => {
             name: 'Q1',
             displayName: 'First Quarter',
             startDate: new Date('2024-09-01T00:00:00.000Z'),
-            endDate: new Date('2024-11-15T00:00:00.000Z'),
+            endDate: new Date('2024-11-15T23:59:59.999Z'),
             order: 1,
             weeksCount: 10,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            createdAt: new Date('2024-01-01T00:00:00.000Z'),
+            updatedAt: new Date('2024-01-02T00:00:00.000Z'),
           },
         ],
-        createdAt: new Date('2024-01-01T00:00:00.000Z'),
-        updatedAt: new Date('2024-01-02T00:00:00.000Z'),
+        createdAt: new Date('2024-01-01T12:00:00.000Z'),
+        updatedAt: new Date('2024-01-02T14:30:00.000Z'),
       };
 
       vi.mocked(mockRepository.findBySchoolId).mockResolvedValue([schoolYear]);
@@ -98,13 +98,37 @@ describe('GetSchoolYearsUseCase', () => {
       const result = await useCase.execute(TEST_CONSTANTS.SCHOOL_ID);
 
       // Assert
-      expect(result[0].id).toBe('school-year-1');
-      expect(result[0].name).toBe('2024-2025');
-      expect(result[0].startDate).toBe('2024-09-01T00:00:00.000Z');
-      expect(result[0].endDate).toBe('2025-06-30T00:00:00.000Z');
-      expect(result[0].isActive).toBe(true);
-      expect(result[0].quarters).toHaveLength(1);
-      expect(result[0].quarters[0].name).toBe('Q1');
+      expect(result[0].startDate).toBe('2024-09-01T08:30:15.123Z');
+      expect(result[0].endDate).toBe('2025-06-30T17:45:30.456Z');
+      expect(result[0].quarters[0].startDate).toBe('2024-09-01T00:00:00.000Z');
+      expect(result[0].quarters[0].endDate).toBe('2024-11-15T23:59:59.999Z');
+      expect(result[0].quarters[0].createdAt).toBe('2024-01-01T00:00:00.000Z');
+      expect(result[0].quarters[0].updatedAt).toBe('2024-01-02T00:00:00.000Z');
+      expect(result[0].createdAt).toBe('2024-01-01T12:00:00.000Z');
+      expect(result[0].updatedAt).toBe('2024-01-02T14:30:00.000Z');
+    });
+
+    it('should handle school years with no quarters', async () => {
+      // Arrange
+      const schoolYear = {
+        id: 'school-year-1',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        name: '2024-2025',
+        startDate: new Date('2024-09-01T00:00:00.000Z'),
+        endDate: new Date('2025-06-30T00:00:00.000Z'),
+        isActive: true,
+        quarters: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      vi.mocked(mockRepository.findBySchoolId).mockResolvedValue([schoolYear]);
+
+      // Act
+      const result = await useCase.execute(TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      expect(result[0].quarters).toBeUndefined();
     });
   });
 });
