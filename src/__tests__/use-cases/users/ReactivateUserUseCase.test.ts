@@ -216,6 +216,202 @@ describe('ReactivateUserUseCase', () => {
         clerkId: 'clerk-student-1',
       });
 
+      const reactivatedParent = User.create({
+        id: 'parent-user-1',
+        email: 'parent@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: true,
+        clerkId: 'clerk-parent-1',
+      });
+
+      vi.mocked(mockUserRepository.findById)
+        .mockResolvedValueOnce(inactiveStudent)
+        .mockResolvedValueOnce(inactiveParent);
+      vi.mocked(mockUserRepository.reactivate)
+        .mockResolvedValueOnce(reactivatedStudent)
+        .mockResolvedValueOnce(reactivatedParent);
+      mockPrisma.userRole.findMany.mockResolvedValue([
+        { role: { name: 'STUDENT' } },
+      ]);
+      mockPrisma.student.findUnique.mockResolvedValue({
+        id: 'student-1',
+        userId: 'student-user-1',
+        userStudents: [
+          {
+            userId: 'parent-user-1',
+            user: inactiveParent,
+          },
+        ],
+      });
+
+      await useCase.execute('student-user-1', 'admin-user-id', TEST_CONSTANTS.SCHOOL_ID, ['SCHOOL_ADMIN']);
+
+      expect(mockUserRepository.reactivate).toHaveBeenCalledTimes(2);
+      expect(mockUserRepository.reactivate).toHaveBeenCalledWith('student-user-1');
+      expect(mockUserRepository.reactivate).toHaveBeenCalledWith('parent-user-1');
+      expect(mockUnlockUser).toHaveBeenCalledWith('clerk-student-1');
+      expect(mockUnlockUser).toHaveBeenCalledWith('clerk-parent-1');
+    });
+
+    it('should reactivate student with multiple linked parents', async () => {
+      const inactiveStudent = User.create({
+        id: 'student-user-1',
+        email: 'student@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: false,
+        clerkId: 'clerk-student-1',
+      });
+
+      const inactiveParent1 = User.create({
+        id: 'parent-user-1',
+        email: 'parent1@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: false,
+        clerkId: 'clerk-parent-1',
+      });
+
+      const inactiveParent2 = User.create({
+        id: 'parent-user-2',
+        email: 'parent2@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: false,
+        clerkId: 'clerk-parent-2',
+      });
+
+      const reactivatedStudent = User.create({
+        id: 'student-user-1',
+        email: 'student@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: true,
+        clerkId: 'clerk-student-1',
+      });
+
+      vi.mocked(mockUserRepository.findById)
+        .mockResolvedValueOnce(inactiveStudent)
+        .mockResolvedValueOnce(inactiveParent1)
+        .mockResolvedValueOnce(inactiveParent2);
+      vi.mocked(mockUserRepository.reactivate)
+        .mockResolvedValueOnce(reactivatedStudent)
+        .mockResolvedValueOnce(inactiveParent1)
+        .mockResolvedValueOnce(inactiveParent2);
+      mockPrisma.userRole.findMany.mockResolvedValue([
+        { role: { name: 'STUDENT' } },
+      ]);
+      mockPrisma.student.findUnique.mockResolvedValue({
+        id: 'student-1',
+        userId: 'student-user-1',
+        userStudents: [
+          {
+            userId: 'parent-user-1',
+            user: inactiveParent1,
+          },
+          {
+            userId: 'parent-user-2',
+            user: inactiveParent2,
+          },
+        ],
+      });
+
+      await useCase.execute('student-user-1', 'admin-user-id', TEST_CONSTANTS.SCHOOL_ID, ['SCHOOL_ADMIN']);
+
+      expect(mockUserRepository.reactivate).toHaveBeenCalledTimes(3);
+      expect(mockUserRepository.reactivate).toHaveBeenCalledWith('student-user-1');
+      expect(mockUserRepository.reactivate).toHaveBeenCalledWith('parent-user-1');
+      expect(mockUserRepository.reactivate).toHaveBeenCalledWith('parent-user-2');
+    });
+
+    it('should only reactivate inactive parents', async () => {
+      const inactiveStudent = User.create({
+        id: 'student-user-1',
+        email: 'student@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: false,
+        clerkId: 'clerk-student-1',
+      });
+
+      const inactiveParent = User.create({
+        id: 'parent-user-1',
+        email: 'parent1@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: false,
+        clerkId: 'clerk-parent-1',
+      });
+
+      const activeParent = User.create({
+        id: 'parent-user-2',
+        email: 'parent2@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: true, // Already active
+        clerkId: 'clerk-parent-2',
+      });
+
+      const reactivatedStudent = User.create({
+        id: 'student-user-1',
+        email: 'student@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: true,
+        clerkId: 'clerk-student-1',
+      });
+
+      vi.mocked(mockUserRepository.findById)
+        .mockResolvedValueOnce(inactiveStudent)
+        .mockResolvedValueOnce(inactiveParent)
+        .mockResolvedValueOnce(activeParent);
+      vi.mocked(mockUserRepository.reactivate)
+        .mockResolvedValueOnce(reactivatedStudent)
+        .mockResolvedValueOnce(inactiveParent);
+      mockPrisma.userRole.findMany.mockResolvedValue([
+        { role: { name: 'STUDENT' } },
+      ]);
+      mockPrisma.student.findUnique.mockResolvedValue({
+        id: 'student-1',
+        userId: 'student-user-1',
+        userStudents: [
+          {
+            userId: 'parent-user-1',
+            user: inactiveParent,
+          },
+          {
+            userId: 'parent-user-2',
+            user: activeParent,
+          },
+        ],
+      });
+
+      await useCase.execute('student-user-1', 'admin-user-id', TEST_CONSTANTS.SCHOOL_ID, ['SCHOOL_ADMIN']);
+
+      // Should only reactivate inactive parent, not the already active one
+      expect(mockUserRepository.reactivate).toHaveBeenCalledTimes(2);
+      expect(mockUserRepository.reactivate).toHaveBeenCalledWith('student-user-1');
+      expect(mockUserRepository.reactivate).toHaveBeenCalledWith('parent-user-1');
+      expect(mockUserRepository.reactivate).not.toHaveBeenCalledWith('parent-user-2');
+    });
+
+    it('should handle parent without clerkId when reactivating', async () => {
+      const inactiveStudent = User.create({
+        id: 'student-user-1',
+        email: 'student@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: false,
+        clerkId: 'clerk-student-1',
+      });
+
+      const inactiveParent = User.create({
+        id: 'parent-user-1',
+        email: 'parent@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: false,
+        clerkId: undefined, // No clerkId
+      });
+
+      const reactivatedStudent = User.create({
+        id: 'student-user-1',
+        email: 'student@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: true,
+        clerkId: 'clerk-student-1',
+      });
+
       vi.mocked(mockUserRepository.findById)
         .mockResolvedValueOnce(inactiveStudent)
         .mockResolvedValueOnce(inactiveParent);
@@ -239,8 +435,8 @@ describe('ReactivateUserUseCase', () => {
       await useCase.execute('student-user-1', 'admin-user-id', TEST_CONSTANTS.SCHOOL_ID, ['SCHOOL_ADMIN']);
 
       expect(mockUserRepository.reactivate).toHaveBeenCalledTimes(2);
-      expect(mockUserRepository.reactivate).toHaveBeenCalledWith('student-user-1');
-      expect(mockUserRepository.reactivate).toHaveBeenCalledWith('parent-user-1');
+      expect(mockUnlockUser).toHaveBeenCalledTimes(1); // Only for student
+      expect(mockUnlockUser).toHaveBeenCalledWith('clerk-student-1');
     });
 
     it('should continue even if Clerk unlock fails', async () => {

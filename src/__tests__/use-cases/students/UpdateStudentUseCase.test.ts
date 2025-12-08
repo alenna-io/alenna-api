@@ -229,6 +229,94 @@ describe('UpdateStudentUseCase', () => {
         )
       ).rejects.toThrow('Student record not found');
     });
+
+    it('should update level information (isLeveled, expectedLevel, currentLevel)', async () => {
+      // Arrange
+      const existingStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isLeveled: false,
+      });
+
+      const updatedStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isLeveled: true,
+        expectedLevel: 'L8',
+        currentLevel: 'L7',
+      });
+
+      const updateInput: UpdateStudentInput = {
+        isLeveled: true,
+        expectedLevel: 'L8',
+        currentLevel: 'L7',
+      };
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(existingStudent);
+      mockPrisma.student.findUnique.mockResolvedValue({
+        userId: TEST_CONSTANTS.USER_ID,
+      });
+      vi.mocked(mockRepository.update).mockResolvedValue(updatedStudent);
+
+      // Act
+      const result = await useCase.execute(
+        TEST_CONSTANTS.STUDENT_ID,
+        updateInput,
+        TEST_CONSTANTS.SCHOOL_ID
+      );
+
+      // Assert
+      expect(mockRepository.update).toHaveBeenCalledWith(
+        TEST_CONSTANTS.STUDENT_ID,
+        expect.objectContaining({
+          isLeveled: true,
+          expectedLevel: 'L8',
+          currentLevel: 'L7',
+        }),
+        TEST_CONSTANTS.SCHOOL_ID
+      );
+    });
+
+    it('should update certificationTypeId', async () => {
+      // Arrange
+      const existingStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        certificationTypeId: 'cert-1',
+      });
+
+      const updatedStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        certificationTypeId: 'cert-2',
+      });
+
+      const updateInput: UpdateStudentInput = {
+        certificationTypeId: 'cert-2',
+      };
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(existingStudent);
+      mockPrisma.student.findUnique.mockResolvedValue({
+        userId: TEST_CONSTANTS.USER_ID,
+      });
+      vi.mocked(mockRepository.update).mockResolvedValue(updatedStudent);
+
+      // Act
+      const result = await useCase.execute(
+        TEST_CONSTANTS.STUDENT_ID,
+        updateInput,
+        TEST_CONSTANTS.SCHOOL_ID
+      );
+
+      // Assert
+      expect(mockRepository.update).toHaveBeenCalledWith(
+        TEST_CONSTANTS.STUDENT_ID,
+        expect.objectContaining({
+          certificationTypeId: 'cert-2',
+        }),
+        TEST_CONSTANTS.SCHOOL_ID
+      );
+    });
   });
 });
 

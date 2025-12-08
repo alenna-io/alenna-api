@@ -570,6 +570,124 @@ describe('DeactivateUserUseCase', () => {
       expect(mockUserRepository.deactivate).toHaveBeenCalledWith('parent-user-2');
       expect(mockLockUser).toHaveBeenCalledTimes(3);
     });
+
+    it('should only consider active, non-deleted students when checking parent status', async () => {
+      // Arrange
+      const studentUser = User.create({
+        id: 'user-1',
+        email: 'student@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: true,
+        clerkId: 'clerk-student-1',
+      });
+
+      vi.mocked(mockUserRepository.findById).mockResolvedValue(studentUser);
+      vi.mocked(mockUserRepository.deactivate).mockResolvedValue(studentUser);
+      mockPrisma.userRole.findMany.mockResolvedValue([
+        { role: { name: 'STUDENT' } },
+      ]);
+      mockPrisma.student.findUnique.mockResolvedValue({
+        id: 'student-1',
+        userId: 'user-1',
+        userStudents: [
+          {
+            userId: 'parent-user-1',
+            user: { id: 'parent-user-1' },
+          },
+        ],
+      });
+      // The Prisma query filters for deletedAt: null and isActive: true at the database level
+      // So the mock should only return active, non-deleted students
+      // In this case, only the student being deactivated is returned (which will be filtered out in code)
+      // Note: Deleted and inactive students are filtered by Prisma query, so they won't be in the result
+      mockPrisma.userStudent.findMany.mockResolvedValue([
+        {
+          userId: 'parent-user-1',
+          student: {
+            id: 'student-1', // Being deactivated - will be filtered out in code
+            deletedAt: null, // Not deleted (would be filtered by Prisma query)
+            user: { id: 'user-1', isActive: true }, // Active (would be filtered by Prisma query)
+          },
+        },
+        // student-2 is deleted, so Prisma query filters it out - not in mock result
+        // student-3 is inactive, so Prisma query filters it out - not in mock result
+      ]);
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'parent-user-1',
+        clerkId: 'clerk-parent-1',
+      });
+      vi.mocked(mockUserRepository.deactivate).mockResolvedValueOnce(studentUser).mockResolvedValueOnce({
+        id: 'parent-user-1',
+        email: 'parent@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: false,
+      } as User);
+
+      // Act
+      await useCase.execute('user-1', 'admin-user-id', TEST_CONSTANTS.SCHOOL_ID, ['SCHOOL_ADMIN']);
+
+      // Assert
+      // Parent should be deactivated because after filtering out the student being deactivated,
+      // parent has no other active students (deleted/inactive students were already filtered by Prisma query)
+      expect(mockUserRepository.deactivate).toHaveBeenCalledTimes(2);
+      expect(mockUserRepository.deactivate).toHaveBeenCalledWith('parent-user-1');
+    });
+
+    it('should exclude student being deactivated from parent active student count', async () => {
+      // Arrange
+      const studentUser = User.create({
+        id: 'user-1',
+        email: 'student@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: true,
+        clerkId: 'clerk-student-1',
+      });
+
+      vi.mocked(mockUserRepository.findById).mockResolvedValue(studentUser);
+      vi.mocked(mockUserRepository.deactivate).mockResolvedValue(studentUser);
+      mockPrisma.userRole.findMany.mockResolvedValue([
+        { role: { name: 'STUDENT' } },
+      ]);
+      mockPrisma.student.findUnique.mockResolvedValue({
+        id: 'student-1',
+        userId: 'user-1',
+        userStudents: [
+          {
+            userId: 'parent-user-1',
+            user: { id: 'parent-user-1' },
+          },
+        ],
+      });
+      // Query returns only the student being deactivated
+      // After filtering it out, parent has no other active students
+      mockPrisma.userStudent.findMany.mockResolvedValue([
+        {
+          userId: 'parent-user-1',
+          student: {
+            id: 'student-1', // This is the student being deactivated
+            user: { id: 'user-1', isActive: true },
+          },
+        },
+      ]);
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'parent-user-1',
+        clerkId: 'clerk-parent-1',
+      });
+      vi.mocked(mockUserRepository.deactivate).mockResolvedValueOnce(studentUser).mockResolvedValueOnce({
+        id: 'parent-user-1',
+        email: 'parent@test.com',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        isActive: false,
+      } as User);
+
+      // Act
+      await useCase.execute('user-1', 'admin-user-id', TEST_CONSTANTS.SCHOOL_ID, ['SCHOOL_ADMIN']);
+
+      // Assert
+      // Parent should be deactivated because the only student they have is the one being deactivated
+      expect(mockUserRepository.deactivate).toHaveBeenCalledTimes(2);
+      expect(mockUserRepository.deactivate).toHaveBeenCalledWith('parent-user-1');
+    });
   });
 });
 

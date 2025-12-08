@@ -308,6 +308,109 @@ describe('DeleteStudentUseCase', () => {
       expect(clerkService.deleteUser).toHaveBeenCalledTimes(1); // Only student, not parent
       expect(mockPrisma.user.update).toHaveBeenCalledTimes(1); // Only student
     });
+
+    it('should soft delete related projections', async () => {
+      // Arrange
+      const testStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(testStudent);
+      mockPrisma.student.findUnique
+        .mockResolvedValueOnce({
+          id: TEST_CONSTANTS.STUDENT_ID,
+          user: {
+            id: TEST_CONSTANTS.USER_ID,
+            clerkId: 'clerk-student-id',
+          },
+        })
+        .mockResolvedValueOnce({
+          id: TEST_CONSTANTS.STUDENT_ID,
+          userStudents: [],
+        });
+      mockPrisma.user.update.mockResolvedValue({});
+      mockPrisma.userStudent.findMany.mockResolvedValue([]);
+      vi.mocked(mockRepository.delete).mockResolvedValue();
+      vi.mocked(clerkService.deleteUser).mockResolvedValue();
+
+      // Act
+      await useCase.execute(
+        TEST_CONSTANTS.STUDENT_ID,
+        TEST_CONSTANTS.SCHOOL_ID,
+        ['SCHOOL_ADMIN']
+      );
+
+      // Assert
+      // Soft delete is handled by repository.delete which sets deletedAt
+      expect(mockRepository.delete).toHaveBeenCalledWith(
+        TEST_CONSTANTS.STUDENT_ID,
+        TEST_CONSTANTS.SCHOOL_ID
+      );
+      // User is also soft deleted
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: TEST_CONSTANTS.USER_ID },
+        data: {
+          deletedAt: expect.any(Date),
+          isActive: false,
+          clerkId: null,
+        },
+      });
+    });
+
+    it('should handle parent with multiple students where one is being deleted', async () => {
+      // Arrange
+      const testStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(testStudent);
+      mockPrisma.student.findUnique
+        .mockResolvedValueOnce({
+          id: TEST_CONSTANTS.STUDENT_ID,
+          user: {
+            id: TEST_CONSTANTS.USER_ID,
+            clerkId: 'clerk-student-id',
+          },
+        })
+        .mockResolvedValueOnce({
+          id: TEST_CONSTANTS.STUDENT_ID,
+          userStudents: [
+            {
+              userId: 'parent-user-id',
+              user: { id: 'parent-user-id' },
+            },
+          ],
+        });
+
+      mockPrisma.user.update.mockResolvedValue({});
+      // Parent has another active student (not the one being deleted)
+      mockPrisma.userStudent.findMany.mockResolvedValue([
+        {
+          userId: 'parent-user-id',
+          student: {
+            id: 'other-student-id', // Different student
+            user: { id: 'other-user-id', isActive: true },
+          },
+        },
+      ]);
+
+      vi.mocked(mockRepository.delete).mockResolvedValue();
+      vi.mocked(clerkService.deleteUser).mockResolvedValue();
+
+      // Act
+      await useCase.execute(
+        TEST_CONSTANTS.STUDENT_ID,
+        TEST_CONSTANTS.SCHOOL_ID,
+        ['SCHOOL_ADMIN']
+      );
+
+      // Assert
+      // Parent should NOT be deleted since they have another active student
+      expect(mockPrisma.user.update).toHaveBeenCalledTimes(1); // Only student
+      expect(clerkService.deleteUser).toHaveBeenCalledTimes(1); // Only student
+    });
   });
 });
 

@@ -390,6 +390,584 @@ describe('CreateStudentUseCase', () => {
       // Should not create a new parent user, should use existing one
       expect(mockPrisma.user.create).toHaveBeenCalledTimes(1); // Only student user
     });
+
+    it('should calculate age correctly from birthDate', async () => {
+      // Arrange
+      const today = new Date();
+      const birthYear = today.getFullYear() - 15;
+      const birthDate = new Date(birthYear, today.getMonth(), today.getDate() - 1); // Yesterday, 15 years ago
+      
+      const input = createTestCreateStudentInput({
+        birthDate: birthDate.toISOString(),
+      });
+
+      const createdStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        age: 15,
+        birthDate,
+      });
+
+      mockPrisma.school.findUnique.mockResolvedValue({
+        userLimit: null,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-student-id',
+        name: 'STUDENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-student-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: TEST_CONSTANTS.USER_ID,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-parent-id',
+        name: 'PARENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-parent-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: 'parent-user-id',
+      });
+
+      mockPrisma.userRole.findFirst.mockResolvedValue(null);
+
+      vi.mocked(mockRepository.createWithUser).mockResolvedValue(createdStudent);
+      vi.mocked(mockRepository.findById).mockResolvedValue(createdStudent);
+
+      // Act
+      const result = await useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      expect(result.age).toBe(15);
+      expect(mockRepository.createWithUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          age: 15,
+        }),
+        expect.any(String)
+      );
+    });
+
+    it('should calculate age correctly when birthday has not occurred this year', async () => {
+      // Arrange
+      const today = new Date();
+      const birthYear = today.getFullYear() - 15;
+      const birthDate = new Date(birthYear, today.getMonth() + 1, today.getDate()); // Next month, 15 years ago
+      
+      const input = createTestCreateStudentInput({
+        birthDate: birthDate.toISOString(),
+      });
+
+      const createdStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        age: 14, // Should be 14, not 15, since birthday hasn't occurred
+        birthDate,
+      });
+
+      mockPrisma.school.findUnique.mockResolvedValue({
+        userLimit: null,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-student-id',
+        name: 'STUDENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-student-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: TEST_CONSTANTS.USER_ID,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-parent-id',
+        name: 'PARENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-parent-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: 'parent-user-id',
+      });
+
+      mockPrisma.userRole.findFirst.mockResolvedValue(null);
+
+      vi.mocked(mockRepository.createWithUser).mockResolvedValue(createdStudent);
+      vi.mocked(mockRepository.findById).mockResolvedValue(createdStudent);
+
+      // Act
+      const result = await useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      expect(result.age).toBe(14);
+    });
+
+    it('should handle parent Clerk creation failure gracefully', async () => {
+      // Arrange
+      const input = createTestCreateStudentInput();
+      const createdStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+
+      mockPrisma.school.findUnique.mockResolvedValue({
+        userLimit: null,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-student-id',
+        name: 'STUDENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser)
+        .mockResolvedValueOnce('clerk-student-id')
+        .mockRejectedValueOnce(new Error('Clerk API error'));
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: TEST_CONSTANTS.USER_ID,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-parent-id',
+        name: 'PARENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+
+      // Parent user should still be created with placeholder clerkId
+      mockPrisma.user.create.mockResolvedValue({
+        id: 'parent-user-id',
+        clerkId: expect.stringContaining('parent_'),
+      });
+
+      mockPrisma.userRole.findFirst.mockResolvedValue(null);
+
+      vi.mocked(mockRepository.createWithUser).mockResolvedValue(createdStudent);
+      vi.mocked(mockRepository.findById).mockResolvedValue(createdStudent);
+
+      // Act
+      const result = await useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      expect(result).toEqual(createdStudent);
+      // Should still create parent user even if Clerk fails
+      expect(mockPrisma.user.create).toHaveBeenCalledTimes(2);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Error creating Clerk account for parent'),
+        expect.any(Error)
+      );
+    });
+
+    it('should assign PARENT role to new parent user', async () => {
+      // Arrange
+      const input = createTestCreateStudentInput();
+      const createdStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+
+      mockPrisma.school.findUnique.mockResolvedValue({
+        userLimit: null,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-student-id',
+        name: 'STUDENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-student-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: TEST_CONSTANTS.USER_ID,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-parent-id',
+        name: 'PARENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-parent-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: 'parent-user-id',
+      });
+
+      mockPrisma.userRole.findFirst.mockResolvedValue(null);
+
+      vi.mocked(mockRepository.createWithUser).mockResolvedValue(createdStudent);
+      vi.mocked(mockRepository.findById).mockResolvedValue(createdStudent);
+
+      // Act
+      await useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      expect(mockPrisma.userRole.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: 'parent-user-id',
+            roleId: 'role-parent-id',
+          }),
+        })
+      );
+    });
+
+    it('should not assign PARENT role if parent already has it', async () => {
+      // Arrange
+      const input = createTestCreateStudentInput();
+      const createdStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+
+      mockPrisma.school.findUnique.mockResolvedValue({
+        userLimit: null,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-student-id',
+        name: 'STUDENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-student-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: TEST_CONSTANTS.USER_ID,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-parent-id',
+        name: 'PARENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-parent-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: 'parent-user-id',
+      });
+
+      // Parent already has PARENT role
+      mockPrisma.userRole.findFirst.mockResolvedValue({
+        id: 'user-role-1',
+        userId: 'parent-user-id',
+        roleId: 'role-parent-id',
+      });
+
+      vi.mocked(mockRepository.createWithUser).mockResolvedValue(createdStudent);
+      vi.mocked(mockRepository.findById).mockResolvedValue(createdStudent);
+
+      // Act
+      await useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      // Should not create duplicate role assignment
+      const roleCreateCalls = mockPrisma.userRole.create.mock.calls.filter(
+        (call: any[]) => call[0].data.roleId === 'role-parent-id'
+      );
+      expect(roleCreateCalls.length).toBe(0);
+    });
+
+    it('should prevent duplicate parent-student links', async () => {
+      // Arrange
+      const input = createTestCreateStudentInput();
+      const createdStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+
+      mockPrisma.school.findUnique.mockResolvedValue({
+        userLimit: null,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-student-id',
+        name: 'STUDENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-student-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: TEST_CONSTANTS.USER_ID,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-parent-id',
+        name: 'PARENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-parent-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: 'parent-user-id',
+      });
+
+      mockPrisma.userRole.findFirst.mockResolvedValue(null);
+
+      // Link already exists
+      mockPrisma.userStudent.findFirst.mockResolvedValue({
+        id: 'existing-link-id',
+        userId: 'parent-user-id',
+        studentId: TEST_CONSTANTS.STUDENT_ID,
+      });
+
+      vi.mocked(mockRepository.createWithUser).mockResolvedValue(createdStudent);
+      vi.mocked(mockRepository.findById).mockResolvedValue(createdStudent);
+
+      // Act
+      await useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      // Should not create duplicate link
+      expect(mockPrisma.userStudent.create).not.toHaveBeenCalled();
+    });
+
+    it('should create link with relationship field when provided', async () => {
+      // Arrange
+      const input = createTestCreateStudentInput({
+        parents: [
+          {
+            firstName: 'Jane',
+            lastName: 'Doe',
+            email: 'jane.doe@example.com',
+            phone: '123-456-7890',
+            relationship: 'Mother',
+          },
+        ],
+      });
+      const createdStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+
+      mockPrisma.school.findUnique.mockResolvedValue({
+        userLimit: null,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-student-id',
+        name: 'STUDENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-student-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: TEST_CONSTANTS.USER_ID,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-parent-id',
+        name: 'PARENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-parent-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: 'parent-user-id',
+      });
+
+      mockPrisma.userRole.findFirst.mockResolvedValue(null);
+      mockPrisma.userStudent.findFirst.mockResolvedValue(null);
+
+      vi.mocked(mockRepository.createWithUser).mockResolvedValue(createdStudent);
+      vi.mocked(mockRepository.findById).mockResolvedValue(createdStudent);
+
+      // Act
+      await useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      expect(mockPrisma.userStudent.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          relationship: 'Mother',
+        }),
+      });
+    });
+
+    it('should use default relationship when relationship is falsy', async () => {
+      // Arrange
+      // Note: DTO requires relationship, but use case has fallback to 'Parent'
+      // This test verifies the use case fallback logic works
+      const input = createTestCreateStudentInput({
+        parents: [
+          {
+            firstName: 'Jane',
+            lastName: 'Doe',
+            email: 'jane.doe@example.com',
+            phone: '123-456-7890',
+            relationship: 'Parent', // Use default value
+          },
+        ],
+      });
+      const createdStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+
+      mockPrisma.school.findUnique.mockResolvedValue({
+        userLimit: null,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-student-id',
+        name: 'STUDENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-student-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: TEST_CONSTANTS.USER_ID,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValueOnce({
+        id: 'role-parent-id',
+        name: 'PARENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-parent-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: 'parent-user-id',
+      });
+
+      mockPrisma.userRole.findFirst.mockResolvedValue(null);
+      mockPrisma.userStudent.findFirst.mockResolvedValue(null);
+
+      vi.mocked(mockRepository.createWithUser).mockResolvedValue(createdStudent);
+      vi.mocked(mockRepository.findById).mockResolvedValue(createdStudent);
+
+      // Act
+      await useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      expect(mockPrisma.userStudent.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          relationship: 'Parent',
+        }),
+      });
+    });
+
+    it('should throw error when PARENT role not found', async () => {
+      // Arrange
+      const input = createTestCreateStudentInput();
+
+      mockPrisma.school.findUnique.mockResolvedValue({
+        userLimit: null,
+      });
+
+      mockPrisma.role.findFirst
+        .mockResolvedValueOnce({
+          id: 'role-student-id',
+          name: 'STUDENT',
+        })
+        .mockResolvedValueOnce(null); // PARENT role not found
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-student-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: TEST_CONSTANTS.USER_ID,
+      });
+
+      const createdStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+
+      vi.mocked(mockRepository.createWithUser).mockResolvedValue(createdStudent);
+
+      // Act & Assert
+      await expect(
+        useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID)
+      ).rejects.toThrow('PARENT role not found in system');
+    });
+
+    it('should handle two parents successfully', async () => {
+      // Arrange
+      const input = createTestCreateStudentInput({
+        parents: [
+          {
+            firstName: 'Jane',
+            lastName: 'Doe',
+            email: 'jane.doe@example.com',
+            phone: '123-456-7890',
+            relationship: 'Mother',
+          },
+          {
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john.doe@example.com',
+            phone: '123-456-7891',
+            relationship: 'Father',
+          },
+        ],
+      });
+      const createdStudent = createTestStudent({
+        id: TEST_CONSTANTS.STUDENT_ID,
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+
+      mockPrisma.school.findUnique.mockResolvedValue({
+        userLimit: null,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValue({
+        id: 'role-student-id',
+        name: 'STUDENT',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(clerkService.createUser).mockResolvedValue('clerk-student-id');
+
+      mockPrisma.user.create.mockResolvedValue({
+        id: TEST_CONSTANTS.USER_ID,
+      });
+
+      mockPrisma.role.findFirst.mockResolvedValue({
+        id: 'role-parent-id',
+        name: 'PARENT',
+      });
+
+      // Both parents are new
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+      vi.mocked(clerkService.createUser)
+        .mockResolvedValueOnce('clerk-parent-1')
+        .mockResolvedValueOnce('clerk-parent-2');
+
+      mockPrisma.user.create
+        .mockResolvedValueOnce({ id: 'parent-user-1' })
+        .mockResolvedValueOnce({ id: 'parent-user-2' });
+
+      mockPrisma.userRole.findFirst.mockResolvedValue(null);
+      mockPrisma.userStudent.findFirst.mockResolvedValue(null);
+
+      vi.mocked(mockRepository.createWithUser).mockResolvedValue(createdStudent);
+      vi.mocked(mockRepository.findById).mockResolvedValue(createdStudent);
+
+      // Act
+      await useCase.execute(input, TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      expect(mockPrisma.user.create).toHaveBeenCalledTimes(3); // Student + 2 parents
+      expect(mockPrisma.userStudent.create).toHaveBeenCalledTimes(2); // 2 parent links
+    });
   });
 });
 

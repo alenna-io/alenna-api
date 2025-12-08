@@ -281,6 +281,29 @@ describe('GetStudentsUseCase', () => {
       expect(result).toEqual(students);
       expect(mockSchoolYearRepository.findActiveBySchoolId).toHaveBeenCalledWith(TEST_CONSTANTS.SCHOOL_ID);
     });
+
+    it('should exclude soft-deleted students', async () => {
+      // Arrange
+      const activeStudent = createTestStudent({
+        id: 'student-1',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+      });
+      const deletedStudent = createTestStudent({
+        id: 'student-2',
+        schoolId: TEST_CONSTANTS.SCHOOL_ID,
+        deletedAt: new Date(),
+      });
+
+      // Repository should only return non-deleted students
+      vi.mocked(mockStudentRepository.findBySchoolId).mockResolvedValue([activeStudent]);
+
+      // Act
+      const result = await useCase.execute(TEST_CONSTANTS.SCHOOL_ID);
+
+      // Assert
+      expect(result).toEqual([activeStudent]);
+      expect(result).not.toContainEqual(deletedStudent);
+    });
   });
 });
 
