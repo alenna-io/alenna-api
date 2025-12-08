@@ -131,6 +131,59 @@ export function createTestUser(overrides?: Partial<User>): User {
 }
 
 /**
+ * Creates a test ProjectionTemplate with default values
+ */
+export function createTestProjectionTemplate(overrides?: {
+  id?: string;
+  name?: string;
+  level?: string;
+  isDefault?: boolean;
+  isActive?: boolean;
+  schoolId?: string;
+  templateSubjects?: Array<{
+    id?: string;
+    subSubjectId?: string;
+    subSubjectName?: string;
+    startPace?: number;
+    endPace?: number;
+    skipPaces?: number[];
+    notPairWith?: string[];
+    extendToNext?: boolean;
+    order?: number;
+  }>;
+}): any {
+  const defaultTemplate = {
+    id: 'template-1',
+    name: 'Plantilla L1',
+    level: 'L1',
+    isDefault: true,
+    isActive: true,
+    schoolId: TEST_CONSTANTS.SCHOOL_ID,
+    templateSubjects: [
+      {
+        id: 'subject-1',
+        subSubjectId: 'sub-subject-1',
+        subSubjectName: 'Math L1',
+        startPace: 1001,
+        endPace: 1012,
+        skipPaces: [],
+        notPairWith: [],
+        extendToNext: false,
+        order: 0,
+      },
+    ],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  return {
+    ...defaultTemplate,
+    ...overrides,
+    templateSubjects: overrides?.templateSubjects || defaultTemplate.templateSubjects,
+  };
+}
+
+/**
  * Common test constants
  */
 export const TEST_CONSTANTS = {
@@ -139,5 +192,6 @@ export const TEST_CONSTANTS = {
   STUDENT_ID: 'student-1',
   CERTIFICATION_TYPE_ID: 'cert-1',
   CLERK_ID: 'clerk-user-1',
+  TEMPLATE_ID: 'template-1',
 } as const;
 

@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import { IStudentRepository, IUserRepository } from '../../core/adapters_interface/repositories';
+import { IProjectionTemplateRepository } from '../../core/adapters_interface/repositories/IProjectionTemplateRepository';
 import { Student } from '../../core/domain/entities';
 
 /**
@@ -33,6 +34,22 @@ export function createMockUserRepository(): IUserRepository {
     update: vi.fn(),
     deactivate: vi.fn(),
     reactivate: vi.fn(),
+    delete: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock ProjectionTemplateRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockProjectionTemplateRepository(): IProjectionTemplateRepository {
+  return {
+    findById: vi.fn(),
+    findBySchoolId: vi.fn(),
+    findByLevel: vi.fn(),
+    findDefaultByLevel: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
     delete: vi.fn(),
   };
 }
