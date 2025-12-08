@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { IStudentRepository, IUserRepository } from '../../core/adapters_interface/repositories';
+import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository } from '../../core/adapters_interface/repositories';
 import { IProjectionTemplateRepository } from '../../core/adapters_interface/repositories/IProjectionTemplateRepository';
 import { Student } from '../../core/domain/entities';
 
@@ -51,6 +51,39 @@ export function createMockProjectionTemplateRepository(): IProjectionTemplateRep
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock SchoolRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockSchoolRepository(): ISchoolRepository {
+  return {
+    findById: vi.fn(),
+    findAll: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    activate: vi.fn(),
+    deactivate: vi.fn(),
+    delete: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock SchoolYearRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockSchoolYearRepository(): ISchoolYearRepository {
+  return {
+    findById: vi.fn(),
+    findBySchoolId: vi.fn(),
+    findActiveBySchoolId: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    setActive: vi.fn(),
+    getCurrentWeek: vi.fn(),
   };
 }
 
