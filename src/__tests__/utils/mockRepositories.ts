@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository } from '../../core/adapters_interface/repositories';
+import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository } from '../../core/adapters_interface/repositories';
 import { IProjectionTemplateRepository } from '../../core/adapters_interface/repositories/IProjectionTemplateRepository';
 import { Student } from '../../core/domain/entities';
 
@@ -107,6 +107,21 @@ export function createMockGroupRepository(): IGroupRepository {
     exists: vi.fn(),
     isStudentInGroupForSchoolYear: vi.fn(),
     getStudentAssignmentsForSchoolYear: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock RoleRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockRoleRepository(): IRoleRepository {
+  return {
+    findAll: vi.fn(),
+    findById: vi.fn(),
+    findByName: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
   };
 }
 
