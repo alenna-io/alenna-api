@@ -341,7 +341,7 @@ export class SchoolController {
       
       const users = await container.getUsersUseCase.execute(schoolId);
       const teachers = users.filter(user => 
-        user.roles.some(role => role.name === 'TEACHER')
+        user.roles.some(role => role.name === 'TEACHER' || role.name === 'SCHOOL_ADMIN')
       );
 
       res.json(teachers.map(teacher => ({
@@ -368,7 +368,7 @@ export class SchoolController {
       
       const users = await container.getUsersUseCase.execute(schoolId);
       const teachersCount = users.filter(user => 
-        user.roles.some(role => role.name === 'TEACHER')
+        user.roles.some(role => role.name === 'TEACHER' || role.name === 'SCHOOL_ADMIN')
       ).length;
 
       res.json({ count: teachersCount });
