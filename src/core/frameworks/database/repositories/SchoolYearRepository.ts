@@ -425,7 +425,27 @@ export class SchoolYearRepository implements ISchoolYearRepository {
       }
 
       // If no exact match (e.g., today falls outside configured weeks but inside quarter),
-      // gracefully return null week but keep year/quarter context.
+      // find the last active week (most recently ended week)
+      const pastWeeks = storedWeeks.filter(
+        (w: PrismaSchoolWeek) => w.endDate < now
+      );
+
+      if (pastWeeks.length > 0) {
+        // Sort by endDate descending to get the most recent
+        const lastActiveWeek = pastWeeks.sort(
+          (a, b) => b.endDate.getTime() - a.endDate.getTime()
+        )[0];
+
+        return {
+          schoolYear,
+          currentQuarter,
+          currentWeek: lastActiveWeek.weekNumber,
+          weekStartDate: lastActiveWeek.startDate,
+          weekEndDate: lastActiveWeek.endDate,
+        };
+      }
+
+      // If no past weeks exist (e.g., we're before the first week), return null
       return {
         schoolYear,
         currentQuarter,
