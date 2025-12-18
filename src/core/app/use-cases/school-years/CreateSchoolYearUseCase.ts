@@ -2,7 +2,7 @@ import type { ISchoolYearRepository } from '../../../adapters_interface/reposito
 import type { CreateSchoolYearInput, SchoolYearOutput, QuarterOutput } from '../../dtos';
 
 export class CreateSchoolYearUseCase {
-  constructor(private schoolYearRepository: ISchoolYearRepository) {}
+  constructor(private schoolYearRepository: ISchoolYearRepository) { }
 
   async execute(input: CreateSchoolYearInput, schoolId: string): Promise<SchoolYearOutput> {
     const schoolYear = await this.schoolYearRepository.create({
@@ -51,6 +51,17 @@ export class CreateSchoolYearUseCase {
         endDate: q.endDate.toISOString(),
         order: q.order,
         weeksCount: q.weeksCount,
+        holidays: (q.holidays || []).map((h: any) => ({
+          id: h.id,
+          startDate: h.startDate.toISOString(),
+          endDate: h.endDate.toISOString(),
+          label: h.label || undefined,
+        })),
+        weeks: (q.schoolWeeks || []).map((w: any) => ({
+          weekNumber: w.weekNumber,
+          startDate: w.startDate.toISOString(),
+          endDate: w.endDate.toISOString(),
+        })),
         createdAt: q.createdAt.toISOString(),
         updatedAt: q.updatedAt.toISOString(),
       })),

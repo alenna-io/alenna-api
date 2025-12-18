@@ -80,6 +80,17 @@ export interface QuarterOutput {
   endDate: string;
   order: number;
   weeksCount: number;
+  holidays?: Array<{
+    id: string;
+    startDate: string;
+    endDate: string;
+    label?: string;
+  }>;
+  weeks?: Array<{
+    weekNumber: number;
+    startDate: string;
+    endDate: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }

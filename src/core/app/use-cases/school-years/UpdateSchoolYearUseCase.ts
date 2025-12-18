@@ -2,16 +2,16 @@ import type { ISchoolYearRepository } from '../../../adapters_interface/reposito
 import type { UpdateSchoolYearInput, SchoolYearOutput, QuarterOutput } from '../../dtos';
 
 export class UpdateSchoolYearUseCase {
-  constructor(private schoolYearRepository: ISchoolYearRepository) {}
+  constructor(private schoolYearRepository: ISchoolYearRepository) { }
 
   async execute(id: string, input: UpdateSchoolYearInput): Promise<SchoolYearOutput> {
     const updateData: any = {};
-    
+
     if (input.name !== undefined) updateData.name = input.name;
     if (input.startDate !== undefined) updateData.startDate = new Date(input.startDate);
     if (input.endDate !== undefined) updateData.endDate = new Date(input.endDate);
     if (input.isActive !== undefined) updateData.isActive = input.isActive;
-    
+
     if (input.quarters) {
       updateData.quarters = input.quarters.map(q => ({
         id: q.id,
@@ -55,6 +55,17 @@ export class UpdateSchoolYearUseCase {
         endDate: q.endDate.toISOString(),
         order: q.order,
         weeksCount: q.weeksCount,
+        holidays: (q.holidays || []).map((h: any) => ({
+          id: h.id,
+          startDate: h.startDate.toISOString(),
+          endDate: h.endDate.toISOString(),
+          label: h.label || undefined,
+        })),
+        weeks: (q.schoolWeeks || []).map((w: any) => ({
+          weekNumber: w.weekNumber,
+          startDate: w.startDate.toISOString(),
+          endDate: w.endDate.toISOString(),
+        })),
         createdAt: q.createdAt.toISOString(),
         updatedAt: q.updatedAt.toISOString(),
       })),

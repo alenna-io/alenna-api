@@ -10,7 +10,7 @@ import prisma from '../prisma.client';
 import { generateSchoolWeeksForQuarter, type HolidayRange } from '../../../../utils';
 
 export class SchoolYearRepository implements ISchoolYearRepository {
-  constructor() {}
+  constructor() { }
 
   async findById(id: string): Promise<SchoolYear | null> {
     const schoolYear = await prisma.schoolYear.findUnique({
@@ -19,6 +19,16 @@ export class SchoolYearRepository implements ISchoolYearRepository {
         quarters: {
           where: { deletedAt: null },
           orderBy: { order: 'asc' },
+          include: {
+            quarterHolidays: {
+              where: { deletedAt: null },
+              orderBy: { startDate: 'asc' },
+            },
+            schoolWeeks: {
+              where: { deletedAt: null },
+              orderBy: { weekNumber: 'asc' },
+            },
+          },
         },
       },
     });
@@ -33,6 +43,16 @@ export class SchoolYearRepository implements ISchoolYearRepository {
         quarters: {
           where: { deletedAt: null },
           orderBy: { order: 'asc' },
+          include: {
+            quarterHolidays: {
+              where: { deletedAt: null },
+              orderBy: { startDate: 'asc' },
+            },
+            schoolWeeks: {
+              where: { deletedAt: null },
+              orderBy: { weekNumber: 'asc' },
+            },
+          },
         },
       },
       orderBy: { startDate: 'desc' },
@@ -232,30 +252,36 @@ export class SchoolYearRepository implements ISchoolYearRepository {
             data: quarterUpdateData,
           });
 
-          // If weeks or holidays are provided, replace existing configuration
-          if (quarter.weeks || quarter.holidays) {
-            // Soft-delete existing holidays and weeks for this quarter
+          // Always process holidays if provided
+          if (quarter.holidays !== undefined) {
+            // Soft-delete existing holidays
             await prisma.quarterHoliday.updateMany({
-              where: { quarterId: updatedQuarter.id, deletedAt: null },
-              data: { deletedAt: new Date() },
-            });
-            await prisma.schoolWeek.updateMany({
               where: { quarterId: updatedQuarter.id, deletedAt: null },
               data: { deletedAt: new Date() },
             });
 
             // Recreate holidays if provided
             if (quarter.holidays && quarter.holidays.length > 0) {
+              const holidaysToCreate = quarter.holidays.map((h) => ({
+                schoolYearId: id,
+                quarterId: updatedQuarter.id,
+                startDate: h.startDate instanceof Date ? h.startDate : new Date(h.startDate),
+                endDate: h.endDate instanceof Date ? h.endDate : new Date(h.endDate),
+                label: h.label ?? null,
+              }))
+
               await prisma.quarterHoliday.createMany({
-                data: quarter.holidays.map((h) => ({
-                  schoolYearId: id,
-                  quarterId: updatedQuarter.id,
-                  startDate: h.startDate,
-                  endDate: h.endDate,
-                  label: h.label ?? null,
-                })),
+                data: holidaysToCreate,
               });
             }
+          }
+
+          // Process weeks if provided
+          if (quarter.weeks !== undefined) {
+            // Hard-delete existing weeks to avoid unique constraint conflicts
+            await prisma.schoolWeek.deleteMany({
+              where: { quarterId: updatedQuarter.id },
+            });
 
             // Determine holidays (ranges) for week generation
             const holidayRanges: HolidayRange[] = (quarter.holidays ?? []).map((h) => ({
@@ -267,29 +293,54 @@ export class SchoolYearRepository implements ISchoolYearRepository {
             let weeksToCreate: { startDate: Date; endDate: Date; weekNumber: number }[] = [];
 
             if (quarter.weeks && quarter.weeks.length > 0) {
-              // Basic validation: sorted by weekNumber and within quarter range
+              // Sort weeks by weekNumber
               const sortedWeeks = [...quarter.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
 
-              // Ensure contiguity and non-overlap
-              let previousEnd: Date | null = null;
-              for (const w of sortedWeeks) {
-                if (w.startDate > w.endDate) {
+              // Auto-adjust weeks to be contiguous (no gaps) unless there's a holiday
+              const adjustedWeeks: { startDate: Date; endDate: Date; weekNumber: number }[] = [];
+
+              for (let i = 0; i < sortedWeeks.length; i++) {
+                const currentWeek = sortedWeeks[i];
+                const previousWeek = i > 0 ? adjustedWeeks[i - 1] : null;
+
+                // Basic validation
+                if (currentWeek.startDate > currentWeek.endDate) {
                   throw new Error('Week startDate must be before endDate');
                 }
-                if (w.startDate < updatedQuarter.startDate || w.endDate > updatedQuarter.endDate) {
-                  throw new Error('Week dates must be within quarter range');
+
+                let adjustedStartDate = currentWeek.startDate;
+                let adjustedEndDate = currentWeek.endDate;
+
+                // If there's a previous week, check for gaps
+                if (previousWeek) {
+                  const expectedStartDate = new Date(previousWeek.endDate.getTime() + 24 * 60 * 60 * 1000);
+                  const gapStart = new Date(previousWeek.endDate.getTime() + 24 * 60 * 60 * 1000);
+                  const gapEnd = new Date(currentWeek.startDate.getTime() - 24 * 60 * 60 * 1000);
+
+                  // Check if there's a holiday in the gap
+                  const hasHolidayInGap = holidayRanges.some(holiday => {
+                    return (
+                      (holiday.startDate <= gapEnd && holiday.endDate >= gapStart) ||
+                      (holiday.startDate >= gapStart && holiday.startDate <= gapEnd) ||
+                      (holiday.endDate >= gapStart && holiday.endDate <= gapEnd)
+                    );
+                  });
+
+                  // If no holiday in gap, adjust previous week's end date to be contiguous
+                  if (!hasHolidayInGap && currentWeek.startDate.getTime() !== expectedStartDate.getTime()) {
+                    // Extend previous week to fill the gap
+                    adjustedWeeks[i - 1].endDate = new Date(currentWeek.startDate.getTime() - 24 * 60 * 60 * 1000);
+                  }
                 }
-                if (previousEnd && w.startDate.getTime() !== previousEnd.getTime() + 24 * 60 * 60 * 1000) {
-                  throw new Error('Weeks must be contiguous without gaps or overlaps');
-                }
-                previousEnd = w.endDate;
+
+                adjustedWeeks.push({
+                  weekNumber: currentWeek.weekNumber,
+                  startDate: adjustedStartDate,
+                  endDate: adjustedEndDate,
+                });
               }
 
-              weeksToCreate = sortedWeeks.map((w) => ({
-                weekNumber: w.weekNumber,
-                startDate: w.startDate,
-                endDate: w.endDate,
-              }));
+              weeksToCreate = adjustedWeeks;
             } else {
               const weeksCount = quarter.weeksCount ?? updatedQuarter.weeksCount ?? 9;
               const generatedWeeks = generateSchoolWeeksForQuarter({
@@ -307,13 +358,15 @@ export class SchoolYearRepository implements ISchoolYearRepository {
             }
 
             if (weeksToCreate.length > 0) {
+              const weeksData = weeksToCreate.map((w) => ({
+                quarterId: updatedQuarter.id,
+                weekNumber: w.weekNumber,
+                startDate: w.startDate,
+                endDate: w.endDate,
+              }))
+
               await prisma.schoolWeek.createMany({
-                data: weeksToCreate.map((w) => ({
-                  quarterId: updatedQuarter.id,
-                  weekNumber: w.weekNumber,
-                  startDate: w.startDate,
-                  endDate: w.endDate,
-                })),
+                data: weeksData,
               });
             }
           }
@@ -328,6 +381,16 @@ export class SchoolYearRepository implements ISchoolYearRepository {
         quarters: {
           where: { deletedAt: null },
           orderBy: { order: 'asc' },
+          include: {
+            quarterHolidays: {
+              where: { deletedAt: null },
+              orderBy: { startDate: 'asc' },
+            },
+            schoolWeeks: {
+              where: { deletedAt: null },
+              orderBy: { weekNumber: 'asc' },
+            },
+          },
         },
       },
     });
@@ -370,13 +433,13 @@ export class SchoolYearRepository implements ISchoolYearRepository {
 
   async getCurrentWeek(schoolId: string): Promise<CurrentWeekInfo | null> {
     const schoolYear = await this.findActiveBySchoolId(schoolId);
-    
+
     if (!schoolYear || !schoolYear.quarters) {
       return null;
     }
 
     const now = new Date();
-    
+
     // Check if we're within the school year
     if (now < schoolYear.startDate || now > schoolYear.endDate) {
       return {

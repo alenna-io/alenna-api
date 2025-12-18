@@ -3,11 +3,11 @@ import type { SchoolYearOutput, QuarterOutput } from '../../dtos';
 import { NotFoundError } from '../../../../utils/errors';
 
 export class GetSchoolYearByIdUseCase {
-  constructor(private schoolYearRepository: ISchoolYearRepository) {}
+  constructor(private schoolYearRepository: ISchoolYearRepository) { }
 
   async execute(id: string): Promise<SchoolYearOutput> {
     const schoolYear = await this.schoolYearRepository.findById(id);
-    
+
     if (!schoolYear) {
       throw new NotFoundError('Año escolar no encontrado');
     }
@@ -32,6 +32,17 @@ export class GetSchoolYearByIdUseCase {
         endDate: q.endDate.toISOString(),
         order: q.order,
         weeksCount: q.weeksCount,
+        holidays: (q.holidays || []).map((h: any) => ({
+          id: h.id,
+          startDate: h.startDate.toISOString(),
+          endDate: h.endDate.toISOString(),
+          label: h.label || undefined,
+        })),
+        weeks: (q.schoolWeeks || []).map((w: any) => ({
+          weekNumber: w.weekNumber,
+          startDate: w.startDate.toISOString(),
+          endDate: w.endDate.toISOString(),
+        })),
         createdAt: q.createdAt.toISOString(),
         updatedAt: q.updatedAt.toISOString(),
       })),
