@@ -126,9 +126,8 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'schools.read',
   ],
   TEACHER: [
-    // Students (read, update - no create/delete)
+    // Students (read-only - no create/update/delete)
     'students.read',
-    'students.update',
     // Projections
     'projections.read',
     'projections.create',

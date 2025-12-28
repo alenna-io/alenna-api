@@ -74,13 +74,16 @@ function calculatePaces(subject: SubjectInput): number[] {
 /**
  * Calculate quarterly distribution for each subject
  * Distributes paces evenly across 4 quarters, with remainder going to early quarters
+ * Ensures minimum 18 paces per quarter across all subjects
  */
 function calculateQuarterlyDistribution(
   subjects: SubjectInput[]
 ): Record<string, SubjectProgression> {
   const progressions: Record<string, SubjectProgression> = {};
   const quarters = 4;
+  const MIN_PACES_PER_QUARTER = 18;
 
+  // Step 1: Initial distribution per subject (existing logic)
   for (const subject of subjects) {
     const paces = calculatePaces(subject);
     const totalPaces = paces.length;
@@ -105,6 +108,102 @@ function calculateQuarterlyDistribution(
         difficulty: subject.difficulty || 3, // Default to 3 if not provided
       },
     };
+  }
+
+  // Step 2: Calculate total paces per quarter across all subjects
+  const totalPerQuarter: number[] = [0, 0, 0, 0];
+  for (const progression of Object.values(progressions)) {
+    for (let q = 0; q < quarters; q++) {
+      totalPerQuarter[q] += progression.quarters[q];
+    }
+  }
+
+  // Step 3: Redistribute if any quarter has < 18 paces
+  const deficitQuarters: number[] = [];
+  const excessQuarters: number[] = [];
+
+  for (let q = 0; q < quarters; q++) {
+    if (totalPerQuarter[q] < MIN_PACES_PER_QUARTER) {
+      deficitQuarters.push(q);
+    } else if (totalPerQuarter[q] > MIN_PACES_PER_QUARTER) {
+      excessQuarters.push(q);
+    }
+  }
+
+  // If there are deficit quarters, redistribute from excess quarters
+  if (deficitQuarters.length > 0 && excessQuarters.length > 0) {
+    // Sort deficit quarters by deficit amount (ascending - fix smallest deficits first)
+    deficitQuarters.sort((a, b) => totalPerQuarter[a] - totalPerQuarter[b]);
+
+    // Sort excess quarters by excess amount (descending - use quarters with most excess first)
+    excessQuarters.sort((a, b) => totalPerQuarter[b] - totalPerQuarter[a]);
+
+    // Redistribute paces from excess quarters to deficit quarters
+    for (const deficitQ of deficitQuarters) {
+      const deficit = MIN_PACES_PER_QUARTER - totalPerQuarter[deficitQ];
+
+      for (let i = 0; i < deficit && excessQuarters.length > 0; i++) {
+        // Find the best excess quarter to take from
+        // Prefer quarters with most excess, and prefer moving from subjects with more paces in that quarter
+        let bestExcessQ = excessQuarters[0];
+        let bestSubjectName = '';
+        let bestScore = -1;
+
+        for (const excessQ of excessQuarters) {
+          // Find subject with most paces in this excess quarter
+          for (const [subjectName, progression] of Object.entries(progressions)) {
+            if (progression.quarters[excessQ] > 0) {
+              // Score: prefer subjects with more paces in excess quarter
+              // Also consider total paces in that quarter (more total = better candidate)
+              const score = progression.quarters[excessQ] * 100 + totalPerQuarter[excessQ];
+              if (score > bestScore) {
+                bestScore = score;
+                bestExcessQ = excessQ;
+                bestSubjectName = subjectName;
+              }
+            }
+          }
+        }
+
+        if (bestSubjectName && progressions[bestSubjectName].quarters[bestExcessQ] > 0) {
+          // Move 1 pace from bestExcessQ to deficitQ
+          progressions[bestSubjectName].quarters[bestExcessQ]--;
+          progressions[bestSubjectName].quarters[deficitQ]++;
+          totalPerQuarter[bestExcessQ]--;
+          totalPerQuarter[deficitQ]++;
+
+          // Update excess/deficit lists
+          if (totalPerQuarter[bestExcessQ] <= MIN_PACES_PER_QUARTER) {
+            const index = excessQuarters.indexOf(bestExcessQ);
+            if (index > -1) {
+              excessQuarters.splice(index, 1);
+            }
+          }
+        } else {
+          // If we can't find a good candidate, try any excess quarter
+          const excessQ = excessQuarters[0];
+          let moved = false;
+
+          for (const progression of Object.values(progressions)) {
+            if (progression.quarters[excessQ] > 0) {
+              progression.quarters[excessQ]--;
+              progression.quarters[deficitQ]++;
+              totalPerQuarter[excessQ]--;
+              totalPerQuarter[deficitQ]++;
+              moved = true;
+              break;
+            }
+          }
+
+          if (moved && totalPerQuarter[excessQ] <= MIN_PACES_PER_QUARTER) {
+            const index = excessQuarters.indexOf(excessQ);
+            if (index > -1) {
+              excessQuarters.splice(index, 1);
+            }
+          }
+        }
+      }
+    }
   }
 
   return progressions;
@@ -143,7 +242,7 @@ function wouldExceedDifficultyLimit(
 
   const currentDifficulty = calculateWeekDifficulty(schedule, subjectProgressions);
   const newDifficulty = currentDifficulty + progression.subject.difficulty;
-  
+
   return newDifficulty > maxCombinedDifficulty;
 }
 
@@ -179,7 +278,7 @@ function createBalancedSchedule(
   for (const { name: subjectName, paces: totalPaces } of sortedSubjects) {
     // Calculate optimal distribution for this subject
     let weeksToPlace: number[];
-    
+
     if (totalPaces <= weeksByQuarter) {
       // Distribute evenly across weeks
       const step = weeksByQuarter / totalPaces;
@@ -235,7 +334,7 @@ function createBalancedSchedule(
       // 2. Check notPairWith constraints
       const subjectConstraints = notPairWithConstraints.get(subjectName);
       if (subjectConstraints) {
-        const hasConflict = schedule.some(scheduledSubject => 
+        const hasConflict = schedule.some(scheduledSubject =>
           subjectConstraints.has(scheduledSubject)
         );
         if (hasConflict) {
@@ -267,7 +366,7 @@ function createBalancedSchedule(
         // Check constraints first - must be respected
         const subjectConstraints = notPairWithConstraints.get(subjectName);
         if (subjectConstraints) {
-          const hasConflict = schedule.some(scheduledSubject => 
+          const hasConflict = schedule.some(scheduledSubject =>
             subjectConstraints.has(scheduledSubject)
           );
           if (hasConflict) {
@@ -331,7 +430,7 @@ function createBalancedSchedule(
           const subjectConstraints = notPairWithConstraints.get(subjectName);
           let hasConflict = false;
           if (subjectConstraints) {
-            hasConflict = schedule.some(scheduledSubject => 
+            hasConflict = schedule.some(scheduledSubject =>
               subjectConstraints.has(scheduledSubject)
             );
           }
@@ -401,7 +500,7 @@ function createBalancedSchedule(
         const subjectConstraints = notPairWithConstraints.get(subjectName);
         let hasConflict = false;
         if (subjectConstraints) {
-          hasConflict = schedule.some(scheduledSubject => 
+          hasConflict = schedule.some(scheduledSubject =>
             subjectConstraints.has(scheduledSubject)
           );
         }
@@ -472,7 +571,7 @@ function createBalancedSchedule(
         // Check constraints - STRICTLY enforce these
         const subjectConstraints = notPairWithConstraints.get(subjectName);
         if (subjectConstraints) {
-          const hasConflict = schedule.some(scheduledSubject => 
+          const hasConflict = schedule.some(scheduledSubject =>
             subjectConstraints.has(scheduledSubject)
           );
           if (hasConflict) {
@@ -515,7 +614,7 @@ function createBalancedSchedule(
           if (totalPaces - pacesUsed > 0) {
             const subjectConstraints = notPairWithConstraints.get(subjectName);
             if (subjectConstraints) {
-              const hasConflict = schedule.some(scheduledSubject => 
+              const hasConflict = schedule.some(scheduledSubject =>
                 subjectConstraints.has(scheduledSubject)
               );
               if (hasConflict) {
@@ -575,11 +674,11 @@ function createBalancedSchedule(
         const subjectConstraints = notPairWithConstraints.get(subjectToMove);
         let hasConflict = false;
         if (subjectConstraints) {
-          hasConflict = toSchedule.some(scheduledSubject => 
+          hasConflict = toSchedule.some(scheduledSubject =>
             subjectConstraints.has(scheduledSubject)
           );
         }
-        
+
         // If >72 paces and we're rebalancing, allow constraint violations if it improves distribution
         if (hasConflict && totalYearPaces > 72) {
           // Allow violation for rebalancing when over 72 paces
@@ -688,7 +787,7 @@ function assignPacesToWeeks(
  */
 function buildConstraintsMap(subjects: SubjectInput[]): Map<string, Set<string>> {
   const constraints = new Map<string, Set<string>>();
-  
+
   // Create a map of subSubjectId -> subjectName
   const idToName = new Map<string, string>();
   for (const subject of subjects) {
@@ -699,7 +798,7 @@ function buildConstraintsMap(subjects: SubjectInput[]): Map<string, Set<string>>
   for (const subject of subjects) {
     const subjectName = subject.subSubjectName;
     const constraintSet = constraints.get(subjectName) || new Set<string>();
-    
+
     for (const restrictedId of subject.notPairWith || []) {
       const restrictedName = idToName.get(restrictedId);
       if (restrictedName) {
@@ -710,7 +809,7 @@ function buildConstraintsMap(subjects: SubjectInput[]): Map<string, Set<string>>
         constraints.set(restrictedName, reverseConstraintSet);
       }
     }
-    
+
     if (constraintSet.size > 0) {
       constraints.set(subjectName, constraintSet);
     }
