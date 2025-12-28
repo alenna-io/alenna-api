@@ -10,7 +10,7 @@ export const SyncUserDTO = z.object({
 });
 
 export const CreateUserDTO = z.object({
-  clerkId: z.string().min(1).optional(), // Optional - will be created automatically if not provided
+  clerkId: z.string().min(1).optional().or(z.literal('').transform(() => undefined)), // Optional - will be created automatically if not provided. Empty string is treated as undefined
   email: z.string().email(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
