@@ -606,7 +606,6 @@ describe('ProjectionAlgorithm', () => {
 
       const result = generateProjection(subjects);
 
-      const totalPaces = 20 + 10;
       const minPacesPerQuarter = 18;
 
       result.Math.quarters.forEach((quarter, index) => {
