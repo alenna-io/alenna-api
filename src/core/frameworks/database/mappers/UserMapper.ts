@@ -16,6 +16,7 @@ export class UserMapper {
       prismaUser.schoolId,
       prismaUser.firstName || undefined,
       prismaUser.lastName || undefined,
+      prismaUser.phone || undefined,
       prismaUser.language || undefined,
       prismaUser.isActive ?? true,
       prismaUser.createdPassword ?? false,

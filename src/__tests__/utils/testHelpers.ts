@@ -114,7 +114,7 @@ export function createTestUser(overrides?: Partial<User>): User {
     return defaultUser;
   }
 
-  // Merge overrides - User constructor: id, clerkId, email, schoolId, firstName?, lastName?, language?, isActive, createdPassword, roles, createdAt?, updatedAt?
+  // Merge overrides - User constructor: id, clerkId, email, schoolId, firstName?, lastName?, phone?, language?, isActive, createdPassword, roles, createdAt?, updatedAt?
   return new User(
     overrides.id ?? defaultUser.id,
     overrides.clerkId ?? defaultUser.clerkId,
@@ -122,6 +122,7 @@ export function createTestUser(overrides?: Partial<User>): User {
     overrides.schoolId ?? defaultUser.schoolId,
     overrides.firstName ?? defaultUser.firstName,
     overrides.lastName ?? defaultUser.lastName,
+    overrides.phone ?? defaultUser.phone,
     overrides.language ?? defaultUser.language,
     overrides.isActive ?? defaultUser.isActive,
     overrides.createdPassword ?? defaultUser.createdPassword,

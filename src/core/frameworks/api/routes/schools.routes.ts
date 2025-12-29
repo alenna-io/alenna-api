@@ -65,6 +65,9 @@ router.get('/:id/teachers/count', requirePermission('teachers.read'), schoolCont
 // Get teachers for a school
 router.get('/:id/teachers', requirePermission('teachers.read'), schoolController.getTeachers.bind(schoolController));
 
+// Get parents for a school
+router.get('/:id/parents', requirePermission('students.read'), schoolController.getParents.bind(schoolController));
+
 // Get certification types for a school
 router.get('/:id/certification-types', requirePermission('students.read'), schoolController.getCertificationTypes.bind(schoolController));
 

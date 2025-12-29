@@ -15,13 +15,14 @@ export class User {
     public readonly schoolId: string,
     public readonly firstName?: string,
     public readonly lastName?: string,
+    public readonly phone?: string,
     public readonly language?: string,
     public readonly isActive: boolean = true,
     public readonly createdPassword: boolean = false,
     public readonly roles: UserRoleInfo[] = [],
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date
-  ) {}
+  ) { }
 
   static create(props: {
     id: string;
@@ -30,6 +31,7 @@ export class User {
     schoolId: string;
     firstName?: string;
     lastName?: string;
+    phone?: string;
     language?: string;
     isActive?: boolean;
     createdPassword?: boolean;
@@ -42,6 +44,7 @@ export class User {
       props.schoolId,
       props.firstName,
       props.lastName,
+      props.phone,
       props.language,
       props.isActive ?? true,
       props.createdPassword ?? false,
@@ -51,7 +54,7 @@ export class User {
     );
   }
 
-  update(props: Partial<Pick<User, 'firstName' | 'lastName' | 'language' | 'isActive' | 'createdPassword' | 'roles' | 'email' | 'schoolId'>>): User {
+  update(props: Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'language' | 'isActive' | 'createdPassword' | 'roles' | 'email' | 'schoolId'>>): User {
     return new User(
       this.id,
       this.clerkId,
@@ -59,6 +62,7 @@ export class User {
       props.schoolId ?? this.schoolId,
       props.firstName ?? this.firstName,
       props.lastName ?? this.lastName,
+      props.phone ?? this.phone,
       props.language ?? this.language,
       props.isActive !== undefined ? props.isActive : this.isActive,
       props.createdPassword !== undefined ? props.createdPassword : this.createdPassword,

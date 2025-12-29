@@ -9,7 +9,7 @@ export class SchoolController {
   async createSchool(req: Request, res: Response): Promise<void> {
     try {
       const validatedData = CreateSchoolDTO.parse(req.body);
-      
+
       const school = await container.createSchoolUseCase.execute(validatedData);
 
       res.status(201).json({
@@ -21,12 +21,12 @@ export class SchoolController {
       });
     } catch (error: any) {
       console.error('Error creating school:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to create school' });
     }
   }
@@ -34,7 +34,7 @@ export class SchoolController {
   async getMySchool(req: Request, res: Response): Promise<void> {
     try {
       const schoolId = req.schoolId!;
-      
+
       const school = await container.getSchoolUseCase.execute(schoolId);
 
       res.json({
@@ -49,12 +49,12 @@ export class SchoolController {
       });
     } catch (error: any) {
       console.error('Error getting school:', error);
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get school' });
     }
   }
@@ -63,7 +63,7 @@ export class SchoolController {
     try {
       const schoolId = req.schoolId!;
       const validatedData = UpdateSchoolDTO.parse(req.body);
-      
+
       const school = await container.updateSchoolUseCase.execute(schoolId, validatedData);
 
       res.json({
@@ -78,17 +78,17 @@ export class SchoolController {
       });
     } catch (error: any) {
       console.error('Error updating school:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to update school' });
     }
   }
@@ -118,14 +118,14 @@ export class SchoolController {
       const { id } = req.params;
       const schoolId = req.schoolId;
       const userRoles = req.userRoles || [];
-      
+
       // School admins can only access their own school
       const isSuperAdmin = userRoles.includes('SUPERADMIN');
       if (!isSuperAdmin && schoolId && id !== schoolId) {
         res.status(403).json({ error: 'No tienes permiso para acceder a esta escuela' });
         return;
       }
-      
+
       const school = await container.getSchoolUseCase.execute(id);
 
       res.json({
@@ -140,12 +140,12 @@ export class SchoolController {
       });
     } catch (error: any) {
       console.error('Error getting school:', error);
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get school' });
     }
   }
@@ -154,7 +154,7 @@ export class SchoolController {
     try {
       const { id } = req.params;
       const validatedData = UpdateSchoolDTO.parse(req.body);
-      
+
       const school = await container.updateSchoolUseCase.execute(id, validatedData);
 
       res.json({
@@ -167,17 +167,17 @@ export class SchoolController {
       });
     } catch (error: any) {
       console.error('Error updating school:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to update school' });
     }
   }
@@ -185,18 +185,18 @@ export class SchoolController {
   async deleteSchool(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       await container.deleteSchoolUseCase.execute(id);
 
       res.status(204).send();
     } catch (error: any) {
       console.error('Error deleting school:', error);
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to delete school' });
     }
   }
@@ -205,19 +205,19 @@ export class SchoolController {
     try {
       const { id } = req.params;
       const userId = req.userId;
-      
+
       const students = await container.getStudentsUseCase.execute(id, userId);
       const count = students.length;
 
       res.json({ count });
     } catch (error: any) {
       console.error('Error getting students count:', error);
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get students count' });
     }
   }
@@ -226,16 +226,16 @@ export class SchoolController {
     try {
       const { id } = req.params;
       const userId = req.userId;
-      
+
       const students = await container.getStudentsUseCase.execute(id, userId);
 
       // Fetch user contact info for all students in one query
       const studentIds = students.map(s => s.id);
       const studentsWithUsers = await prisma.student.findMany({
         where: { id: { in: studentIds } },
-        include: { 
-          user: { 
-            select: { 
+        include: {
+          user: {
+            select: {
               email: true,
               phone: true,
               streetAddress: true,
@@ -243,12 +243,12 @@ export class SchoolController {
               state: true,
               country: true,
               zipCode: true
-            } 
-          } 
+            }
+          }
         }
       });
       const userInfoMap = new Map(studentsWithUsers.map(s => [
-        s.id, 
+        s.id,
         {
           email: s.user?.email,
           phone: s.user?.phone,
@@ -303,12 +303,12 @@ export class SchoolController {
       }));
     } catch (error: any) {
       console.error('Error getting students:', error);
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get students' });
     }
   }
@@ -316,21 +316,21 @@ export class SchoolController {
   async getTeachersCount(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       const teachers = await container.getUsersUseCase.execute(id);
-      const teacherCount = teachers.filter(user => 
+      const teacherCount = teachers.filter(user =>
         user.roles.some(role => role.name === 'TEACHER')
       ).length;
 
       res.json({ count: teacherCount });
     } catch (error: any) {
       console.error('Error getting teachers count:', error);
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get teachers count' });
     }
   }
@@ -338,9 +338,9 @@ export class SchoolController {
   async getMyTeachers(req: Request, res: Response): Promise<void> {
     try {
       const schoolId = req.schoolId!;
-      
+
       const users = await container.getUsersUseCase.execute(schoolId);
-      const teachers = users.filter(user => 
+      const teachers = users.filter(user =>
         user.roles.some(role => role.name === 'TEACHER' || role.name === 'SCHOOL_ADMIN')
       );
 
@@ -365,9 +365,9 @@ export class SchoolController {
   async getMyTeachersCount(req: Request, res: Response): Promise<void> {
     try {
       const schoolId = req.schoolId!;
-      
+
       const users = await container.getUsersUseCase.execute(schoolId);
-      const teachersCount = users.filter(user => 
+      const teachersCount = users.filter(user =>
         user.roles.some(role => role.name === 'TEACHER' || role.name === 'SCHOOL_ADMIN')
       ).length;
 
@@ -381,9 +381,9 @@ export class SchoolController {
   async getTeachers(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       const users = await container.getUsersUseCase.execute(id);
-      const teachers = users.filter(user => 
+      const teachers = users.filter(user =>
         user.roles.some(role => role.name === 'TEACHER')
       );
 
@@ -400,13 +400,75 @@ export class SchoolController {
       })));
     } catch (error: any) {
       console.error('Error getting teachers:', error);
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get teachers' });
+    }
+  }
+
+  async getParents(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      const users = await container.getUsersUseCase.execute(id);
+      const parents = users.filter(user =>
+        user.roles.some(role => role.name === 'PARENT')
+      );
+
+      // Get unique parents by email (in case same parent is linked to multiple students)
+      const uniqueParentsMap = new Map<string, {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        phone?: string;
+        fullName: string;
+      }>();
+
+      parents.forEach(parent => {
+        if (parent.email) {
+          const key = parent.email.toLowerCase();
+          if (!uniqueParentsMap.has(key)) {
+            console.log('[getParents] Parent data:', {
+              id: parent.id,
+              email: parent.email,
+              firstName: parent.firstName,
+              lastName: parent.lastName,
+              phone: parent.phone,
+              hasPhone: !!parent.phone,
+            });
+            uniqueParentsMap.set(key, {
+              id: parent.id,
+              email: parent.email,
+              firstName: parent.firstName || '',
+              lastName: parent.lastName || '',
+              phone: parent.phone || undefined,
+              fullName: parent.fullName,
+            });
+          }
+        }
+      });
+
+      console.log('[getParents] Returning parents:', Array.from(uniqueParentsMap.values()).map(p => ({
+        email: p.email,
+        phone: p.phone,
+        hasPhone: !!p.phone,
+      })));
+
+      res.json(Array.from(uniqueParentsMap.values()));
+    } catch (error: any) {
+      console.error('Error getting parents:', error);
+
+      if (error.message === 'School not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      res.status(500).json({ error: error.message || 'Failed to get parents' });
     }
   }
 
@@ -414,17 +476,17 @@ export class SchoolController {
     try {
       const { id } = req.params;
       const schoolId = req.schoolId!; // Use authenticated user's school
-      
+
       // Verify the requested school matches the user's school (unless superadmin)
       const requestedSchoolId = id === 'me' ? schoolId : id;
       const userRoles = req.userRoles || [];
       const isSuperAdmin = userRoles.includes('SUPERADMIN');
-      
+
       if (!isSuperAdmin && requestedSchoolId !== schoolId) {
         res.status(403).json({ error: 'No tienes permiso para acceder a esta información' });
         return;
       }
-      
+
       const { GetCertificationTypesUseCase } = await import('../../../app/use-cases/certification-types/GetCertificationTypesUseCase');
       const getCertificationTypesUseCase = new GetCertificationTypesUseCase();
       const certificationTypes = await getCertificationTypesUseCase.execute(requestedSchoolId);
@@ -488,23 +550,23 @@ export class SchoolController {
   async activateSchool(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       await container.activateSchoolUseCase.execute(id);
 
       res.json({ message: 'School activated successfully' });
     } catch (error: any) {
       console.error('Error activating school:', error);
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       if (error.message === 'School is already active') {
         res.status(400).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to activate school' });
     }
   }
@@ -512,23 +574,23 @@ export class SchoolController {
   async deactivateSchool(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       await container.deactivateSchoolUseCase.execute(id);
 
       res.json({ message: 'School deactivated successfully' });
     } catch (error: any) {
       console.error('Error deactivating school:', error);
-      
+
       if (error.message === 'School not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       if (error.message === 'School is already inactive') {
         res.status(400).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to deactivate school' });
     }
   }
@@ -568,12 +630,12 @@ export class SchoolController {
       res.json({ message: 'Module enabled successfully' });
     } catch (error: any) {
       console.error('Error enabling school module:', error);
-      
+
       if (error.message === 'Module not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to enable module' });
     }
   }
