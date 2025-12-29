@@ -20,6 +20,9 @@ export interface Quarter {
   endDate: Date;
   order: number;
   weeksCount: number;
+  isClosed: boolean;
+  closedAt?: Date;
+  closedBy?: string;
   // Optional detailed configuration
   schoolWeeks?: import('./SchoolWeek').SchoolWeek[];
   holidays?: import('./QuarterHoliday').QuarterHoliday[];

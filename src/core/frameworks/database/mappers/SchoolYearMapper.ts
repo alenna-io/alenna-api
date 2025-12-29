@@ -34,6 +34,9 @@ export class QuarterMapper {
       endDate: prismaQuarter.endDate,
       order: prismaQuarter.order,
       weeksCount: prismaQuarter.weeksCount,
+      isClosed: prismaQuarter.isClosed,
+      closedAt: prismaQuarter.closedAt ?? undefined,
+      closedBy: prismaQuarter.closedBy ?? undefined,
       holidays: prismaQuarter.quarterHolidays?.map(h => ({
         id: h.id,
         schoolYearId: h.schoolYearId,

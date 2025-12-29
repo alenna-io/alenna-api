@@ -11,6 +11,15 @@ const { mockPrismaInstance } = vi.hoisted(() => {
         findFirst: vi.fn(),
         update: vi.fn(),
       },
+      projection: {
+        findFirst: vi.fn(),
+      },
+      quarter: {
+        findFirst: vi.fn(),
+      },
+      schoolYear: {
+        findFirst: vi.fn(),
+      },
     },
   };
 });
@@ -190,6 +199,225 @@ describe('MovePaceUseCase', () => {
           5
         )
       ).rejects.toThrow('Ya existe un PACE de Math en Q2 Semana 5');
+    });
+
+    it('should throw error when trying to move pace from closed quarter', async () => {
+      const projection = Projection.create({
+        id: TEST_CONSTANTS.PROJECTION_ID,
+        studentId: TEST_CONSTANTS.STUDENT_ID,
+        schoolYear: '2024-2025',
+        startDate: new Date('2024-08-01'),
+        endDate: new Date('2025-05-31'),
+      });
+
+      const projectionPace = {
+        id: 'projection-pace-1',
+        projectionId: TEST_CONSTANTS.PROJECTION_ID,
+        quarter: 'Q1',
+        week: 1,
+        deletedAt: null,
+        paceCatalog: {
+          subSubject: {
+            category: {
+              name: 'Math',
+            },
+          },
+        },
+      };
+
+      const projectionWithStudent = {
+        id: TEST_CONSTANTS.PROJECTION_ID,
+        student: {
+          schoolId: 'school-1',
+        },
+      };
+
+      const schoolYear = {
+        id: 'school-year-1',
+        schoolId: 'school-1',
+        name: '2024-2025',
+        deletedAt: null,
+      };
+
+      const sourceQuarter = {
+        id: 'quarter-1',
+        schoolYearId: 'school-year-1',
+        name: 'Q1',
+        isClosed: true,
+        deletedAt: null,
+      };
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(projection);
+      mockPrisma.projectionPace.findFirst.mockResolvedValue(projectionPace);
+      mockPrisma.projection.findFirst.mockResolvedValue(projectionWithStudent);
+      mockPrisma.schoolYear.findFirst.mockResolvedValue(schoolYear);
+      mockPrisma.quarter.findFirst.mockResolvedValue(sourceQuarter);
+
+      await expect(
+        useCase.execute(
+          TEST_CONSTANTS.PROJECTION_ID,
+          'projection-pace-1',
+          TEST_CONSTANTS.STUDENT_ID,
+          'Q2',
+          5
+        )
+      ).rejects.toThrow('Cannot move paces from closed quarter');
+    });
+
+    it('should throw error when trying to move pace to closed quarter', async () => {
+      const projection = Projection.create({
+        id: TEST_CONSTANTS.PROJECTION_ID,
+        studentId: TEST_CONSTANTS.STUDENT_ID,
+        schoolYear: '2024-2025',
+        startDate: new Date('2024-08-01'),
+        endDate: new Date('2025-05-31'),
+      });
+
+      const projectionPace = {
+        id: 'projection-pace-1',
+        projectionId: TEST_CONSTANTS.PROJECTION_ID,
+        quarter: 'Q1',
+        week: 1,
+        deletedAt: null,
+        paceCatalog: {
+          subSubject: {
+            category: {
+              name: 'Math',
+            },
+          },
+        },
+      };
+
+      const projectionWithStudent = {
+        id: TEST_CONSTANTS.PROJECTION_ID,
+        student: {
+          schoolId: 'school-1',
+        },
+      };
+
+      const schoolYear = {
+        id: 'school-year-1',
+        schoolId: 'school-1',
+        name: '2024-2025',
+        deletedAt: null,
+      };
+
+      const sourceQuarter = {
+        id: 'quarter-1',
+        schoolYearId: 'school-year-1',
+        name: 'Q1',
+        isClosed: false,
+        deletedAt: null,
+      };
+
+      const targetQuarter = {
+        id: 'quarter-2',
+        schoolYearId: 'school-year-1',
+        name: 'Q2',
+        isClosed: true,
+        deletedAt: null,
+      };
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(projection);
+      mockPrisma.projectionPace.findFirst.mockResolvedValue(projectionPace);
+      mockPrisma.projection.findFirst.mockResolvedValue(projectionWithStudent);
+      mockPrisma.schoolYear.findFirst.mockResolvedValue(schoolYear);
+      mockPrisma.quarter.findFirst
+        .mockResolvedValueOnce(sourceQuarter)
+        .mockResolvedValueOnce(targetQuarter);
+
+      await expect(
+        useCase.execute(
+          TEST_CONSTANTS.PROJECTION_ID,
+          'projection-pace-1',
+          TEST_CONSTANTS.STUDENT_ID,
+          'Q2',
+          5
+        )
+      ).rejects.toThrow('Cannot move paces to closed quarter');
+    });
+
+    it('should allow moving pace between open quarters', async () => {
+      const projection = Projection.create({
+        id: TEST_CONSTANTS.PROJECTION_ID,
+        studentId: TEST_CONSTANTS.STUDENT_ID,
+        schoolYear: '2024-2025',
+        startDate: new Date('2024-08-01'),
+        endDate: new Date('2025-05-31'),
+      });
+
+      const projectionPace = {
+        id: 'projection-pace-1',
+        projectionId: TEST_CONSTANTS.PROJECTION_ID,
+        quarter: 'Q1',
+        week: 1,
+        deletedAt: null,
+        paceCatalog: {
+          subSubject: {
+            category: {
+              name: 'Math',
+            },
+          },
+        },
+      };
+
+      const projectionWithStudent = {
+        id: TEST_CONSTANTS.PROJECTION_ID,
+        student: {
+          schoolId: 'school-1',
+        },
+      };
+
+      const schoolYear = {
+        id: 'school-year-1',
+        schoolId: 'school-1',
+        name: '2024-2025',
+        deletedAt: null,
+      };
+
+      const sourceQuarter = {
+        id: 'quarter-1',
+        schoolYearId: 'school-year-1',
+        name: 'Q1',
+        isClosed: false,
+        deletedAt: null,
+      };
+
+      const targetQuarter = {
+        id: 'quarter-2',
+        schoolYearId: 'school-year-1',
+        name: 'Q2',
+        isClosed: false,
+        deletedAt: null,
+      };
+
+      const updatedPace = {
+        ...projectionPace,
+        quarter: 'Q2',
+        week: 5,
+      };
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(projection);
+      mockPrisma.projectionPace.findFirst
+        .mockResolvedValueOnce(projectionPace)
+        .mockResolvedValueOnce(null);
+      mockPrisma.projection.findFirst.mockResolvedValue(projectionWithStudent);
+      mockPrisma.schoolYear.findFirst.mockResolvedValue(schoolYear);
+      mockPrisma.quarter.findFirst
+        .mockResolvedValueOnce(sourceQuarter)
+        .mockResolvedValueOnce(targetQuarter);
+      mockPrisma.projectionPace.update.mockResolvedValue(updatedPace);
+
+      const result = await useCase.execute(
+        TEST_CONSTANTS.PROJECTION_ID,
+        'projection-pace-1',
+        TEST_CONSTANTS.STUDENT_ID,
+        'Q2',
+        5
+      );
+
+      expect(result.quarter).toBe('Q2');
+      expect(result.week).toBe(5);
     });
   });
 });

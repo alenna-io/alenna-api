@@ -36,6 +36,45 @@ export class UpdatePaceGradeUseCase {
       throw new Error('PACE no encontrado en la proyección');
     }
 
+    // 2.5. Check if quarter is closed
+    const projectionWithStudent = await prisma.projection.findFirst({
+      where: {
+        id: projectionId,
+        deletedAt: null,
+      },
+      include: {
+        student: {
+          select: {
+            schoolId: true,
+          },
+        },
+      },
+    });
+
+    if (projectionWithStudent) {
+      const schoolYear = await prisma.schoolYear.findFirst({
+        where: {
+          schoolId: projectionWithStudent.student.schoolId,
+          name: projection.schoolYear,
+          deletedAt: null,
+        },
+      });
+
+      if (schoolYear) {
+        const quarter = await prisma.quarter.findFirst({
+          where: {
+            schoolYearId: schoolYear.id,
+            name: projectionPace.quarter,
+            deletedAt: null,
+          },
+        });
+
+        if (quarter?.isClosed) {
+          throw new Error('Cannot edit grades for closed quarter');
+        }
+      }
+    }
+
     // 3. Determine completion status
     const finalIsCompleted = isCompleted ?? (grade >= 80);
     const finalIsFailed = isFailed ?? (grade < 80);

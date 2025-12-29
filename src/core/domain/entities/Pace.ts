@@ -9,10 +9,13 @@ export class ProjectionPace {
     public readonly grade: number | null = null,
     public readonly isCompleted: boolean = false,
     public readonly isFailed: boolean = false,
+    public readonly isUnfinished: boolean = false,
+    public readonly originalQuarter?: string,
+    public readonly originalWeek?: number,
     public readonly comments?: string,
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date
-  ) {}
+  ) { }
 
   static create(props: {
     id: string;
@@ -23,6 +26,9 @@ export class ProjectionPace {
     grade?: number | null;
     isCompleted?: boolean;
     isFailed?: boolean;
+    isUnfinished?: boolean;
+    originalQuarter?: string;
+    originalWeek?: number;
     comments?: string;
   }): ProjectionPace {
     return new ProjectionPace(
@@ -34,6 +40,9 @@ export class ProjectionPace {
       props.grade ?? null,
       props.isCompleted ?? false,
       props.isFailed ?? false,
+      props.isUnfinished ?? false,
+      props.originalQuarter,
+      props.originalWeek,
       props.comments,
       new Date(),
       new Date()
@@ -50,6 +59,9 @@ export class ProjectionPace {
       props.grade !== undefined ? props.grade : this.grade,
       props.isCompleted ?? this.isCompleted,
       props.isFailed ?? this.isFailed,
+      props.isUnfinished ?? this.isUnfinished,
+      props.originalQuarter ?? this.originalQuarter,
+      props.originalWeek ?? this.originalWeek,
       props.comments ?? this.comments,
       this.createdAt,
       new Date()

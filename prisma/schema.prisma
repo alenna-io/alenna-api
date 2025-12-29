@@ -95,6 +95,9 @@ model Quarter {
   endDate         DateTime         @map("end_date")
   order           Int
   weeksCount      Int              @default(9) @map("weeks_count")
+  isClosed        Boolean          @default(false) @map("is_closed")
+  closedAt        DateTime?        @map("closed_at")
+  closedBy        String?          @map("closed_by")
   deletedAt       DateTime?        @map("deleted_at")
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
@@ -490,6 +493,9 @@ model ProjectionPace {
   grade         Int?
   isCompleted   Boolean        @default(false) @map("is_completed")
   isFailed      Boolean        @default(false) @map("is_failed")
+  isUnfinished  Boolean        @default(false) @map("is_unfinished")
+  originalQuarter String?       @map("original_quarter")
+  originalWeek    Int?          @map("original_week")
   comments      String?
   deletedAt     DateTime?      @map("deleted_at")
   createdAt     DateTime       @default(now()) @map("created_at")

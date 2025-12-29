@@ -4,7 +4,7 @@ import prisma from '../../../frameworks/database/prisma.client';
 import { randomUUID } from 'crypto';
 
 export class AddPaceToProjectionUseCase {
-  constructor(private projectionRepository: IProjectionRepository) {}
+  constructor(private projectionRepository: IProjectionRepository) { }
 
   async execute(
     projectionId: string,
@@ -36,7 +36,7 @@ export class AddPaceToProjectionUseCase {
         },
       },
     });
-    
+
     // If the pace exists but is soft-deleted, we'll restore it instead of creating new
     if (existingPace && existingPace.deletedAt === null) {
       throw new Error('Este PACE ya está agregado a la proyección');
@@ -81,9 +81,63 @@ export class AddPaceToProjectionUseCase {
       throw new Error(`Ya existe un PACE de ${categoryName} en ${quarter} Semana ${week}`);
     }
 
+    // 4.5. Validate sequential order - ensure pace numbers are in order within the same subject
+    const newPaceNumber = parseInt(paceCatalogWithDetails.code) || 0;
+    const subjectName = paceCatalogWithDetails.subSubject.name;
+
+    // Get all paces in the target quarter for the same subject
+    const targetQuarterPaces = await prisma.projectionPace.findMany({
+      where: {
+        projectionId,
+        quarter,
+        deletedAt: null,
+        paceCatalog: {
+          subSubject: {
+            name: subjectName,
+          },
+        },
+      },
+      include: {
+        paceCatalog: true,
+      },
+    });
+
+    // Sort by pace number
+    targetQuarterPaces.sort((a, b) => {
+      const paceNumA = parseInt(a.paceCatalog.code) || 0;
+      const paceNumB = parseInt(b.paceCatalog.code) || 0;
+      return paceNumA - paceNumB;
+    });
+
+    // Check if inserting this pace would create a gap in sequential order
+    // Find the pace that should come before and after this pace number
+    let beforePace: typeof targetQuarterPaces[0] | null = null;
+    let afterPace: typeof targetQuarterPaces[0] | null = null;
+
+    for (const pace of targetQuarterPaces) {
+      const paceNum = parseInt(pace.paceCatalog.code) || 0;
+      if (paceNum < newPaceNumber) {
+        beforePace = pace;
+      } else if (paceNum > newPaceNumber && !afterPace) {
+        afterPace = pace;
+        break;
+      }
+    }
+
+    // If there's a pace before and after, check if they're sequential (no gap)
+    if (beforePace && afterPace) {
+      const beforeNum = parseInt(beforePace.paceCatalog.code) || 0;
+      const afterNum = parseInt(afterPace.paceCatalog.code) || 0;
+
+      // If before and after are consecutive (e.g., 1067 and 1068), we can't insert 1066 between them
+      if (afterNum - beforeNum === 1) {
+        throw new Error(`No se puede insertar el PACE ${newPaceNumber} entre ${beforeNum} y ${afterNum}. Los PACEs deben estar en orden secuencial sin espacios.`);
+      }
+    }
+
     // 5. Restore soft-deleted pace or create new one
     let projectionPace;
-    
+
     if (existingPace && existingPace.deletedAt !== null) {
       // Restore the soft-deleted pace with new position
       projectionPace = await prisma.projectionPace.update({
@@ -141,6 +195,9 @@ export class AddPaceToProjectionUseCase {
       projectionPace.grade,
       projectionPace.isCompleted,
       projectionPace.isFailed,
+      projectionPace.isUnfinished ?? false,
+      projectionPace.originalQuarter ?? undefined,
+      projectionPace.originalWeek ?? undefined,
       projectionPace.comments ?? undefined,
       projectionPace.createdAt,
       projectionPace.updatedAt

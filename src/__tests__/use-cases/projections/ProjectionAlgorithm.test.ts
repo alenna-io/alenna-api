@@ -4,7 +4,7 @@ import { generateProjection, SubjectInput } from '../../../core/app/use-cases/pr
 describe('ProjectionAlgorithm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => { });
   });
 
   describe('generateProjection', () => {
@@ -30,7 +30,7 @@ describe('ProjectionAlgorithm', () => {
       expect(result).toHaveProperty('Math');
       expect(result.Math.yearTotal).toBe(12);
       expect(result.Math.quarters.length).toBe(4);
-      
+
       // Check that paces are distributed across quarters
       const totalPacesInQuarters = result.Math.quarters.reduce((sum, quarter) => {
         return sum + quarter.filter(pace => pace !== '').length;
@@ -54,7 +54,7 @@ describe('ProjectionAlgorithm', () => {
       const quarters = result.Math.quarters;
 
       // With 12 paces, should be 3 per quarter
-      const pacesPerQuarter = quarters.map(quarter => 
+      const pacesPerQuarter = quarters.map(quarter =>
         quarter.filter(pace => pace !== '').length
       );
 
@@ -78,7 +78,7 @@ describe('ProjectionAlgorithm', () => {
       const quarters = result.Math.quarters;
 
       // With 10 paces, should be 3, 3, 2, 2 (remainder of 2 goes to first 2 quarters)
-      const pacesPerQuarter = quarters.map(quarter => 
+      const pacesPerQuarter = quarters.map(quarter =>
         quarter.filter(pace => pace !== '').length
       );
 
@@ -86,7 +86,7 @@ describe('ProjectionAlgorithm', () => {
       expect(pacesPerQuarter[1]).toBeGreaterThanOrEqual(2);
       expect(pacesPerQuarter[2]).toBeGreaterThanOrEqual(2);
       expect(pacesPerQuarter[3]).toBeGreaterThanOrEqual(2);
-      
+
       // Total should be 10
       const total = pacesPerQuarter.reduce((sum, count) => sum + count, 0);
       expect(total).toBe(10);
@@ -107,7 +107,7 @@ describe('ProjectionAlgorithm', () => {
       const result = generateProjection(subjects);
 
       expect(result.Math.yearTotal).toBe(10); // 12 - 2 skipped = 10
-      
+
       // Check that skipped paces are not in the result
       const allPaces = result.Math.quarters.flat().filter(pace => pace !== '');
       expect(allPaces).not.toContain('1005');
@@ -217,7 +217,7 @@ describe('ProjectionAlgorithm', () => {
         for (let week = 0; week < 9; week++) {
           const mathPace = result.Math.quarters[q][week];
           const englishPace = result.English.quarters[q][week];
-          
+
           // If both have paces in the same week, that's a constraint violation
           // (This should be rare or not happen with standard 72 paces)
           if (mathPace !== '' && englishPace !== '') {
@@ -319,7 +319,7 @@ describe('ProjectionAlgorithm', () => {
       // With 60 total paces (>72 would require more), should still generate
       expect(result.Math.yearTotal).toBe(30);
       expect(result.English.yearTotal).toBe(30);
-      
+
       // Should log warnings if constraints are relaxed
       expect(console.warn).toHaveBeenCalled();
     });
@@ -442,7 +442,7 @@ describe('ProjectionAlgorithm', () => {
               weekPaceCount++;
             }
           }
-          
+
           // With 6 subjects and 12 paces each (72 total), most weeks should have at least 2 paces
           // Some weeks might have fewer due to constraints, but most should meet minimum
           if (week < 8) { // Don't check last week as strictly
@@ -576,12 +576,158 @@ describe('ProjectionAlgorithm', () => {
       expect(result).toHaveProperty('English');
       expect(result).toHaveProperty('Science');
       expect(result).toHaveProperty('Social Studies');
-      
+
       // All paces should be placed
       expect(result.Math.yearTotal).toBe(9);
       expect(result.English.yearTotal).toBe(9);
       expect(result.Science.yearTotal).toBe(9);
       expect(result['Social Studies'].yearTotal).toBe(9);
+    });
+
+    it('should ensure minimum 18 paces per quarter across all subjects', () => {
+      const subjects: SubjectInput[] = [
+        {
+          subSubjectId: 'math-1',
+          subSubjectName: 'Math',
+          startPace: 1001,
+          endPace: 1020,
+          skipPaces: [],
+          notPairWith: [],
+        },
+        {
+          subSubjectId: 'english-1',
+          subSubjectName: 'English',
+          startPace: 2001,
+          endPace: 2010,
+          skipPaces: [],
+          notPairWith: [],
+        },
+      ];
+
+      const result = generateProjection(subjects);
+
+      const totalPaces = 20 + 10;
+      const minPacesPerQuarter = 18;
+
+      result.Math.quarters.forEach((quarter, index) => {
+        const mathPaces = quarter.filter(pace => pace !== '').length;
+        const englishPaces = result.English.quarters[index].filter(pace => pace !== '').length;
+        const totalInQuarter = mathPaces + englishPaces;
+        expect(totalInQuarter).toBeGreaterThanOrEqual(minPacesPerQuarter);
+      });
+    });
+
+    it('should maintain sequential order within each quarter', () => {
+      const subjects: SubjectInput[] = [
+        {
+          subSubjectId: 'math-1',
+          subSubjectName: 'Math',
+          startPace: 1001,
+          endPace: 1020,
+          skipPaces: [],
+          notPairWith: [],
+        },
+      ];
+
+      const result = generateProjection(subjects);
+
+      result.Math.quarters.forEach((quarter) => {
+        const paces = quarter.filter(pace => pace !== '').map(pace => parseInt(pace));
+        for (let i = 1; i < paces.length; i++) {
+          expect(paces[i]).toBeGreaterThan(paces[i - 1]);
+        }
+      });
+    });
+
+    it('should maintain pace number sequence across quarters', () => {
+      const subjects: SubjectInput[] = [
+        {
+          subSubjectId: 'math-1',
+          subSubjectName: 'Math',
+          startPace: 1001,
+          endPace: 1020,
+          skipPaces: [],
+          notPairWith: [],
+        },
+      ];
+
+      const result = generateProjection(subjects);
+
+      for (let q = 0; q < 3; q++) {
+        const currentQuarter = result.Math.quarters[q];
+        const nextQuarter = result.Math.quarters[q + 1];
+        const currentPaces = currentQuarter.filter(pace => pace !== '').map(pace => parseInt(pace));
+        const nextPaces = nextQuarter.filter(pace => pace !== '').map(pace => parseInt(pace));
+
+        if (currentPaces.length > 0 && nextPaces.length > 0) {
+          const lastPaceInCurrent = Math.max(...currentPaces);
+          const firstPaceInNext = Math.min(...nextPaces);
+          expect(firstPaceInNext).toBeGreaterThan(lastPaceInCurrent);
+        }
+      }
+    });
+
+    it('should handle edge case: total paces exactly divisible by 4', () => {
+      const subjects: SubjectInput[] = [
+        {
+          subSubjectId: 'math-1',
+          subSubjectName: 'Math',
+          startPace: 1001,
+          endPace: 1012,
+          skipPaces: [],
+          notPairWith: [],
+        },
+      ];
+
+      const result = generateProjection(subjects);
+
+      expect(result.Math.yearTotal).toBe(12);
+      const totalInQuarters = result.Math.quarters.reduce((sum, quarter) => {
+        return sum + quarter.filter(pace => pace !== '').length;
+      }, 0);
+      expect(totalInQuarters).toBe(12);
+    });
+
+    it('should handle edge case: very few total paces (< 18)', () => {
+      const subjects: SubjectInput[] = [
+        {
+          subSubjectId: 'math-1',
+          subSubjectName: 'Math',
+          startPace: 1001,
+          endPace: 1010,
+          skipPaces: [],
+          notPairWith: [],
+        },
+      ];
+
+      const result = generateProjection(subjects);
+
+      expect(result.Math.yearTotal).toBe(10);
+      const totalInQuarters = result.Math.quarters.reduce((sum, quarter) => {
+        return sum + quarter.filter(pace => pace !== '').length;
+      }, 0);
+      expect(totalInQuarters).toBe(10);
+    });
+
+    it('should handle edge case: very many total paces (> 108)', () => {
+      const subjects: SubjectInput[] = [
+        {
+          subSubjectId: 'math-1',
+          subSubjectName: 'Math',
+          startPace: 1001,
+          endPace: 1150,
+          skipPaces: [],
+          notPairWith: [],
+        },
+      ];
+
+      const result = generateProjection(subjects);
+
+      expect(result.Math.yearTotal).toBe(150);
+      const totalInQuarters = result.Math.quarters.reduce((sum, quarter) => {
+        return sum + quarter.filter(pace => pace !== '').length;
+      }, 0);
+      expect(totalInQuarters).toBe(150);
     });
   });
 });

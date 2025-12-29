@@ -72,6 +72,10 @@ export const PERMISSION_DEFINITIONS: Record<string, PermissionDefinition> = {
   'schools.create': { module: 'schools', scope: 'global' },
   'schools.update': { module: 'schools', scope: 'global' },
   'schools.delete': { module: 'schools', scope: 'global' },
+
+  // Quarters module - quarter management
+  'quarters.read': { module: 'school_admin', scope: 'school' },
+  'quarters.close': { module: 'school_admin', scope: 'school' },
 };
 
 export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
@@ -119,6 +123,9 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'schoolYear.create',
     'schoolYear.update',
     'schoolYear.delete',
+    // Quarters
+    'quarters.read',
+    'quarters.close',
     // Users (non-teacher users)
     'users.read',
     'users.create',
@@ -146,6 +153,8 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'monthlyAssignment.delete',
     // Report Cards (read-only)
     'reportCards.read',
+    // Quarters (read-only)
+    'quarters.read',
     // Groups (read-only)
     'groups.read',
     // School Admin (read-only)
@@ -161,6 +170,8 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'reportCards.readOwn',
     // PACEs (read-only)
     'paces.read',
+    // Quarters (read-only)
+    'quarters.read',
   ],
   STUDENT: [
     // Students (own only)

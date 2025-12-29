@@ -60,6 +60,8 @@ import {
   SetActiveSchoolYearUseCase,
   GetCurrentWeekUseCase,
   PreviewQuarterWeeksUseCase,
+  CloseQuarterUseCase,
+  GetQuartersStatusUseCase,
   CreateDailyGoalUseCase,
   UpdateDailyGoalUseCase,
   GetDailyGoalsUseCase,
@@ -385,6 +387,15 @@ class Container {
     return new PreviewQuarterWeeksUseCase();
   }
 
+  // Quarter Use Cases
+  get closeQuarterUseCase(): CloseQuarterUseCase {
+    return new CloseQuarterUseCase();
+  }
+
+  get getQuartersStatusUseCase(): GetQuartersStatusUseCase {
+    return new GetQuartersStatusUseCase();
+  }
+
   // Daily Goals Use Cases
   get createDailyGoalUseCase(): CreateDailyGoalUseCase {
     return new CreateDailyGoalUseCase(this.dailyGoalRepository);
@@ -440,7 +451,7 @@ class Container {
   }
 
   get getMonthlyAssignmentsByProjectionUseCase(): GetMonthlyAssignmentsByProjectionUseCase {
-return new GetMonthlyAssignmentsByProjectionUseCase();
+    return new GetMonthlyAssignmentsByProjectionUseCase();
   }
 
   // School Monthly Assignment Use Cases

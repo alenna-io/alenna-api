@@ -11,6 +11,15 @@ const { mockPrismaInstance } = vi.hoisted(() => {
         findFirst: vi.fn(),
         update: vi.fn(),
       },
+      projection: {
+        findFirst: vi.fn(),
+      },
+      quarter: {
+        findFirst: vi.fn(),
+      },
+      schoolYear: {
+        findFirst: vi.fn(),
+      },
       gradeHistory: {
         create: vi.fn(),
       },
@@ -374,6 +383,132 @@ describe('UpdatePaceGradeUseCase', () => {
           85
         )
       ).rejects.toThrow('PACE no encontrado en la proyección');
+    });
+
+    it('should throw error when trying to edit grade in closed quarter', async () => {
+      const projection = Projection.create({
+        id: TEST_CONSTANTS.PROJECTION_ID,
+        studentId: TEST_CONSTANTS.STUDENT_ID,
+        schoolYear: '2024-2025',
+        startDate: new Date('2024-08-01'),
+        endDate: new Date('2025-05-31'),
+      });
+
+      const projectionPace = {
+        id: 'projection-pace-1',
+        projectionId: TEST_CONSTANTS.PROJECTION_ID,
+        quarter: 'Q1',
+        grade: null,
+        isCompleted: false,
+        isFailed: false,
+        comments: null,
+        deletedAt: null,
+      };
+
+      const projectionWithStudent = {
+        id: TEST_CONSTANTS.PROJECTION_ID,
+        student: {
+          schoolId: 'school-1',
+        },
+      };
+
+      const schoolYear = {
+        id: 'school-year-1',
+        schoolId: 'school-1',
+        name: '2024-2025',
+        deletedAt: null,
+      };
+
+      const quarter = {
+        id: 'quarter-1',
+        schoolYearId: 'school-year-1',
+        name: 'Q1',
+        isClosed: true,
+        deletedAt: null,
+      };
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(projection);
+      mockPrisma.projectionPace.findFirst.mockResolvedValue(projectionPace);
+      mockPrisma.projection.findFirst.mockResolvedValue(projectionWithStudent);
+      mockPrisma.schoolYear.findFirst.mockResolvedValue(schoolYear);
+      mockPrisma.quarter.findFirst.mockResolvedValue(quarter);
+
+      await expect(
+        useCase.execute(
+          TEST_CONSTANTS.PROJECTION_ID,
+          'projection-pace-1',
+          TEST_CONSTANTS.STUDENT_ID,
+          85
+        )
+      ).rejects.toThrow('Cannot edit grades for closed quarter');
+    });
+
+    it('should allow editing grade in open quarter', async () => {
+      const projection = Projection.create({
+        id: TEST_CONSTANTS.PROJECTION_ID,
+        studentId: TEST_CONSTANTS.STUDENT_ID,
+        schoolYear: '2024-2025',
+        startDate: new Date('2024-08-01'),
+        endDate: new Date('2025-05-31'),
+      });
+
+      const projectionPace = {
+        id: 'projection-pace-1',
+        projectionId: TEST_CONSTANTS.PROJECTION_ID,
+        quarter: 'Q1',
+        grade: null,
+        isCompleted: false,
+        isFailed: false,
+        comments: null,
+        deletedAt: null,
+      };
+
+      const projectionWithStudent = {
+        id: TEST_CONSTANTS.PROJECTION_ID,
+        student: {
+          schoolId: 'school-1',
+        },
+      };
+
+      const schoolYear = {
+        id: 'school-year-1',
+        schoolId: 'school-1',
+        name: '2024-2025',
+        deletedAt: null,
+      };
+
+      const quarter = {
+        id: 'quarter-1',
+        schoolYearId: 'school-year-1',
+        name: 'Q1',
+        isClosed: false,
+        deletedAt: null,
+      };
+
+      const updatedPace = {
+        ...projectionPace,
+        grade: 85,
+        isCompleted: true,
+        isFailed: false,
+      };
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(projection);
+      mockPrisma.projectionPace.findFirst.mockResolvedValue(projectionPace);
+      mockPrisma.projection.findFirst.mockResolvedValue(projectionWithStudent);
+      mockPrisma.schoolYear.findFirst.mockResolvedValue(schoolYear);
+      mockPrisma.quarter.findFirst.mockResolvedValue(quarter);
+      mockPrisma.projectionPace.update.mockResolvedValue(updatedPace);
+      mockPrisma.gradeHistory.create.mockResolvedValue({});
+
+      const result = await useCase.execute(
+        TEST_CONSTANTS.PROJECTION_ID,
+        'projection-pace-1',
+        TEST_CONSTANTS.STUDENT_ID,
+        85
+      );
+
+      expect(result.grade).toBe(85);
+      expect(mockPrisma.projectionPace.update).toHaveBeenCalled();
     });
   });
 });

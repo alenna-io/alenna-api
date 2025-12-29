@@ -19,13 +19,53 @@ export class GradeMonthlyAssignmentUseCase {
           deletedAt: null,
         },
       },
+      include: {
+        projection: {
+          include: {
+            student: {
+              include: {
+                school: {
+                  include: {
+                    schoolYears: {
+                      where: {
+                        deletedAt: null,
+                      },
+                      include: {
+                        quarters: {
+                          where: {
+                            deletedAt: null,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!assignment) {
       throw new Error('Asignación no encontrada');
     }
 
-    // 2. Validate grade
+    // 2. Check if the quarter is closed
+    const schoolYear = assignment.projection.student.school.schoolYears.find(
+      sy => sy.name === assignment.projection.schoolYear
+    );
+
+    if (!schoolYear) {
+      throw new Error('Año escolar no encontrado');
+    }
+
+    const quarter = schoolYear.quarters.find(q => q.name === assignment.quarter);
+    if (quarter?.isClosed) {
+      throw new Error('No se pueden editar calificaciones de asignaciones mensuales para bloques cerrados');
+    }
+
+    // 3. Validate grade
     if (input.grade < 0 || input.grade > 100) {
       throw new Error('La calificación debe estar entre 0 y 100');
     }

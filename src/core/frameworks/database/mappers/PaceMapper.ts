@@ -12,6 +12,9 @@ export class ProjectionPaceMapper {
       projectionPace.grade,
       projectionPace.isCompleted,
       projectionPace.isFailed,
+      projectionPace.isUnfinished,
+      projectionPace.originalQuarter ?? undefined,
+      projectionPace.originalWeek ?? undefined,
       projectionPace.comments ?? undefined,
       projectionPace.createdAt,
       projectionPace.updatedAt
