@@ -15,4 +15,8 @@ export * from './MonthlyAssignmentMapper';
 export * from './TeacherStudentMapper';
 export * from './GroupMapper';
 export * from './GroupStudentMapper';
+export * from './TuitionConfigMapper';
+export * from './TuitionTypeMapper';
+export * from './StudentScholarshipMapper';
+export * from './BillingRecordMapper';
 

@@ -16,6 +16,7 @@ import schoolMonthlyAssignmentsRoutes from './school-monthly-assignments.routes'
 import reportCardsRoutes from './report-cards.routes';
 import groupsRoutes from './groups.routes';
 import quartersRoutes from './quarters.routes';
+import billingRoutes from './billing.routes';
 
 const router: ExpressRouter = Router();
 
@@ -48,6 +49,7 @@ v1Router.use('/school-monthly-assignments', schoolMonthlyAssignmentsRoutes);
 v1Router.use('/students/:studentId/projections/:projectionId/report-card', reportCardsRoutes);
 v1Router.use('/groups', groupsRoutes);
 v1Router.use('/quarters', quartersRoutes);
+v1Router.use('/billing', billingRoutes);
 
 router.use('/v1', v1Router);
 

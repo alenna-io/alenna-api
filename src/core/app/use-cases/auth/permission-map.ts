@@ -1,6 +1,6 @@
 export type RoleName = 'SUPERADMIN' | 'SCHOOL_ADMIN' | 'TEACHER' | 'PARENT' | 'STUDENT';
 
-export type ModuleKey = 'students' | 'projections' | 'paces' | 'monthlyAssignments' | 'reportCards' | 'groups' | 'teachers' | 'school_admin' | 'schools' | 'users';
+export type ModuleKey = 'students' | 'projections' | 'paces' | 'monthlyAssignments' | 'reportCards' | 'groups' | 'teachers' | 'school_admin' | 'schools' | 'users' | 'billing';
 
 export interface PermissionDefinition {
   module: ModuleKey;
@@ -76,6 +76,12 @@ export const PERMISSION_DEFINITIONS: Record<string, PermissionDefinition> = {
   // Quarters module - quarter management
   'quarters.read': { module: 'school_admin', scope: 'school' },
   'quarters.close': { module: 'school_admin', scope: 'school' },
+
+  // Billing module - monthly tuition billing
+  'billing.read': { module: 'billing', scope: 'school' },
+  'billing.create': { module: 'billing', scope: 'school' },
+  'billing.update': { module: 'billing', scope: 'school' },
+  'billing.delete': { module: 'billing', scope: 'school' },
 };
 
 export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
@@ -131,6 +137,11 @@ export const ROLE_PERMISSION_MAP: Record<RoleName, string[]> = {
     'users.create',
     // Schools (read-only for school admin)
     'schools.read',
+    // Billing
+    'billing.read',
+    'billing.create',
+    'billing.update',
+    'billing.delete',
   ],
   TEACHER: [
     // Students (read-only - no create/update/delete)
@@ -194,6 +205,7 @@ export const MODULE_KEY_TO_DB_KEY: Record<ModuleKey, string> = {
   school_admin: 'school_admin',
   schools: 'schools',
   users: 'users',
+  billing: 'billing',
 };
 
 /**
@@ -211,4 +223,5 @@ export const MODULE_DEPENDENCIES: Record<ModuleKey, ModuleKey[]> = {
   school_admin: [],
   schools: [],
   users: [],
+  billing: [],
 };

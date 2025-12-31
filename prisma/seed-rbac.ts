@@ -64,6 +64,7 @@ export async function seedRBAC() {
     { key: 'school_admin', name: 'School Admin', description: 'School settings (info, years, certification types)', displayOrder: 8 },
     { key: 'schools', name: 'Schools', description: 'Manage schools and global administration', displayOrder: 9 },
     { key: 'users', name: 'Users', description: 'Manage system users', displayOrder: 10 },
+    { key: 'billing', name: 'Billing', description: 'Manage monthly tuition billing', displayOrder: 11 },
   ];
 
   for (const moduleData of modulesData) {
@@ -89,3 +90,18 @@ export async function seedRBAC() {
   console.log('✅ Modules ready');
 }
 
+// Allow running this file directly
+if (require.main === module) {
+  seedRBAC()
+    .then(() => {
+      console.log('✅ RBAC seeding completed');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('❌ Error seeding RBAC:', error);
+      process.exit(1);
+    })
+    .finally(() => {
+      prisma.$disconnect();
+    });
+}

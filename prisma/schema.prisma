@@ -29,6 +29,8 @@ model School {
   schoolYears         SchoolYear[]
   students            Student[]
   users               User[]
+  tuitionConfig       TuitionConfig?
+  tuitionTypes        TuitionType[]
 
   @@map("schools")
 }
@@ -82,6 +84,7 @@ model SchoolYear {
   schoolMonthlyAssignmentTemplates SchoolMonthlyAssignmentTemplate[]
   school                           School                            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacherStudents                  TeacherStudent[]
+  billingRecords                   BillingRecord[]
 
   @@index([schoolId, isActive])
   @@map("school_years")
@@ -183,6 +186,8 @@ model Student {
   user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   teacherStudents     TeacherStudent[]
   userStudents        UserStudent[]
+  scholarship         StudentScholarship?
+  billingRecords      BillingRecord[]
 
   @@index([schoolId])
   @@index([certificationTypeId])
@@ -618,4 +623,90 @@ model QuarterGradePercentage {
   @@index([schoolYearId])
   @@index([schoolYearId, quarter])
   @@map("quarter_grade_percentages")
+}
+
+model TuitionType {
+  id          String   @id @default(cuid())
+  schoolId    String   @map("school_id")
+  name        String
+  baseAmount  Decimal  @map("base_amount") @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  lateFeeType String   @map("late_fee_type")
+  lateFeeValue Decimal @map("late_fee_value") @db.Decimal(10, 2)
+  displayOrder Int     @default(0) @map("display_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  studentScholarships StudentScholarship[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId])
+  @@map("tuition_types")
+}
+
+model TuitionConfig {
+  id        String   @id @default(cuid())
+  schoolId  String   @unique @map("school_id")
+  dueDay    Int      @default(5) @map("due_day")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@map("tuition_configs")
+}
+
+model StudentScholarship {
+  id              String      @id @default(cuid())
+  studentId       String      @unique @map("student_id")
+  tuitionTypeId   String?     @map("tuition_type_id")
+  scholarshipType String?     @map("scholarship_type")
+  scholarshipValue Decimal?   @map("scholarship_value") @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  student         Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tuitionType     TuitionType? @relation(fields: [tuitionTypeId], references: [id])
+
+  @@index([studentId])
+  @@index([tuitionTypeId])
+  @@map("student_scholarships")
+}
+
+model BillingRecord {
+  id                      String    @id @default(cuid())
+  studentId               String    @map("student_id")
+  schoolYearId            String    @map("school_year_id")
+  billingMonth            Int       @map("billing_month")
+  billingYear             Int       @map("billing_year")
+  tuitionTypeSnapshot     Json      @map("tuition_type_snapshot")
+  effectiveTuitionAmount  Decimal   @map("effective_tuition_amount") @db.Decimal(10, 2)
+  scholarshipAmount       Decimal   @default(0) @map("scholarship_amount") @db.Decimal(10, 2)
+  discountAdjustments     Json      @default("[]") @map("discount_adjustments")
+  extraCharges            Json      @default("[]") @map("extra_charges")
+  lateFeeAmount           Decimal   @default(0) @map("late_fee_amount") @db.Decimal(10, 2)
+  finalAmount             Decimal   @map("final_amount") @db.Decimal(10, 2)
+  billStatus              String    @map("bill_status")
+  paymentStatus           String    @default("unpaid") @map("payment_status")
+  paidAt                  DateTime? @map("paid_at")
+  lockedAt                DateTime? @map("locked_at")
+  auditMetadata           Json      @map("audit_metadata")
+  paymentNote             String?   @map("payment_note")
+  paymentMethod           String?   @map("payment_method")
+  paymentGateway          String?   @map("payment_gateway")
+  paymentTransactionId    String?   @map("payment_transaction_id")
+  paymentGatewayStatus    String?   @map("payment_gateway_status")
+  paymentWebhookReceivedAt DateTime? @map("payment_webhook_received_at")
+  dueDate                 DateTime  @map("due_date")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+  student                 Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  schoolYear              SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, billingMonth, billingYear])
+  @@index([studentId])
+  @@index([schoolYearId])
+  @@index([billStatus])
+  @@index([paymentStatus])
+  @@index([billingMonth, billingYear])
+  @@index([paymentTransactionId])
+  @@map("billing_records")
 }

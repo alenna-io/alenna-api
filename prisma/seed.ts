@@ -80,11 +80,11 @@ async function main() {
   console.log('📋 Creating default projection templates...');
   // Pace ranges: L1 = 1001-1012, L2 = 1013-1024, L3 = 1025-1036, etc. (12 paces per level)
   const defaultTemplates: Array<{ level: string; subjects: Array<{ subjectName: string; startPace: number; endPace: number }> }> = [];
-  
+
   for (let levelNum = 1; levelNum <= 8; levelNum++) {
     const startPace = 1001 + (levelNum - 1) * 12; // L1: 1001, L2: 1013, L3: 1025, etc.
     const endPace = startPace + 11; // 12 paces total per level
-    
+
     if (levelNum === 1) {
       defaultTemplates.push({
         level: 'L1',
@@ -278,7 +278,7 @@ async function main() {
   if (!superadminRole) {
     throw new Error('SUPERADMIN role not found. Make sure RBAC seed runs first.');
   }
-  
+
   if (superadminRole) {
     await prisma.userRole.upsert({
       where: {
@@ -451,7 +451,7 @@ async function main() {
   const schoolAdminModule = await prisma.module.findUnique({ where: { key: 'school_admin' } });
   const usersModule = await prisma.module.findUnique({ where: { key: 'users' } });
   const groupsModule = await prisma.module.findUnique({ where: { key: 'groups' } });
-  
+
   if (studentsModule) {
     await prisma.schoolModule.upsert({
       where: {
@@ -767,7 +767,7 @@ async function main() {
   // Create student profile for demo student user (login account)
   if (studentRole && demoStudentUser) {
     const demoStudentId = randomUUID();
-    
+
     // Update demo student user with contact info
     await prisma.user.update({
       where: { id: demoStudentUser.id },
@@ -780,7 +780,7 @@ async function main() {
         zipCode: '12345',
       },
     });
-    
+
     await prisma.student.create({
       data: {
         id: demoStudentId,
@@ -891,7 +891,7 @@ async function main() {
   for (const studentData of studentsData) {
     const { certificationTypeName, currentLevel, streetAddress, city, state, country, zipCode, address, ...restData } = studentData;
     const studentId = randomUUID();
-    
+
     // Create User account for student (email must be unique)
     const studentUser = await prisma.user.create({
       data: {
@@ -936,7 +936,7 @@ async function main() {
         schoolId: school.id,
       },
     });
-    
+
     console.log('✅ Created student:', studentUser.firstName, studentUser.lastName);
 
     // Link Demo Parent to first student (María)
@@ -1013,7 +1013,7 @@ async function main() {
 
       // Add sample ProjectionPaces for María (L8 student)
       console.log('   🎯 Adding sample projection PACEs for María (L8)...');
-      
+
       let projectionPacesCreated = 0;
 
       // Get L8 subsubjects for each category
@@ -1043,59 +1043,77 @@ async function main() {
       // Each quarter progresses sequentially (Q1 uses 1085-1087, Q2 uses 1088-1090, etc.)
       const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
       const pacesPerQuarter = 3; // 3 PACEs per subject per quarter (weeks 1,4,7 or 2,5,8 or 3,6,9)
-      
+
       for (let quarterIndex = 0; quarterIndex < quarters.length; quarterIndex++) {
         const quarter = quarters[quarterIndex];
-        
+
         // Calculate which PACEs to use (sequential progression)
         const startPaceIndex = quarterIndex * pacesPerQuarter; // Q1=0, Q2=3, Q3=6, Q4=9
-        
+
         const quarterSchedule = [
           // Week 1: Math, English
-          { week: 1, subjects: [
-            { paces: mathPaces, paceIndex: startPaceIndex },
-            { paces: englishPaces, paceIndex: startPaceIndex }
-          ]},
+          {
+            week: 1, subjects: [
+              { paces: mathPaces, paceIndex: startPaceIndex },
+              { paces: englishPaces, paceIndex: startPaceIndex }
+            ]
+          },
           // Week 2: Science, Social Studies
-          { week: 2, subjects: [
-            { paces: sciencePaces, paceIndex: startPaceIndex },
-            { paces: socialStudiesPaces, paceIndex: startPaceIndex }
-          ]},
+          {
+            week: 2, subjects: [
+              { paces: sciencePaces, paceIndex: startPaceIndex },
+              { paces: socialStudiesPaces, paceIndex: startPaceIndex }
+            ]
+          },
           // Week 3: Word Building, Spanish
-          { week: 3, subjects: [
-            { paces: wordBuildingPaces, paceIndex: startPaceIndex },
-            { paces: spanishPaces, paceIndex: startPaceIndex }
-          ]},
+          {
+            week: 3, subjects: [
+              { paces: wordBuildingPaces, paceIndex: startPaceIndex },
+              { paces: spanishPaces, paceIndex: startPaceIndex }
+            ]
+          },
           // Week 4: Math, English
-          { week: 4, subjects: [
-            { paces: mathPaces, paceIndex: startPaceIndex + 1 },
-            { paces: englishPaces, paceIndex: startPaceIndex + 1 }
-          ]},
+          {
+            week: 4, subjects: [
+              { paces: mathPaces, paceIndex: startPaceIndex + 1 },
+              { paces: englishPaces, paceIndex: startPaceIndex + 1 }
+            ]
+          },
           // Week 5: Science, Social Studies
-          { week: 5, subjects: [
-            { paces: sciencePaces, paceIndex: startPaceIndex + 1 },
-            { paces: socialStudiesPaces, paceIndex: startPaceIndex + 1 }
-          ]},
+          {
+            week: 5, subjects: [
+              { paces: sciencePaces, paceIndex: startPaceIndex + 1 },
+              { paces: socialStudiesPaces, paceIndex: startPaceIndex + 1 }
+            ]
+          },
           // Week 6: Word Building, Spanish
-          { week: 6, subjects: [
-            { paces: wordBuildingPaces, paceIndex: startPaceIndex + 1 },
-            { paces: spanishPaces, paceIndex: startPaceIndex + 1 }
-          ]},
+          {
+            week: 6, subjects: [
+              { paces: wordBuildingPaces, paceIndex: startPaceIndex + 1 },
+              { paces: spanishPaces, paceIndex: startPaceIndex + 1 }
+            ]
+          },
           // Week 7: Math, English
-          { week: 7, subjects: [
-            { paces: mathPaces, paceIndex: startPaceIndex + 2 },
-            { paces: englishPaces, paceIndex: startPaceIndex + 2 }
-          ]},
+          {
+            week: 7, subjects: [
+              { paces: mathPaces, paceIndex: startPaceIndex + 2 },
+              { paces: englishPaces, paceIndex: startPaceIndex + 2 }
+            ]
+          },
           // Week 8: Science, Social Studies
-          { week: 8, subjects: [
-            { paces: sciencePaces, paceIndex: startPaceIndex + 2 },
-            { paces: socialStudiesPaces, paceIndex: startPaceIndex + 2 }
-          ]},
+          {
+            week: 8, subjects: [
+              { paces: sciencePaces, paceIndex: startPaceIndex + 2 },
+              { paces: socialStudiesPaces, paceIndex: startPaceIndex + 2 }
+            ]
+          },
           // Week 9: Word Building, Spanish
-          { week: 9, subjects: [
-            { paces: wordBuildingPaces, paceIndex: startPaceIndex + 2 },
-            { paces: spanishPaces, paceIndex: startPaceIndex + 2 }
-          ]},
+          {
+            week: 9, subjects: [
+              { paces: wordBuildingPaces, paceIndex: startPaceIndex + 2 },
+              { paces: spanishPaces, paceIndex: startPaceIndex + 2 }
+            ]
+          },
         ];
 
         for (const schedule of quarterSchedule) {
@@ -1165,7 +1183,7 @@ async function main() {
 
   // Create Teacher-Student Groups (Assignments)
   console.log('\n👥 Creating teacher-student groups...');
-  
+
   // Get the demo teacher
   const demoTeacher = await prisma.user.findUnique({
     where: { email: 'demo.teacher@alenna.io' },
@@ -1297,13 +1315,126 @@ async function main() {
   console.log('📝 Demo school ID:', school.id);
   console.log('   Use this ID when syncing users from Clerk');
   console.log('');
-  console.log('📊 Database Summary:');
+  // Create Tuition Type for the school
+  console.log('\n💰 Creating Tuition Type...');
+  const tuitionType = await prisma.tuitionType.upsert({
+    where: {
+      schoolId_name: {
+        schoolId: school.id,
+        name: 'Default',
+      },
+    },
+    update: {},
+    create: {
+      id: randomUUID(),
+      schoolId: school.id,
+      name: 'Default',
+      baseAmount: 2200.00, // $1000 base tuition
+      currency: 'USD',
+      lateFeeType: 'percentage',
+      lateFeeValue: 5.00, // 5% late fee
+      displayOrder: 0,
+    },
+  });
+  console.log('✅ Created tuition type');
+
+  // Create Tuition Config for the school
+  console.log('\n💰 Creating Tuition Configuration...');
+  const tuitionConfig = await prisma.tuitionConfig.upsert({
+    where: { schoolId: school.id },
+    update: {},
+    create: {
+      id: randomUUID(),
+      schoolId: school.id,
+      dueDay: 5, // Due on the 5th of each month
+    },
+  });
+  console.log('✅ Created tuition configuration');
+
+  // Create billing records for all students for current month
+  console.log('\n📋 Creating billing records for all students...');
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1; // 1-12
+  const currentYear = now.getFullYear();
+  const dueDate = new Date(currentYear, currentMonth - 1, tuitionConfig.dueDay);
+
+  const allStudents = await prisma.student.findMany({
+    where: {
+      schoolId: school.id,
+      deletedAt: null,
+    },
+  });
+
+  let billingRecordsCreated = 0;
+  for (const student of allStudents) {
+    // Check if billing record already exists for this month/year
+    const existingBill = await prisma.billingRecord.findFirst({
+      where: {
+        studentId: student.id,
+        billingMonth: currentMonth,
+        billingYear: currentYear,
+      },
+    });
+
+    if (!existingBill) {
+      const effectiveTuitionAmount = Number(tuitionType.baseAmount);
+      const scholarshipAmount = 0; // No scholarship by default
+      const discountAdjustments: any[] = [];
+      const extraCharges: any[] = [];
+      const lateFeeAmount = 0; // No late fee initially
+      const discountAmount = 0;
+      const extraAmount = 0;
+      const amountAfterDiscounts = effectiveTuitionAmount - scholarshipAmount - discountAmount;
+      const finalAmount = amountAfterDiscounts + extraAmount + lateFeeAmount;
+
+      const tuitionTypeSnapshot = {
+        tuitionTypeId: tuitionType.id,
+        tuitionTypeName: tuitionType.name,
+        baseAmount: Number(tuitionType.baseAmount),
+        lateFeeType: tuitionType.lateFeeType,
+        lateFeeValue: Number(tuitionType.lateFeeValue),
+      };
+
+      const auditMetadata = {
+        createdBy: adminUser.id,
+        updatedBy: adminUser.id,
+      };
+
+      await prisma.billingRecord.create({
+        data: {
+          id: randomUUID(),
+          studentId: student.id,
+          schoolYearId: schoolYear.id,
+          billingMonth: currentMonth,
+          billingYear: currentYear,
+          tuitionTypeSnapshot,
+          effectiveTuitionAmount,
+          scholarshipAmount,
+          discountAdjustments,
+          extraCharges,
+          lateFeeAmount,
+          finalAmount,
+          billStatus: 'required',
+          paymentStatus: 'unpaid',
+          dueDate,
+          auditMetadata,
+        },
+      });
+      billingRecordsCreated++;
+    }
+  }
+  console.log(`✅ Created ${billingRecordsCreated} billing records for ${currentMonth}/${currentYear}`);
+
+  console.log('\n📊 Database Summary:');
   console.log(`   - 8 categories`);
   console.log(`   - 13 levels (L1-L12 + Electives)`);
   console.log(`   - ${certificationTypes.length} certification types`);
   console.log(`   - ${studentsData.length} students with current levels`);
   console.log(`   - 1 projection (María only)`);
   console.log(`   - Sample ProjectionPaces created for María`);
+  console.log(`   - 1 tuition type`);
+  console.log(`   - 1 tuition configuration`);
+  console.log(`   - ${billingRecordsCreated} billing records`);
 }
 
 main()
