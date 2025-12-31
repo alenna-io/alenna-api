@@ -40,6 +40,7 @@ export interface UserInfoOutput {
   language?: string;
   schoolId: string;
   schoolName: string;
+  schoolLogoUrl?: string;
   studentId?: string;
   studentProfile?: StudentProfileOutput;
   createdPassword: boolean;
@@ -143,6 +144,7 @@ export class GetUserInfoUseCase {
     // Handle case where school might be soft-deleted or missing
     const schoolName = user.school?.name || 'Alenna'
     const schoolId = user.schoolId
+    const schoolLogoUrl = user.school?.logoUrl || undefined
 
     return {
       id: user.id,
@@ -153,33 +155,34 @@ export class GetUserInfoUseCase {
       language: user.language || undefined,
       schoolId: schoolId,
       schoolName: schoolName,
+      schoolLogoUrl: schoolLogoUrl,
       studentId: user.student?.id ?? studentData?.id,
       createdPassword: user.createdPassword ?? false,
       studentProfile: studentData
         ? {
-            id: studentData.id,
-            firstName: studentData.user?.firstName ?? '',
-            lastName: studentData.user?.lastName ?? '',
-            name: `${studentData.user?.firstName ?? ''} ${studentData.user?.lastName ?? ''}`.trim(),
-            birthDate: studentData.birthDate.toISOString(),
-            graduationDate: studentData.graduationDate?.toISOString() ?? '',
-            certificationType: studentData.certificationType?.name,
-            phone: studentData.user?.phone ?? undefined,
-            isLeveled: studentData.isLeveled,
-            expectedLevel: studentData.expectedLevel ?? undefined,
-            currentLevel: studentData.currentLevel ?? undefined,
-            streetAddress: studentData.user?.streetAddress ?? undefined,
-            city: studentData.user?.city ?? undefined,
-            state: studentData.user?.state ?? undefined,
-            country: studentData.user?.country ?? undefined,
-            zipCode: studentData.user?.zipCode ?? undefined,
-            parents: studentData.userStudents
-              .filter((userStudent) => userStudent.user.userRoles.some((role) => role.role.name === 'PARENT'))
-              .map((userStudent) => ({
-                id: userStudent.user.id,
-                name: `${userStudent.user.firstName ?? ''} ${userStudent.user.lastName ?? ''}`.trim(),
-              })),
-          }
+          id: studentData.id,
+          firstName: studentData.user?.firstName ?? '',
+          lastName: studentData.user?.lastName ?? '',
+          name: `${studentData.user?.firstName ?? ''} ${studentData.user?.lastName ?? ''}`.trim(),
+          birthDate: studentData.birthDate.toISOString(),
+          graduationDate: studentData.graduationDate?.toISOString() ?? '',
+          certificationType: studentData.certificationType?.name,
+          phone: studentData.user?.phone ?? undefined,
+          isLeveled: studentData.isLeveled,
+          expectedLevel: studentData.expectedLevel ?? undefined,
+          currentLevel: studentData.currentLevel ?? undefined,
+          streetAddress: studentData.user?.streetAddress ?? undefined,
+          city: studentData.user?.city ?? undefined,
+          state: studentData.user?.state ?? undefined,
+          country: studentData.user?.country ?? undefined,
+          zipCode: studentData.user?.zipCode ?? undefined,
+          parents: studentData.userStudents
+            .filter((userStudent) => userStudent.user.userRoles.some((role) => role.role.name === 'PARENT'))
+            .map((userStudent) => ({
+              id: userStudent.user.id,
+              name: `${userStudent.user.firstName ?? ''} ${userStudent.user.lastName ?? ''}`.trim(),
+            })),
+        }
         : undefined,
       roles: user.userRoles.map((userRole) => ({
         id: userRole.role.id,
