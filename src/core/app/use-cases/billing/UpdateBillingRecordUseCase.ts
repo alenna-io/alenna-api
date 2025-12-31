@@ -3,7 +3,7 @@ import { BillingRecord } from '../../../domain/entities';
 import { UpdateBillingRecordInput } from '../../dtos';
 
 export class UpdateBillingRecordUseCase {
-  constructor(private billingRecordRepository: IBillingRecordRepository) {}
+  constructor(private billingRecordRepository: IBillingRecordRepository) { }
 
   async execute(billingRecordId: string, schoolId: string, input: UpdateBillingRecordInput, updatedBy: string): Promise<BillingRecord> {
     const billingRecord = await this.billingRecordRepository.findById(billingRecordId, schoolId);
@@ -11,7 +11,7 @@ export class UpdateBillingRecordUseCase {
       throw new Error('Billing record not found');
     }
 
-    if (billingRecord.isLocked) {
+    if (billingRecord.lockedAt !== null) {
       throw new Error('Cannot update a locked bill');
     }
 

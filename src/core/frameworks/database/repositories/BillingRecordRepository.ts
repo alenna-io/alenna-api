@@ -209,7 +209,7 @@ export class BillingRecordRepository implements IBillingRecordRepository {
   }
 
   async createMany(billingRecords: BillingRecord[]): Promise<BillingRecord[]> {
-    const created = await prisma.billingRecord.createMany({
+    await prisma.billingRecord.createMany({
       data: billingRecords.map(BillingRecordMapper.toPrisma),
     });
 

@@ -1,4 +1,4 @@
-import { BillingRecord as PrismaBillingRecord } from '@prisma/client';
+import { BillingRecord as PrismaBillingRecord, Prisma } from '@prisma/client';
 import { BillingRecord, BillStatus, PaymentStatus, PaymentMethod, TuitionTypeSnapshot, DiscountAdjustment, ExtraCharge, AuditMetadata } from '../../../domain/entities';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -39,25 +39,30 @@ export class BillingRecordMapper {
     );
   }
 
-  static toPrisma(billingRecord: BillingRecord): Omit<PrismaBillingRecord, 'createdAt' | 'updatedAt'> {
+  static toPrisma(billingRecord: BillingRecord): Omit<PrismaBillingRecord, 'createdAt' | 'updatedAt' | 'tuitionTypeSnapshot' | 'discountAdjustments' | 'extraCharges' | 'auditMetadata'> & {
+    tuitionTypeSnapshot: Prisma.InputJsonValue;
+    discountAdjustments: Prisma.InputJsonValue;
+    extraCharges: Prisma.InputJsonValue;
+    auditMetadata: Prisma.InputJsonValue;
+  } {
     return {
       id: billingRecord.id,
       studentId: billingRecord.studentId,
       schoolYearId: billingRecord.schoolYearId,
       billingMonth: billingRecord.billingMonth,
       billingYear: billingRecord.billingYear,
-      tuitionTypeSnapshot: billingRecord.tuitionTypeSnapshot as unknown as Prisma.JsonValue,
+      tuitionTypeSnapshot: billingRecord.tuitionTypeSnapshot as unknown as Prisma.InputJsonValue,
       effectiveTuitionAmount: new Decimal(billingRecord.effectiveTuitionAmount),
       scholarshipAmount: new Decimal(billingRecord.scholarshipAmount),
-      discountAdjustments: billingRecord.discountAdjustments as unknown as Prisma.JsonValue,
-      extraCharges: billingRecord.extraCharges as unknown as Prisma.JsonValue,
+      discountAdjustments: billingRecord.discountAdjustments as unknown as Prisma.InputJsonValue,
+      extraCharges: billingRecord.extraCharges as unknown as Prisma.InputJsonValue,
       lateFeeAmount: new Decimal(billingRecord.lateFeeAmount),
       finalAmount: new Decimal(billingRecord.finalAmount),
       billStatus: billingRecord.billStatus,
       paymentStatus: billingRecord.paymentStatus,
       paidAt: billingRecord.paidAt,
       lockedAt: billingRecord.lockedAt,
-      auditMetadata: billingRecord.auditMetadata as unknown as Prisma.JsonValue,
+      auditMetadata: billingRecord.auditMetadata as unknown as Prisma.InputJsonValue,
       paymentNote: billingRecord.paymentNote,
       paymentMethod: billingRecord.paymentMethod,
       paymentGateway: billingRecord.paymentGateway,

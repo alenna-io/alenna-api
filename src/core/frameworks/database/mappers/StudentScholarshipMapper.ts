@@ -1,5 +1,6 @@
 import { StudentScholarship as PrismaStudentScholarship } from '@prisma/client';
 import { StudentScholarship, ScholarshipType } from '../../../domain/entities';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export class StudentScholarshipMapper {
   static toDomain(prismaScholarship: PrismaStudentScholarship): StudentScholarship {
@@ -20,7 +21,7 @@ export class StudentScholarshipMapper {
       studentId: scholarship.studentId,
       tuitionTypeId: scholarship.tuitionTypeId,
       scholarshipType: scholarship.scholarshipType,
-      scholarshipValue: scholarship.scholarshipValue,
+      scholarshipValue: scholarship.scholarshipValue !== null ? new Decimal(scholarship.scholarshipValue) : null,
     };
   }
 }
