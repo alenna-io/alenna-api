@@ -1,7 +1,7 @@
 import prisma from '../../frameworks/database/prisma.client';
 import { BillingRecordRepository } from '../../frameworks/database/repositories/BillingRecordRepository';
 import { BillingRecordMapper } from '../../frameworks/database/mappers/BillingRecordMapper';
-import { BillingRecord } from '../../../domain/entities';
+import { BillingRecord } from '../../domain/entities';
 import { logger } from '../../../utils/logger';
 
 export class UpdateDelayedBillingRecordsJob {
@@ -58,20 +58,20 @@ export class UpdateDelayedBillingRecordsJob {
         let updatedRecord = billingRecord.markAsDelayed();
 
         // Apply late fee if not already applied (only for bills that require taxable bills)
-        if (updatedRecord.paymentStatus === 'delayed' && 
-            updatedRecord.lateFeeAmount === 0 && 
-            updatedRecord.billStatus !== 'not_required') {
+        if (updatedRecord.paymentStatus === 'delayed' &&
+          updatedRecord.lateFeeAmount === 0 &&
+          updatedRecord.billStatus !== 'not_required') {
           // Calculate amount after discounts for late fee calculation
           const amountAfterDiscounts = updatedRecord.effectiveTuitionAmount
             - updatedRecord.scholarshipAmount
             - BillingRecord.calculateDiscountAmount(updatedRecord.discountAdjustments, updatedRecord.effectiveTuitionAmount - updatedRecord.scholarshipAmount);
-          
+
           updatedRecord = updatedRecord.applyLateFee(amountAfterDiscounts, 'system');
         }
 
         // Only update if status or late fee actually changed
-        if (updatedRecord.paymentStatus !== billingRecord.paymentStatus || 
-            updatedRecord.lateFeeAmount !== billingRecord.lateFeeAmount) {
+        if (updatedRecord.paymentStatus !== billingRecord.paymentStatus ||
+          updatedRecord.lateFeeAmount !== billingRecord.lateFeeAmount) {
           await this.billingRecordRepository.update(prismaRecord.id, updatedRecord, schoolId);
           updatedCount++;
         }

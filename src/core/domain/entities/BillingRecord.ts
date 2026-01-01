@@ -515,4 +515,8 @@ export class BillingRecord {
   get canEdit(): boolean {
     return this.lockedAt === null;
   }
+
+  get isLocked(): boolean {
+    return this.lockedAt !== null;
+  }
 }

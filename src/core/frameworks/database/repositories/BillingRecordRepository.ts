@@ -612,7 +612,7 @@ export class BillingRecordRepository implements IBillingRecordRepository {
       paidBy: string;
       paidAt?: Date;
     },
-    schoolId: string
+    _schoolId: string
   ): Promise<BillingRecord> {
     return await prisma.$transaction(async (tx) => {
       // Update the billing record

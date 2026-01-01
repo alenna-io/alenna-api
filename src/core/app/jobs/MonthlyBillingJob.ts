@@ -4,6 +4,7 @@ import { BillingRecordRepository } from '../../frameworks/database/repositories/
 import { TuitionConfigRepository } from '../../frameworks/database/repositories/TuitionConfigRepository';
 import { StudentScholarshipRepository } from '../../frameworks/database/repositories/StudentScholarshipRepository';
 import { TuitionTypeRepository } from '../../frameworks/database/repositories/TuitionTypeRepository';
+import { StudentRepository } from '../../frameworks/database/repositories/StudentRepository';
 import { logger } from '../../../utils/logger';
 
 export class MonthlyBillingJob {
@@ -14,12 +15,14 @@ export class MonthlyBillingJob {
     const tuitionConfigRepository = new TuitionConfigRepository();
     const studentScholarshipRepository = new StudentScholarshipRepository();
     const tuitionTypeRepository = new TuitionTypeRepository();
+    const studentRepository = new StudentRepository();
 
     this.bulkCreateBillingRecordsUseCase = new BulkCreateBillingRecordsUseCase(
       billingRecordRepository,
       tuitionConfigRepository,
       studentScholarshipRepository,
-      tuitionTypeRepository
+      tuitionTypeRepository,
+      studentRepository
     );
   }
 
