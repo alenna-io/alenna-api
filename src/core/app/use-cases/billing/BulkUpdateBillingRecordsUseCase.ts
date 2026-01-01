@@ -83,7 +83,7 @@ export class BulkUpdateBillingRecordsUseCase {
         let newLateFeeAmount = record.lateFeeAmount;
         const now = new Date();
         const isOverdue = now > record.dueDate;
-        if (isOverdue && record.paymentStatus !== 'paid' && record.lateFeeAmount === 0 && newTaxableBillStatus !== 'not_required') {
+        if (isOverdue && record.lateFeeAmount === 0 && newTaxableBillStatus !== 'not_required') {
           if (tuitionType.lateFeeType === 'fixed') {
             newLateFeeAmount = tuitionType.lateFeeValue;
           } else {
