@@ -8,4 +8,5 @@ export * from './PaceDTO';
 export * from './SchoolYearDTO';
 export * from './MonthlyAssignmentDTO';
 export * from './BillingDTO';
+export * from './SubSubjectDTO';
 

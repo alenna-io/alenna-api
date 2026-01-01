@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { container } from '../../di/container';
 import { CreateDailyGoalDTO, UpdateDailyGoalDTO, GetDailyGoalsDTO, UpdateDailyGoalCompletionDTO, UpdateDailyGoalNotesDTO, AddNoteToHistoryDTO } from '../../../app/dtos';
+import { isElectivesCategory, formatElectiveDisplayName } from '../../../utils/elective-utils';
 
 export class DailyGoalsController {
   async getDailyGoals(req: Request, res: Response): Promise<void> {
@@ -8,7 +9,7 @@ export class DailyGoalsController {
       const { studentId, projectionId } = req.params;
       const { quarter, week } = req.query;
       const schoolId = req.schoolId!;
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -39,15 +40,24 @@ export class DailyGoalsController {
       }
 
       // Extract unique sub-subject names from projection paces
-      const subSubjectNames = new Set<string>();
-      const categoryToSubSubjects = new Map<string, string[]>();
-      
+      // For electives, format as "Elective: [Name]"
+      // For other categories, use sub-subject name directly
+      const subSubjectDisplayNames = new Map<string, string>(); // subSubjectName -> displayName
+      const subSubjectToCategory = new Map<string, string>(); // subSubjectName -> categoryName
+      const categoryToSubSubjects = new Map<string, string[]>(); // categoryName -> [subSubjectNames]
+
       projectionWithPaces.projectionPaces.forEach(pp => {
         const subSubjectName = pp.paceCatalog.subSubject.name;
         const categoryName = pp.paceCatalog.subSubject.category.name;
-        
-        subSubjectNames.add(subSubjectName);
-        
+
+        subSubjectToCategory.set(subSubjectName, categoryName);
+
+        if (isElectivesCategory(categoryName)) {
+          subSubjectDisplayNames.set(subSubjectName, formatElectiveDisplayName(subSubjectName));
+        } else {
+          subSubjectDisplayNames.set(subSubjectName, subSubjectName);
+        }
+
         if (!categoryToSubSubjects.has(categoryName)) {
           categoryToSubSubjects.set(categoryName, []);
         }
@@ -56,16 +66,21 @@ export class DailyGoalsController {
           subSubjects.push(subSubjectName);
         }
       });
-      
-      // Sort sub-subjects for consistent ordering
-      const sortedSubSubjects = Array.from(subSubjectNames).sort();
 
-      // Transform to frontend format using actual sub-subject names
+      // Sort sub-subjects by display name for consistent ordering
+      const sortedSubSubjects = Array.from(subSubjectDisplayNames.keys()).sort((a, b) => {
+        const displayA = subSubjectDisplayNames.get(a) || a;
+        const displayB = subSubjectDisplayNames.get(b) || b;
+        return displayA.localeCompare(displayB);
+      });
+
+      // Transform to frontend format using display names
       const goalsData: { [subject: string]: any[] } = {};
-      
-      // Initialize empty arrays for each sub-subject
-      sortedSubSubjects.forEach(subject => {
-        goalsData[subject] = Array(5).fill(null).map(() => ({
+
+      // Initialize empty arrays for each sub-subject using display names
+      sortedSubSubjects.forEach(subSubjectName => {
+        const displayName = subSubjectDisplayNames.get(subSubjectName) || subSubjectName;
+        goalsData[displayName] = Array(5).fill(null).map(() => ({
           text: '',
           isCompleted: false,
           notes: undefined,
@@ -75,31 +90,101 @@ export class DailyGoalsController {
       });
 
       // Populate with actual data and load note history
-      // Map goals stored with category names to their corresponding sub-subjects
+      // Goals are stored with category names, but we need to map them to display names
+      // For electives, goals are stored with sub-subject names, not category names
+      // For other categories, goals are stored with category names
       for (const goal of dailyGoals) {
-        const subSubjectsForCategory = categoryToSubSubjects.get(goal.subject) || [];
-        
-        // For each sub-subject in this category, populate the goal if it doesn't already exist
-        // We'll use the first sub-subject as the default, or distribute if needed
-        const targetSubSubject = subSubjectsForCategory[0] || goal.subject;
-        
-        if (goalsData[targetSubSubject] && goal.dayOfWeek < 5) {
-          // Only populate if this slot is empty (avoid overwriting existing goals)
-          if (!goalsData[targetSubSubject][goal.dayOfWeek]?.id) {
-            // Load note history for this goal
-            const noteHistory = await container.getNoteHistoryUseCase.execute(goal.id);
-            
-            goalsData[targetSubSubject][goal.dayOfWeek] = {
-              id: goal.id,
-              text: goal.text,
-              isCompleted: goal.isCompleted,
-              notes: goal.notes,
-              notesCompleted: goal.notesCompleted,
-              notesHistory: noteHistory.map(note => ({
-                text: note.text,
-                completedDate: note.completedDate.toISOString()
-              }))
-            };
+        // Check if goal.subject is a category name or a sub-subject name
+        const subSubjectsForCategory = categoryToSubSubjects.get(goal.subject);
+
+        if (subSubjectsForCategory && subSubjectsForCategory.length > 0) {
+          // Goal stored with category name - map to sub-subjects
+          // For electives, each sub-subject should have its own goals
+          // For other categories, use first sub-subject (backward compatibility)
+          const firstSubSubject = subSubjectsForCategory[0];
+          const category = subSubjectToCategory.get(firstSubSubject);
+
+          if (category && isElectivesCategory(category)) {
+            // For electives, try to match goal to specific sub-subject by checking if goal.text contains sub-subject name
+            // This is a heuristic - in practice, goals for electives should be stored with sub-subject names
+            // For now, use the first sub-subject as default
+            const targetSubSubject = firstSubSubject;
+            const displayName = subSubjectDisplayNames.get(targetSubSubject) || targetSubSubject;
+
+            if (goalsData[displayName] && goal.dayOfWeek < 5) {
+              if (!goalsData[displayName][goal.dayOfWeek]?.id) {
+                const noteHistory = await container.getNoteHistoryUseCase.execute(goal.id);
+
+                goalsData[displayName][goal.dayOfWeek] = {
+                  id: goal.id,
+                  text: goal.text,
+                  isCompleted: goal.isCompleted,
+                  notes: goal.notes,
+                  notesCompleted: goal.notesCompleted,
+                  notesHistory: noteHistory.map(note => ({
+                    text: note.text,
+                    completedDate: note.completedDate.toISOString()
+                  }))
+                };
+              }
+            }
+          } else {
+            // For other categories, use first sub-subject (existing behavior)
+            const targetSubSubject = firstSubSubject;
+            const displayName = subSubjectDisplayNames.get(targetSubSubject) || targetSubSubject;
+
+            if (goalsData[displayName] && goal.dayOfWeek < 5) {
+              if (!goalsData[displayName][goal.dayOfWeek]?.id) {
+                const noteHistory = await container.getNoteHistoryUseCase.execute(goal.id);
+
+                goalsData[displayName][goal.dayOfWeek] = {
+                  id: goal.id,
+                  text: goal.text,
+                  isCompleted: goal.isCompleted,
+                  notes: goal.notes,
+                  notesCompleted: goal.notesCompleted,
+                  notesHistory: noteHistory.map(note => ({
+                    text: note.text,
+                    completedDate: note.completedDate.toISOString()
+                  }))
+                };
+              }
+            }
+          }
+        } else {
+          // Goal stored with sub-subject name (newer format, especially for electives)
+          // Check if it matches any of our sub-subjects (could be display name or original name)
+          let targetDisplayName: string | undefined;
+
+          // First try exact match on display name
+          if (goalsData[goal.subject]) {
+            targetDisplayName = goal.subject;
+          } else {
+            // Try to find matching sub-subject by original name
+            for (const [subSubjectName, displayName] of subSubjectDisplayNames.entries()) {
+              if (subSubjectName === goal.subject || displayName === goal.subject) {
+                targetDisplayName = displayName;
+                break;
+              }
+            }
+          }
+
+          if (targetDisplayName && goalsData[targetDisplayName] && goal.dayOfWeek < 5) {
+            if (!goalsData[targetDisplayName][goal.dayOfWeek]?.id) {
+              const noteHistory = await container.getNoteHistoryUseCase.execute(goal.id);
+
+              goalsData[targetDisplayName][goal.dayOfWeek] = {
+                id: goal.id,
+                text: goal.text,
+                isCompleted: goal.isCompleted,
+                notes: goal.notes,
+                notesCompleted: goal.notesCompleted,
+                notesHistory: noteHistory.map(note => ({
+                  text: note.text,
+                  completedDate: note.completedDate.toISOString()
+                }))
+              };
+            }
           }
         }
       }
@@ -107,12 +192,12 @@ export class DailyGoalsController {
       res.json(goalsData);
     } catch (error: any) {
       console.error('Error getting daily goals:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get daily goals' });
     }
   }
@@ -125,7 +210,7 @@ export class DailyGoalsController {
         ...req.body,
         projectionId,
       });
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -158,12 +243,12 @@ export class DailyGoalsController {
       });
     } catch (error: any) {
       console.error('Error creating daily goal:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to create daily goal' });
     }
   }
@@ -176,7 +261,7 @@ export class DailyGoalsController {
         ...req.body,
         id: goalId,
       });
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -209,17 +294,17 @@ export class DailyGoalsController {
       });
     } catch (error: any) {
       console.error('Error updating daily goal:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'Daily goal not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to update daily goal' });
     }
   }
@@ -232,7 +317,7 @@ export class DailyGoalsController {
         ...req.body,
         id: goalId,
       });
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -265,17 +350,17 @@ export class DailyGoalsController {
       });
     } catch (error: any) {
       console.error('Error updating daily goal completion:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'Daily goal not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to update daily goal completion' });
     }
   }
@@ -288,7 +373,7 @@ export class DailyGoalsController {
         ...req.body,
         id: goalId,
       });
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -321,17 +406,17 @@ export class DailyGoalsController {
       });
     } catch (error: any) {
       console.error('Error updating daily goal notes:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'Daily goal not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to update daily goal notes' });
     }
   }
@@ -344,7 +429,7 @@ export class DailyGoalsController {
         ...req.body,
         dailyGoalId: goalId,
       });
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -370,17 +455,17 @@ export class DailyGoalsController {
       });
     } catch (error: any) {
       console.error('Error adding note to history:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'Daily goal not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to add note to history' });
     }
   }
@@ -389,7 +474,7 @@ export class DailyGoalsController {
     try {
       const { studentId, projectionId, goalId } = req.params;
       const schoolId = req.schoolId!;
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -415,12 +500,12 @@ export class DailyGoalsController {
       })));
     } catch (error: any) {
       console.error('Error getting note history:', error);
-      
+
       if (error.message === 'Daily goal not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get note history' });
     }
   }
@@ -429,7 +514,7 @@ export class DailyGoalsController {
     try {
       const { studentId, projectionId, goalId } = req.params;
       const schoolId = req.schoolId!;
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -449,12 +534,12 @@ export class DailyGoalsController {
       res.status(204).send();
     } catch (error: any) {
       console.error('Error deleting daily goal:', error);
-      
+
       if (error.message === 'Daily goal not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to delete daily goal' });
     }
   }

@@ -53,6 +53,7 @@ import {
   MarkPaceIncompleteUseCase,
   GetPaceCatalogUseCase,
   GetSubSubjectsUseCase,
+  CreateSubSubjectWithPacesUseCase,
   GetProjectionTemplatesUseCase,
   GetProjectionTemplateByLevelUseCase,
   CreateDefaultTemplatesUseCase,
@@ -343,6 +344,10 @@ class Container {
   // SubSubject Use Cases
   get getSubSubjectsUseCase(): GetSubSubjectsUseCase {
     return new GetSubSubjectsUseCase();
+  }
+
+  get createSubSubjectWithPacesUseCase(): CreateSubSubjectWithPacesUseCase {
+    return new CreateSubSubjectWithPacesUseCase();
   }
 
   // Projection Template Use Cases

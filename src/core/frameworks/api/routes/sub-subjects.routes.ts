@@ -18,5 +18,8 @@ router.use(ensureTenantIsolation);
 // GET /sub-subjects
 router.get('/', subSubjectController.getSubSubjects.bind(subSubjectController));
 
+// POST /sub-subjects
+router.post('/', subSubjectController.createSubSubject.bind(subSubjectController));
+
 export default router;
 

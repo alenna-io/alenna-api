@@ -21,8 +21,8 @@ export const GenerateProjectionDTO = z.object({
   subjects: z.array(z.object({
     subSubjectId: z.string().min(1, 'SubSubject ID is required'),
     subSubjectName: z.string().min(1, 'SubSubject name is required'),
-    startPace: z.number().int().min(1001, 'Start pace must be at least 1001'),
-    endPace: z.number().int().min(1001, 'End pace must be at least 1001'),
+    startPace: z.number().int().min(1, 'Start pace must be a positive integer'),
+    endPace: z.number().int().min(1, 'End pace must be a positive integer'),
     skipPaces: z.array(z.number().int()).default([]),
     notPairWith: z.array(z.string()).default([]),
     groupedWith: z.array(z.string()).optional().default([]),

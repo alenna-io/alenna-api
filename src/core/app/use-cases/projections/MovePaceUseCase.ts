@@ -2,6 +2,7 @@ import { IProjectionRepository } from '../../../adapters_interface/repositories'
 import { ProjectionPace } from '../../../domain/entities';
 import prisma from '../../../frameworks/database/prisma.client';
 import { ProjectionPaceMapper } from '../../../frameworks/database/mappers';
+import { isElectivesCategory } from '../../../utils/elective-utils';
 
 export class MovePaceUseCase {
   constructor(private projectionRepository: IProjectionRepository) { }
@@ -97,25 +98,29 @@ export class MovePaceUseCase {
     const categoryName = projectionPace.paceCatalog.subSubject.category.name;
 
     // 3. Check if there's already a PACE at the target position in the same category
-    const existingAtPosition = await prisma.projectionPace.findFirst({
-      where: {
-        projectionId,
-        quarter: newQuarter,
-        week: newWeek,
-        id: { not: projectionPaceId }, // Exclude the pace we're moving
-        paceCatalog: {
-          subSubject: {
-            category: {
-              name: categoryName,
+    // For electives, allow multiple paces in the same week/quarter (each elective is a separate subject)
+    // For other categories, check for existing PACE at this position in the same category
+    if (!isElectivesCategory(categoryName)) {
+      const existingAtPosition = await prisma.projectionPace.findFirst({
+        where: {
+          projectionId,
+          quarter: newQuarter,
+          week: newWeek,
+          id: { not: projectionPaceId }, // Exclude the pace we're moving
+          paceCatalog: {
+            subSubject: {
+              category: {
+                name: categoryName,
+              },
             },
           },
+          deletedAt: null,
         },
-        deletedAt: null,
-      },
-    });
+      });
 
-    if (existingAtPosition) {
-      throw new Error(`Ya existe un PACE de ${categoryName} en ${newQuarter} Semana ${newWeek}`);
+      if (existingAtPosition) {
+        throw new Error(`Ya existe un PACE de ${categoryName} en ${newQuarter} Semana ${newWeek}`);
+      }
     }
 
     // 3.5. Validate sequential order - ensure pace numbers are in order within the same subject

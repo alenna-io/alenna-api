@@ -1,6 +1,7 @@
 import { IProjectionRepository } from '../../../adapters_interface/repositories';
 import { IStudentRepository } from '../../../adapters_interface/repositories';
 import { ProjectionDetailOutput, PaceOutput, GradeHistoryOutput, QuarterPacesOutput } from '../../dtos';
+import { isElectivesCategory, formatElectiveDisplayName } from '../../../utils/elective-utils';
 
 export class GetProjectionDetailUseCase {
   constructor(
@@ -46,32 +47,49 @@ export class GetProjectionDetailUseCase {
       : Array.from(categoryNamesFromPaces).sort();
 
     // Collect all unique sub-subject names from projection paces
-    const subSubjectNames = new Set<string>();
+    // For electives, format as "Elective: [Name]"
+    // For other categories, use sub-subject name directly
+    const subSubjectDisplayNames = new Map<string, string>(); // subSubjectName -> displayName
+    const subSubjectToCategory = new Map<string, string>(); // subSubjectName -> categoryName
+    
     projectionPaces.forEach(pp => {
       const subSubjectName = pp.paceCatalog.subSubject.name;
-      subSubjectNames.add(subSubjectName);
+      const categoryName = pp.paceCatalog.subSubject.category.name;
+      subSubjectToCategory.set(subSubjectName, categoryName);
+      
+      if (isElectivesCategory(categoryName)) {
+        subSubjectDisplayNames.set(subSubjectName, formatElectiveDisplayName(subSubjectName));
+      } else {
+        subSubjectDisplayNames.set(subSubjectName, subSubjectName);
+      }
     });
 
-    // Sort sub-subjects by name for consistent ordering
-    const sortedSubSubjects = Array.from(subSubjectNames).sort();
+    // Sort sub-subjects by display name for consistent ordering
+    const sortedSubSubjects = Array.from(subSubjectDisplayNames.keys()).sort((a, b) => {
+      const displayA = subSubjectDisplayNames.get(a) || a;
+      const displayB = subSubjectDisplayNames.get(b) || b;
+      return displayA.localeCompare(displayB);
+    });
 
-    // Initialize quarters structure with actual sub-subject names
+    // Initialize quarters structure with display names
     const quarters: {
       Q1: QuarterPacesOutput;
       Q2: QuarterPacesOutput;
       Q3: QuarterPacesOutput;
       Q4: QuarterPacesOutput;
     } = {
-      Q1: this.initializeQuarter(sortedSubSubjects),
-      Q2: this.initializeQuarter(sortedSubSubjects),
-      Q3: this.initializeQuarter(sortedSubSubjects),
-      Q4: this.initializeQuarter(sortedSubSubjects),
+      Q1: this.initializeQuarter(sortedSubSubjects.map(name => subSubjectDisplayNames.get(name) || name)),
+      Q2: this.initializeQuarter(sortedSubSubjects.map(name => subSubjectDisplayNames.get(name) || name)),
+      Q3: this.initializeQuarter(sortedSubSubjects.map(name => subSubjectDisplayNames.get(name) || name)),
+      Q4: this.initializeQuarter(sortedSubSubjects.map(name => subSubjectDisplayNames.get(name) || name)),
     };
 
-    // Organize projection paces by quarter, sub-subject name, and week
+    // Organize projection paces by quarter, display name, and week
     projectionPaces.forEach(pp => {
       const quarter = pp.quarter as 'Q1' | 'Q2' | 'Q3' | 'Q4';
       const subSubjectName = pp.paceCatalog.subSubject.name;
+      const categoryName = pp.paceCatalog.subSubject.category.name;
+      const displayName = subSubjectDisplayNames.get(subSubjectName) || subSubjectName;
       const weekIndex = pp.week - 1; // Convert week 1-9 to index 0-8
 
       const gradeHistory: GradeHistoryOutput[] = pp.gradeHistory.map(gh => ({
@@ -85,8 +103,8 @@ export class GetProjectionDetailUseCase {
         id: pp.id,
         paceCatalogId: pp.paceCatalogId,
         number: pp.paceCatalog.code,
-        subject: subSubjectName,
-        category: pp.paceCatalog.subSubject.category.name,
+        subject: displayName,
+        category: categoryName,
         quarter: pp.quarter,
         week: pp.week,
         grade: pp.grade,
@@ -101,9 +119,9 @@ export class GetProjectionDetailUseCase {
         updatedAt: pp.updatedAt?.toISOString() || new Date().toISOString(),
       };
 
-      // Add pace to its current quarter
-      if (quarters[quarter] && quarters[quarter][subSubjectName]) {
-        quarters[quarter][subSubjectName][weekIndex] = paceOutput;
+      // Add pace to its current quarter using display name
+      if (quarters[quarter] && quarters[quarter][displayName]) {
+        quarters[quarter][displayName][weekIndex] = paceOutput;
       }
 
       // If this is an unfinished pace with an originalQuarter, also add it to the original quarter
@@ -112,7 +130,7 @@ export class GetProjectionDetailUseCase {
         const originalQuarter = pp.originalQuarter as 'Q1' | 'Q2' | 'Q3' | 'Q4';
         const originalWeekIndex = pp.originalWeek - 1; // Convert week 1-9 to index 0-8
 
-        if (quarters[originalQuarter] && quarters[originalQuarter][subSubjectName]) {
+        if (quarters[originalQuarter] && quarters[originalQuarter][displayName]) {
           // Create a copy of the paceOutput for the original quarter
           // This copy should be non-editable (marked as unfinished)
           const unfinishedCopy: PaceOutput = {
@@ -125,8 +143,8 @@ export class GetProjectionDetailUseCase {
           };
 
           // Only add if there's no pace already at this position in the original quarter
-          if (!quarters[originalQuarter][subSubjectName][originalWeekIndex]) {
-            quarters[originalQuarter][subSubjectName][originalWeekIndex] = unfinishedCopy;
+          if (!quarters[originalQuarter][displayName][originalWeekIndex]) {
+            quarters[originalQuarter][displayName][originalWeekIndex] = unfinishedCopy;
           }
         }
       }
@@ -156,10 +174,10 @@ export class GetProjectionDetailUseCase {
     };
   }
 
-  private initializeQuarter(categories: string[]): QuarterPacesOutput {
+  private initializeQuarter(subjectDisplayNames: string[]): QuarterPacesOutput {
     const quarter: QuarterPacesOutput = {};
-    categories.forEach(category => {
-      quarter[category] = Array(9).fill(null); // 9 weeks per quarter
+    subjectDisplayNames.forEach(displayName => {
+      quarter[displayName] = Array(9).fill(null); // 9 weeks per quarter
     });
     return quarter;
   }
