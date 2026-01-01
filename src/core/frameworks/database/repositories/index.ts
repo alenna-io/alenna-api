@@ -7,4 +7,8 @@ export * from './UserRepository';
 export * from './StudentRepository';
 export * from './SchoolYearRepository';
 export * from './GroupRepository';
+export * from './TuitionConfigRepository';
+export * from './TuitionTypeRepository';
+export * from './StudentScholarshipRepository';
+export * from './BillingRecordRepository';
 

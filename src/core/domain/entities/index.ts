@@ -20,4 +20,8 @@ export * from './Group';
 export * from './GroupStudent';
 export * from './SchoolYear';
 export * from './MonthlyAssignment';
+export * from './TuitionConfig';
+export * from './TuitionType';
+export * from './StudentScholarship';
+export * from './BillingRecord';
 

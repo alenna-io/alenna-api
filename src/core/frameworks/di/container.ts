@@ -10,7 +10,11 @@ import {
   SchoolYearRepository,
   DailyGoalRepository,
   RoleRepository,
-  GroupRepository
+  GroupRepository,
+  TuitionConfigRepository,
+  StudentScholarshipRepository,
+  BillingRecordRepository,
+  TuitionTypeRepository
 } from '../database/repositories';
 import {
   SyncUserUseCase,
@@ -568,6 +572,173 @@ class Container {
 
   get disableSchoolModuleUseCase(): DisableSchoolModuleUseCase {
     return new DisableSchoolModuleUseCase();
+  }
+
+  // Billing Repositories
+  private _tuitionConfigRepository?: TuitionConfigRepository;
+  private _studentScholarshipRepository?: StudentScholarshipRepository;
+  private _billingRecordRepository?: BillingRecordRepository;
+  private _tuitionTypeRepository?: TuitionTypeRepository;
+
+  get tuitionConfigRepository(): TuitionConfigRepository {
+    if (!this._tuitionConfigRepository) {
+      this._tuitionConfigRepository = new TuitionConfigRepository();
+    }
+    return this._tuitionConfigRepository;
+  }
+
+  get studentScholarshipRepository(): StudentScholarshipRepository {
+    if (!this._studentScholarshipRepository) {
+      this._studentScholarshipRepository = new StudentScholarshipRepository();
+    }
+    return this._studentScholarshipRepository;
+  }
+
+  get billingRecordRepository(): BillingRecordRepository {
+    if (!this._billingRecordRepository) {
+      this._billingRecordRepository = new BillingRecordRepository();
+    }
+    return this._billingRecordRepository;
+  }
+
+  get tuitionTypeRepository(): TuitionTypeRepository {
+    if (!this._tuitionTypeRepository) {
+      this._tuitionTypeRepository = new TuitionTypeRepository();
+    }
+    return this._tuitionTypeRepository;
+  }
+
+  // Billing Use Cases
+  get createBillingRecordUseCase() {
+    const { CreateBillingRecordUseCase } = require('../../app/use-cases/billing');
+    return new CreateBillingRecordUseCase(
+      this.billingRecordRepository,
+      this.tuitionConfigRepository,
+      this.studentScholarshipRepository,
+      this.tuitionTypeRepository,
+      this.studentRepository
+    );
+  }
+
+  get bulkCreateBillingRecordsUseCase() {
+    const { BulkCreateBillingRecordsUseCase } = require('../../app/use-cases/billing');
+    return new BulkCreateBillingRecordsUseCase(
+      this.billingRecordRepository,
+      this.tuitionConfigRepository,
+      this.studentScholarshipRepository,
+      this.tuitionTypeRepository,
+      this.studentRepository
+    );
+  }
+
+  get bulkUpdateBillingRecordsUseCase() {
+    const { BulkUpdateBillingRecordsUseCase } = require('../../app/use-cases/billing');
+    return new BulkUpdateBillingRecordsUseCase(
+      this.billingRecordRepository,
+      this.tuitionConfigRepository,
+      this.studentScholarshipRepository,
+      this.tuitionTypeRepository
+    );
+  }
+
+  get updateBillingRecordUseCase() {
+    const { UpdateBillingRecordUseCase } = require('../../app/use-cases/billing');
+    return new UpdateBillingRecordUseCase(this.billingRecordRepository);
+  }
+
+  get recordManualPaymentUseCase() {
+    const { RecordManualPaymentUseCase } = require('../../app/use-cases/billing');
+    return new RecordManualPaymentUseCase(this.billingRecordRepository);
+  }
+
+  get recordPartialPaymentUseCase() {
+    const { RecordPartialPaymentUseCase } = require('../../app/use-cases/billing');
+    return new RecordPartialPaymentUseCase(this.billingRecordRepository);
+  }
+
+  get updateTaxableBillStatusUseCase() {
+    const { UpdateTaxableBillStatusUseCase } = require('../../app/use-cases/billing');
+    return new UpdateTaxableBillStatusUseCase(this.billingRecordRepository);
+  }
+
+  get applyLateFeeUseCase() {
+    const { ApplyLateFeeUseCase } = require('../../app/use-cases/billing');
+    return new ApplyLateFeeUseCase(this.billingRecordRepository);
+  }
+
+  get bulkApplyLateFeeUseCase() {
+    const { BulkApplyLateFeeUseCase } = require('../../app/use-cases/billing');
+    return new BulkApplyLateFeeUseCase(this.billingRecordRepository);
+  }
+
+  get getBillingRecordsUseCase() {
+    const { GetBillingRecordsUseCase } = require('../../app/use-cases/billing');
+    return new GetBillingRecordsUseCase(this.billingRecordRepository);
+  }
+
+  get getBillingRecordByIdUseCase() {
+    const { GetBillingRecordByIdUseCase } = require('../../app/use-cases/billing');
+    return new GetBillingRecordByIdUseCase(this.billingRecordRepository);
+  }
+
+  get createTuitionConfigUseCase() {
+    const { CreateTuitionConfigUseCase } = require('../../app/use-cases/billing');
+    return new CreateTuitionConfigUseCase(this.tuitionConfigRepository);
+  }
+
+  get getTuitionConfigUseCase() {
+    const { GetTuitionConfigUseCase } = require('../../app/use-cases/billing');
+    return new GetTuitionConfigUseCase(this.tuitionConfigRepository);
+  }
+
+  get updateTuitionConfigUseCase() {
+    const { UpdateTuitionConfigUseCase } = require('../../app/use-cases/billing');
+    return new UpdateTuitionConfigUseCase(this.tuitionConfigRepository);
+  }
+
+  get createStudentScholarshipUseCase() {
+    const { CreateStudentScholarshipUseCase } = require('../../app/use-cases/billing');
+    return new CreateStudentScholarshipUseCase(this.studentScholarshipRepository, this.studentRepository);
+  }
+
+  get getStudentScholarshipUseCase() {
+    const { GetStudentScholarshipUseCase } = require('../../app/use-cases/billing');
+    return new GetStudentScholarshipUseCase(this.studentScholarshipRepository);
+  }
+
+  get updateStudentScholarshipUseCase() {
+    const { UpdateStudentScholarshipUseCase } = require('../../app/use-cases/billing');
+    return new UpdateStudentScholarshipUseCase(this.studentScholarshipRepository);
+  }
+
+  get getBillingMetricsUseCase() {
+    const { GetBillingMetricsUseCase } = require('../../app/use-cases/billing');
+    return new GetBillingMetricsUseCase(this.billingRecordRepository);
+  }
+
+  get getBillingDashboardDataUseCase() {
+    const { GetBillingDashboardDataUseCase } = require('../../app/use-cases/billing');
+    return new GetBillingDashboardDataUseCase(this.billingRecordRepository);
+  }
+
+  get createTuitionTypeUseCase() {
+    const { CreateTuitionTypeUseCase } = require('../../app/use-cases/billing');
+    return new CreateTuitionTypeUseCase(this.tuitionTypeRepository);
+  }
+
+  get updateTuitionTypeUseCase() {
+    const { UpdateTuitionTypeUseCase } = require('../../app/use-cases/billing');
+    return new UpdateTuitionTypeUseCase(this.tuitionTypeRepository);
+  }
+
+  get getTuitionTypesUseCase() {
+    const { GetTuitionTypesUseCase } = require('../../app/use-cases/billing');
+    return new GetTuitionTypesUseCase(this.tuitionTypeRepository);
+  }
+
+  get deleteTuitionTypeUseCase() {
+    const { DeleteTuitionTypeUseCase } = require('../../app/use-cases/billing');
+    return new DeleteTuitionTypeUseCase(this.tuitionTypeRepository);
   }
 }
 

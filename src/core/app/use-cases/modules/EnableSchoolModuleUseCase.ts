@@ -100,6 +100,9 @@ export class EnableSchoolModuleUseCase {
       case 'users':
         rolesToGrant = ['SUPERADMIN'];
         break;
+      case 'billing':
+        rolesToGrant = ['SCHOOL_ADMIN'];
+        break;
       default:
         // For unknown modules, grant to SCHOOL_ADMIN by default
         rolesToGrant = ['SCHOOL_ADMIN'];
