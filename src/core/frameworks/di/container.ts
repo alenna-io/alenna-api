@@ -631,6 +631,16 @@ class Container {
     );
   }
 
+  get bulkUpdateBillingRecordsUseCase() {
+    const { BulkUpdateBillingRecordsUseCase } = require('../../app/use-cases/billing');
+    return new BulkUpdateBillingRecordsUseCase(
+      this.billingRecordRepository,
+      this.tuitionConfigRepository,
+      this.studentScholarshipRepository,
+      this.tuitionTypeRepository
+    );
+  }
+
   get updateBillingRecordUseCase() {
     const { UpdateBillingRecordUseCase } = require('../../app/use-cases/billing');
     return new UpdateBillingRecordUseCase(this.billingRecordRepository);

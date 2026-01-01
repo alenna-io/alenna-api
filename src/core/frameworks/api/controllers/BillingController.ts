@@ -19,6 +19,7 @@ import {
   GetBillingDashboardDTO,
   CreateTuitionTypeDTO,
   UpdateTuitionTypeDTO,
+  BulkUpdateBillingRecordsDTO,
 } from '../../../app/dtos';
 
 export class BillingController {
@@ -299,6 +300,30 @@ export class BillingController {
     } catch (error: any) {
       console.error('Error bulk creating billing records:', error);
       res.status(400).json({ error: error.message || 'Failed to bulk create billing records' });
+    }
+  }
+
+  async bulkUpdateBillingRecords(req: Request, res: Response): Promise<void> {
+    try {
+      const schoolId = req.schoolId!;
+      const userId = req.userId!;
+      const validatedData = BulkUpdateBillingRecordsDTO.parse(req.body);
+      const result = await container.bulkUpdateBillingRecordsUseCase.execute(
+        validatedData.schoolYearId,
+        validatedData.billingMonth,
+        validatedData.billingYear,
+        schoolId,
+        userId
+      );
+
+      res.status(200).json({
+        message: `Successfully updated ${result.updated} billing record(s). ${result.skipped} record(s) skipped (locked or paid).`,
+        updated: result.updated,
+        skipped: result.skipped,
+      });
+    } catch (error: any) {
+      console.error('Error bulk updating billing records:', error);
+      res.status(400).json({ error: error.message || 'Failed to bulk update billing records' });
     }
   }
 

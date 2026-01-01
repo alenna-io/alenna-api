@@ -19,6 +19,14 @@ export const BulkCreateBillingRecordsDTO = z.object({
 
 export type BulkCreateBillingRecordsInput = z.infer<typeof BulkCreateBillingRecordsDTO>;
 
+export const BulkUpdateBillingRecordsDTO = z.object({
+  schoolYearId: z.string().min(1, 'School year ID is required'),
+  billingMonth: z.number().int().min(1).max(12, 'Billing month must be between 1 and 12'),
+  billingYear: z.number().int().min(2020).max(2100, 'Billing year must be between 2020 and 2100'),
+});
+
+export type BulkUpdateBillingRecordsInput = z.infer<typeof BulkUpdateBillingRecordsDTO>;
+
 export const DiscountAdjustmentDTO = z.object({
   type: z.enum(['percentage', 'fixed']),
   value: z.number().nonnegative('Value cannot be negative'),

@@ -15,6 +15,10 @@ export class UpdateBillingRecordUseCase {
       throw new Error('Cannot update a locked bill');
     }
 
+    if (billingRecord.paymentStatus === 'paid') {
+      throw new Error('Cannot update a paid bill');
+    }
+
     const updateProps: {
       effectiveTuitionAmount?: number;
       discountAdjustments?: any[];

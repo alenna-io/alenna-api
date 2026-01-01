@@ -19,6 +19,7 @@ router.get('/', requirePermission('billing.read'), billingController.getBillingR
 router.get('/metrics', requirePermission('billing.read'), billingController.getBillingMetrics.bind(billingController));
 router.get('/dashboard', requirePermission('billing.read'), billingController.getBillingDashboard.bind(billingController));
 router.post('/bulk', requirePermission('billing.create'), billingController.bulkCreateBillingRecords.bind(billingController));
+router.put('/bulk-update', requirePermission('billing.update'), billingController.bulkUpdateBillingRecords.bind(billingController));
 router.post('/bulk-apply-late-fee', requirePermission('billing.update'), billingController.bulkApplyLateFee.bind(billingController));
 
 router.get('/tuition-config', requirePermission('billing.read'), billingController.getTuitionConfig.bind(billingController));

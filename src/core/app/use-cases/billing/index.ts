@@ -1,5 +1,6 @@
 export * from './CreateBillingRecordUseCase';
 export * from './BulkCreateBillingRecordsUseCase';
+export * from './BulkUpdateBillingRecordsUseCase';
 export * from './UpdateBillingRecordUseCase';
 export * from './RecordManualPaymentUseCase';
 export * from './RecordPartialPaymentUseCase';
