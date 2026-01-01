@@ -37,8 +37,16 @@ export class UpdateBillingRecordUseCase {
       updateProps.extraCharges = input.extraCharges;
     }
 
-    if (input.billStatus !== undefined) {
-      updateProps.billStatus = input.billStatus;
+    // Handle taxableBillStatus (preferred) or billStatus (backward compatibility)
+    if (input.taxableBillStatus !== undefined) {
+      updateProps.billStatus = input.taxableBillStatus;
+    } else if (input.billStatus !== undefined) {
+      // Map old status values to new ones
+      if (input.billStatus === 'cancelled') {
+        updateProps.billStatus = 'not_required';
+      } else {
+        updateProps.billStatus = input.billStatus;
+      }
     }
 
     const updatedRecord = billingRecord.update(updateProps);

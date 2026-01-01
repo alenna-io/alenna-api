@@ -7,6 +7,7 @@ import {
   BulkCreateBillingRecordsDTO,
   UpdateBillingRecordDTO,
   RecordManualPaymentDTO,
+  RecordPartialPaymentDTO,
   ApplyLateFeeDTO,
   BulkApplyLateFeeDTO,
   CreateTuitionConfigDTO,
@@ -40,11 +41,70 @@ export class BillingController {
       });
       const studentMap = new Map(students.map((s: any) => [s.id, s]));
 
+      // Get payment transactions for all records
+      const recordIds = records.map((r: BillingRecord) => r.id);
+      const allPaymentTransactions = recordIds.length > 0 ? await prisma.billingPaymentTransaction.findMany({
+        where: {
+          billingRecordId: { in: recordIds },
+        },
+        orderBy: {
+          paidAt: 'desc',
+        },
+      }) : [];
+      const transactionsByRecordId = new Map<string, typeof allPaymentTransactions>();
+      allPaymentTransactions.forEach((tx: any) => {
+        if (!transactionsByRecordId.has(tx.billingRecordId)) {
+          transactionsByRecordId.set(tx.billingRecordId, []);
+        }
+        transactionsByRecordId.get(tx.billingRecordId)!.push(tx);
+      });
+
+      // Get user names for audit metadata and payment transactions
+      const userIds = new Set<string>();
+      records.forEach((r: BillingRecord) => {
+        const audit = r.auditMetadata as any;
+        if (audit?.paidBy) userIds.add(audit.paidBy);
+        if (audit?.createdBy) userIds.add(audit.createdBy);
+        if (audit?.updatedBy) userIds.add(audit.updatedBy);
+        if (audit?.lateFeeAppliedBy) userIds.add(audit.lateFeeAppliedBy);
+      });
+      allPaymentTransactions.forEach((tx: any) => userIds.add(tx.paidBy));
+
+      const users = userIds.size > 0 ? await prisma.user.findMany({
+        where: {
+          id: { in: Array.from(userIds) },
+          schoolId,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      }) : [];
+      const userMap = new Map(users.map((u: any) => [u.id, `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || u.id]));
+
       res.json(records.map((record: BillingRecord) => {
         const student = studentMap.get(record.studentId);
         const studentName = student?.user
           ? `${(student.user as any).firstName} ${(student.user as any).lastName}`
           : 'Unknown Student';
+
+        // Enhance audit metadata with user names
+        const audit = record.auditMetadata as any;
+        const enhancedAudit = { ...audit };
+        if (audit?.paidBy) {
+          enhancedAudit.paidByName = userMap.get(audit.paidBy) || audit.paidBy;
+        }
+        if (audit?.createdBy) {
+          enhancedAudit.createdByName = userMap.get(audit.createdBy) || audit.createdBy;
+        }
+        if (audit?.updatedBy) {
+          enhancedAudit.updatedByName = userMap.get(audit.updatedBy) || audit.updatedBy;
+        }
+        if (audit?.lateFeeAppliedBy) {
+          enhancedAudit.lateFeeAppliedByName = userMap.get(audit.lateFeeAppliedBy) || audit.lateFeeAppliedBy;
+        }
 
         return {
           id: record.id,
@@ -62,6 +122,7 @@ export class BillingController {
           finalAmount: record.finalAmount,
           billStatus: record.billStatus,
           paymentStatus: record.paymentStatus,
+          paidAmount: record.paidAmount,
           paidAt: record.paidAt?.toISOString() || null,
           lockedAt: record.lockedAt?.toISOString() || null,
           paymentMethod: record.paymentMethod,
@@ -70,13 +131,23 @@ export class BillingController {
           paymentTransactionId: record.paymentTransactionId,
           paymentGatewayStatus: record.paymentGatewayStatus,
           paymentWebhookReceivedAt: record.paymentWebhookReceivedAt?.toISOString() || null,
-          auditMetadata: record.auditMetadata,
+          auditMetadata: enhancedAudit,
           dueDate: record.dueDate.toISOString(),
           createdAt: record.createdAt?.toISOString(),
           updatedAt: record.updatedAt?.toISOString(),
           isOverdue: record.isOverdue,
           isPaid: record.isPaid,
           canEdit: record.canEdit,
+          paymentTransactions: (transactionsByRecordId.get(record.id) || []).map((tx: any) => ({
+            id: tx.id,
+            amount: Number(tx.amount),
+            paymentMethod: tx.paymentMethod,
+            paymentNote: tx.paymentNote,
+            paidBy: tx.paidBy,
+            paidByName: userMap.get(tx.paidBy) || tx.paidBy,
+            paidAt: tx.paidAt.toISOString(),
+            createdAt: tx.createdAt.toISOString(),
+          })),
         };
       }));
     } catch (error: any) {
@@ -96,6 +167,54 @@ export class BillingController {
         return;
       }
 
+      // Get payment transactions
+      const paymentTransactions = await prisma.billingPaymentTransaction.findMany({
+        where: {
+          billingRecordId: id,
+        },
+        orderBy: {
+          paidAt: 'desc',
+        },
+      });
+
+      // Get user names for audit metadata and payment transactions
+      const userIds = new Set<string>();
+      const audit = record.auditMetadata as any;
+      if (audit?.paidBy) userIds.add(audit.paidBy);
+      if (audit?.createdBy) userIds.add(audit.createdBy);
+      if (audit?.updatedBy) userIds.add(audit.updatedBy);
+      if (audit?.lateFeeAppliedBy) userIds.add(audit.lateFeeAppliedBy);
+      paymentTransactions.forEach((tx: any) => userIds.add(tx.paidBy));
+
+      const users = userIds.size > 0 ? await prisma.user.findMany({
+        where: {
+          id: { in: Array.from(userIds) },
+          schoolId,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      }) : [];
+      const userMap = new Map(users.map((u: any) => [u.id, `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || u.id]));
+
+      // Enhance audit metadata with user names
+      const enhancedAudit = { ...audit };
+      if (audit?.paidBy) {
+        enhancedAudit.paidByName = userMap.get(audit.paidBy) || audit.paidBy;
+      }
+      if (audit?.createdBy) {
+        enhancedAudit.createdByName = userMap.get(audit.createdBy) || audit.createdBy;
+      }
+      if (audit?.updatedBy) {
+        enhancedAudit.updatedByName = userMap.get(audit.updatedBy) || audit.updatedBy;
+      }
+      if (audit?.lateFeeAppliedBy) {
+        enhancedAudit.lateFeeAppliedByName = userMap.get(audit.lateFeeAppliedBy) || audit.lateFeeAppliedBy;
+      }
+
       res.json({
         id: record.id,
         studentId: record.studentId,
@@ -111,6 +230,7 @@ export class BillingController {
         finalAmount: record.finalAmount,
         billStatus: record.billStatus,
         paymentStatus: record.paymentStatus,
+        paidAmount: record.paidAmount,
         paidAt: record.paidAt?.toISOString() || null,
         lockedAt: record.lockedAt?.toISOString() || null,
         paymentMethod: record.paymentMethod,
@@ -119,7 +239,7 @@ export class BillingController {
         paymentTransactionId: record.paymentTransactionId,
         paymentGatewayStatus: record.paymentGatewayStatus,
         paymentWebhookReceivedAt: record.paymentWebhookReceivedAt?.toISOString() || null,
-        auditMetadata: record.auditMetadata,
+        auditMetadata: enhancedAudit,
         dueDate: record.dueDate.toISOString(),
         createdAt: record.createdAt?.toISOString(),
         updatedAt: record.updatedAt?.toISOString(),
@@ -198,6 +318,8 @@ export class BillingController {
         extraCharges: record.extraCharges,
         finalAmount: record.finalAmount,
         billStatus: record.billStatus,
+        paymentStatus: record.paymentStatus,
+        paidAmount: record.paidAmount,
         auditMetadata: record.auditMetadata,
         updatedAt: record.updatedAt?.toISOString(),
       });
@@ -219,6 +341,21 @@ export class BillingController {
     } catch (error: any) {
       console.error('Error recording manual payment:', error);
       res.status(400).json({ error: error.message || 'Failed to record payment' });
+    }
+  }
+
+  async recordPartialPayment(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const schoolId = req.schoolId!;
+      const userId = req.userId!;
+      const validatedData = RecordPartialPaymentDTO.parse(req.body);
+      await container.recordPartialPaymentUseCase.execute(id, schoolId, validatedData, userId);
+
+      res.status(200).json({ message: 'Partial payment recorded successfully' });
+    } catch (error: any) {
+      console.error('Error recording partial payment:', error);
+      res.status(400).json({ error: error.message || 'Failed to record partial payment' });
     }
   }
 

@@ -1,16 +1,17 @@
 import { IBillingRecordRepository } from '../../../adapters_interface/repositories';
-import { RecordManualPaymentInput } from '../../dtos';
+import { RecordPartialPaymentInput } from '../../dtos';
 
-export class RecordManualPaymentUseCase {
-  constructor(private billingRecordRepository: IBillingRecordRepository) {}
+export class RecordPartialPaymentUseCase {
+  constructor(private billingRecordRepository: IBillingRecordRepository) { }
 
-  async execute(billingRecordId: string, schoolId: string, input: RecordManualPaymentInput, paidBy: string): Promise<void> {
+  async execute(billingRecordId: string, schoolId: string, input: RecordPartialPaymentInput, paidBy: string): Promise<void> {
     const billingRecord = await this.billingRecordRepository.findById(billingRecordId, schoolId);
     if (!billingRecord) {
       throw new Error('Billing record not found');
     }
 
-    const updatedRecord = billingRecord.markAsPaid({
+    const updatedRecord = billingRecord.recordPartialPayment({
+      amount: input.amount,
       paymentMethod: input.paymentMethod,
       paymentNote: input.paymentNote,
       paidBy,
@@ -21,7 +22,7 @@ export class RecordManualPaymentUseCase {
       billingRecordId,
       updatedRecord,
       {
-        amount: updatedRecord.finalAmount,
+        amount: input.amount,
         paymentMethod: input.paymentMethod,
         paymentNote: input.paymentNote,
         paidBy,

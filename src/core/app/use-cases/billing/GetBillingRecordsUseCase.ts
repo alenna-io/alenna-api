@@ -13,7 +13,8 @@ export class GetBillingRecordsUseCase {
       billingMonth: input.billingMonth,
       billingYear: input.billingYear,
       paymentStatus: input.paymentStatus,
-      billStatus: input.billStatus,
+      taxableBillStatus: input.taxableBillStatus,
+      billStatus: input.billStatus, // For backward compatibility
       startDate: input.startDate ? new Date(input.startDate) : undefined,
       endDate: input.endDate ? new Date(input.endDate) : undefined,
     };

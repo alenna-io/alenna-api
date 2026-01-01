@@ -7,6 +7,7 @@ export class StudentScholarship {
     public readonly tuitionTypeId: string | null,
     public readonly scholarshipType: ScholarshipType | null,
     public readonly scholarshipValue: number | null,
+    public readonly taxableBillRequired: boolean,
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date
   ) {
@@ -24,6 +25,7 @@ export class StudentScholarship {
     tuitionTypeId?: string | null;
     scholarshipType?: ScholarshipType | null;
     scholarshipValue?: number | null;
+    taxableBillRequired?: boolean;
   }): StudentScholarship {
     return new StudentScholarship(
       props.id,
@@ -31,6 +33,7 @@ export class StudentScholarship {
       props.tuitionTypeId ?? null,
       props.scholarshipType ?? null,
       props.scholarshipValue ?? null,
+      props.taxableBillRequired ?? false,
       new Date(),
       new Date()
     );
@@ -43,6 +46,7 @@ export class StudentScholarship {
       props.tuitionTypeId !== undefined ? props.tuitionTypeId : this.tuitionTypeId,
       props.scholarshipType !== undefined ? props.scholarshipType : this.scholarshipType,
       props.scholarshipValue !== undefined ? props.scholarshipValue : this.scholarshipValue,
+      props.taxableBillRequired !== undefined ? props.taxableBillRequired : this.taxableBillRequired,
       this.createdAt,
       new Date()
     );

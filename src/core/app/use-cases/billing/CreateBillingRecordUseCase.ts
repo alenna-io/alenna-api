@@ -1,27 +1,19 @@
-import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository } from '../../../adapters_interface/repositories';
+import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository, IStudentRepository } from '../../../adapters_interface/repositories';
 import { BillingRecord } from '../../../domain/entities';
 import { CreateBillingRecordInput } from '../../dtos';
 import { randomUUID } from 'crypto';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 export class CreateBillingRecordUseCase {
   constructor(
     private billingRecordRepository: IBillingRecordRepository,
     private tuitionConfigRepository: ITuitionConfigRepository,
     private studentScholarshipRepository: IStudentScholarshipRepository,
-    private tuitionTypeRepository: ITuitionTypeRepository
+    private tuitionTypeRepository: ITuitionTypeRepository,
+    private studentRepository: IStudentRepository
   ) { }
 
   async execute(input: CreateBillingRecordInput, schoolId: string, createdBy: string): Promise<BillingRecord> {
-    const student = await prisma.student.findFirst({
-      where: {
-        id: input.studentId,
-        schoolId,
-        deletedAt: null,
-      },
-    });
+    const student = await this.studentRepository.findById(input.studentId, schoolId);
 
     if (!student) {
       throw new Error('Student not found');
@@ -78,6 +70,9 @@ export class CreateBillingRecordUseCase {
       scholarshipAmount = scholarship.calculateDiscount(effectiveTuitionAmount);
     }
 
+    // Set taxable bill status based on student's scholarship config
+    const taxableBillStatus = scholarship?.taxableBillRequired ? 'required' : 'not_required';
+
     const billingRecord = BillingRecord.create({
       id: randomUUID(),
       studentId: input.studentId,
@@ -87,6 +82,7 @@ export class CreateBillingRecordUseCase {
       tuitionTypeSnapshot,
       effectiveTuitionAmount,
       scholarshipAmount,
+      billStatus: taxableBillStatus,
       dueDay: tuitionConfig.dueDay,
       createdBy,
     });

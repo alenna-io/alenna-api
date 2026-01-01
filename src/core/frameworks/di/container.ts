@@ -615,7 +615,8 @@ class Container {
       this.billingRecordRepository,
       this.tuitionConfigRepository,
       this.studentScholarshipRepository,
-      this.tuitionTypeRepository
+      this.tuitionTypeRepository,
+      this.studentRepository
     );
   }
 
@@ -625,7 +626,8 @@ class Container {
       this.billingRecordRepository,
       this.tuitionConfigRepository,
       this.studentScholarshipRepository,
-      this.tuitionTypeRepository
+      this.tuitionTypeRepository,
+      this.studentRepository
     );
   }
 
@@ -637,6 +639,16 @@ class Container {
   get recordManualPaymentUseCase() {
     const { RecordManualPaymentUseCase } = require('../../app/use-cases/billing');
     return new RecordManualPaymentUseCase(this.billingRecordRepository);
+  }
+
+  get recordPartialPaymentUseCase() {
+    const { RecordPartialPaymentUseCase } = require('../../app/use-cases/billing');
+    return new RecordPartialPaymentUseCase(this.billingRecordRepository);
+  }
+
+  get updateTaxableBillStatusUseCase() {
+    const { UpdateTaxableBillStatusUseCase } = require('../../app/use-cases/billing');
+    return new UpdateTaxableBillStatusUseCase(this.billingRecordRepository);
   }
 
   get applyLateFeeUseCase() {
@@ -676,7 +688,7 @@ class Container {
 
   get createStudentScholarshipUseCase() {
     const { CreateStudentScholarshipUseCase } = require('../../app/use-cases/billing');
-    return new CreateStudentScholarshipUseCase(this.studentScholarshipRepository);
+    return new CreateStudentScholarshipUseCase(this.studentScholarshipRepository, this.studentRepository);
   }
 
   get getStudentScholarshipUseCase() {

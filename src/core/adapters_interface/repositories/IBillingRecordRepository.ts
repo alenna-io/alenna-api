@@ -49,5 +49,44 @@ export interface IBillingRecordRepository {
     unpaidCount: number;
     lateFeesApplied: number;
   }>>;
+  createPaymentTransaction(data: {
+    billingRecordId: string;
+    amount: number;
+    paymentMethod: string;
+    paymentNote?: string | null;
+    paidBy: string;
+    paidAt?: Date;
+  }): Promise<void>;
+  findPaymentTransactions(billingRecordId: string): Promise<Array<{
+    id: string;
+    amount: number;
+    paymentMethod: string;
+    paymentNote: string | null;
+    paidBy: string;
+    paidAt: Date;
+    createdAt: Date;
+  }>>;
+  findPaymentTransactionsByRecordIds(billingRecordIds: string[]): Promise<Array<{
+    id: string;
+    billingRecordId: string;
+    amount: number;
+    paymentMethod: string;
+    paymentNote: string | null;
+    paidBy: string;
+    paidAt: Date;
+    createdAt: Date;
+  }>>;
+  updateWithPaymentTransaction(
+    id: string,
+    billingRecord: BillingRecord,
+    paymentTransaction: {
+      amount: number;
+      paymentMethod: string;
+      paymentNote?: string | null;
+      paidBy: string;
+      paidAt?: Date;
+    },
+    schoolId: string
+  ): Promise<BillingRecord>;
 }
 

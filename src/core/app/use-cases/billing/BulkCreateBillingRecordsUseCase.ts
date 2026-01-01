@@ -1,17 +1,15 @@
-import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository } from '../../../adapters_interface/repositories';
+import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository, IStudentRepository } from '../../../adapters_interface/repositories';
 import { BillingRecord } from '../../../domain/entities';
 import { BulkCreateBillingRecordsInput } from '../../dtos';
 import { randomUUID } from 'crypto';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 export class BulkCreateBillingRecordsUseCase {
   constructor(
     private billingRecordRepository: IBillingRecordRepository,
     private tuitionConfigRepository: ITuitionConfigRepository,
     private studentScholarshipRepository: IStudentScholarshipRepository,
-    private tuitionTypeRepository: ITuitionTypeRepository
+    private tuitionTypeRepository: ITuitionTypeRepository,
+    private studentRepository: IStudentRepository
   ) { }
 
   async execute(input: BulkCreateBillingRecordsInput, schoolId: string, createdBy: string): Promise<BillingRecord[]> {
@@ -29,25 +27,20 @@ export class BulkCreateBillingRecordsUseCase {
 
     let students;
     if (input.studentIds && input.studentIds.length > 0) {
-      students = await prisma.student.findMany({
-        where: {
-          id: { in: input.studentIds },
-          schoolId,
-          deletedAt: null,
-        },
-      });
+      // Get students by IDs
+      students = await Promise.all(
+        input.studentIds.map(id => this.studentRepository.findById(id, schoolId))
+      );
+      students = students.filter(s => s !== null) as any[];
     } else {
-      students = await prisma.student.findMany({
-        where: {
-          schoolId,
-          deletedAt: null,
-        },
-      });
+      // Get all students for the school
+      students = await this.studentRepository.findBySchoolId(schoolId);
     }
 
     const billingRecords: BillingRecord[] = [];
 
     for (const student of students) {
+      const studentId = (student as any).id || student;
       const existingBill = await this.billingRecordRepository.findByMonthAndYear(
         student.id,
         input.billingMonth,
@@ -85,15 +78,19 @@ export class BulkCreateBillingRecordsUseCase {
         scholarshipAmount = scholarship.calculateDiscount(effectiveTuitionAmount);
       }
 
+      // Set taxable bill status based on student's scholarship config
+      const taxableBillStatus = scholarship?.taxableBillRequired ? 'required' : 'not_required';
+
       const billingRecord = BillingRecord.create({
         id: randomUUID(),
-        studentId: student.id,
+        studentId: studentId,
         schoolYearId: input.schoolYearId,
         billingMonth: input.billingMonth,
         billingYear: input.billingYear,
         tuitionTypeSnapshot,
         effectiveTuitionAmount,
         scholarshipAmount,
+        billStatus: taxableBillStatus,
         dueDay: tuitionConfig.dueDay,
         createdBy,
       });

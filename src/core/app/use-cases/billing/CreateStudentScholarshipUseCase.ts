@@ -1,22 +1,16 @@
-import { IStudentScholarshipRepository } from '../../../adapters_interface/repositories';
+import { IStudentScholarshipRepository, IStudentRepository } from '../../../adapters_interface/repositories';
 import { StudentScholarship } from '../../../domain/entities';
 import { CreateStudentScholarshipInput } from '../../dtos';
 import { randomUUID } from 'crypto';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 export class CreateStudentScholarshipUseCase {
-  constructor(private studentScholarshipRepository: IStudentScholarshipRepository) { }
+  constructor(
+    private studentScholarshipRepository: IStudentScholarshipRepository,
+    private studentRepository: IStudentRepository
+  ) { }
 
   async execute(input: CreateStudentScholarshipInput, studentId: string, schoolId: string): Promise<StudentScholarship> {
-    const student = await prisma.student.findFirst({
-      where: {
-        id: studentId,
-        schoolId,
-        deletedAt: null,
-      },
-    });
+    const student = await this.studentRepository.findById(studentId, schoolId);
 
     if (!student) {
       throw new Error('Student not found');

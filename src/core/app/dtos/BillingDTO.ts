@@ -31,11 +31,13 @@ export const ExtraChargeDTO = z.object({
 });
 
 export const UpdateBillingRecordDTO = z.object({
-  billStatus: z.enum(['required', 'sent', 'not_required', 'cancelled']).optional(),
+  taxableBillStatus: z.enum(['not_required', 'required', 'sent']).optional(),
   effectiveTuitionAmount: z.number().nonnegative('Effective tuition amount cannot be negative').optional(),
   discountAdjustments: z.array(DiscountAdjustmentDTO).optional(),
   extraCharges: z.array(ExtraChargeDTO).optional(),
   paymentNote: z.string().optional(),
+  // Keep billStatus for backward compatibility during migration
+  billStatus: z.enum(['required', 'sent', 'not_required', 'cancelled']).optional(),
 });
 
 export type UpdateBillingRecordInput = z.infer<typeof UpdateBillingRecordDTO>;
@@ -46,6 +48,14 @@ export const RecordManualPaymentDTO = z.object({
 });
 
 export type RecordManualPaymentInput = z.infer<typeof RecordManualPaymentDTO>;
+
+export const RecordPartialPaymentDTO = z.object({
+  amount: z.number().positive('Amount must be greater than 0'),
+  paymentMethod: z.enum(['manual', 'online', 'other']),
+  paymentNote: z.string().optional(),
+});
+
+export type RecordPartialPaymentInput = z.infer<typeof RecordPartialPaymentDTO>;
 
 export const ApplyLateFeeDTO = z.object({
   lateFeeAmount: z.number().nonnegative('Late fee amount cannot be negative').optional(),
@@ -74,6 +84,7 @@ export const CreateStudentScholarshipDTO = z.object({
   tuitionTypeId: z.string().optional().nullable(),
   scholarshipType: z.enum(['percentage', 'fixed']).optional().nullable(),
   scholarshipValue: z.number().nonnegative('Scholarship value cannot be negative').optional().nullable(),
+  taxableBillRequired: z.boolean().optional().default(false),
 });
 
 export type CreateStudentScholarshipInput = z.infer<typeof CreateStudentScholarshipDTO>;
@@ -87,10 +98,12 @@ export const GetBillingRecordsDTO = z.object({
   schoolYearId: z.string().optional(),
   billingMonth: z.number().int().min(1).max(12).optional(),
   billingYear: z.number().int().min(2020).max(2100).optional(),
-  billStatus: z.enum(['required', 'sent', 'not_required', 'cancelled']).optional(),
-  paymentStatus: z.enum(['unpaid', 'paid']).optional(),
+  taxableBillStatus: z.enum(['not_required', 'required', 'sent']).optional(),
+  paymentStatus: z.enum(['pending', 'delayed', 'partial_payment', 'paid']).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
+  // Keep for backward compatibility
+  billStatus: z.enum(['required', 'sent', 'not_required', 'cancelled']).optional(),
 });
 
 export type GetBillingRecordsInput = z.infer<typeof GetBillingRecordsDTO>;

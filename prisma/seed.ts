@@ -1353,10 +1353,10 @@ async function main() {
 
   // Create billing records for all students for current month
   console.log('\n📋 Creating billing records for all students...');
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1; // 1-12
-  const currentYear = now.getFullYear();
-  const dueDate = new Date(currentYear, currentMonth - 1, tuitionConfig.dueDay);
+  // Set to December 2025 for testing
+  const currentMonth = 12; // December
+  const currentYear = 2025;
+  const dueDate = new Date(2025, 11, 5); // Dec 5, 2025
 
   const allStudents = await prisma.student.findMany({
     where: {
@@ -1366,6 +1366,7 @@ async function main() {
   });
 
   let billingRecordsCreated = 0;
+  let studentIndex = 0;
   for (const student of allStudents) {
     // Check if billing record already exists for this month/year
     const existingBill = await prisma.billingRecord.findFirst({
@@ -1381,11 +1382,11 @@ async function main() {
       const scholarshipAmount = 0; // No scholarship by default
       const discountAdjustments: any[] = [];
       const extraCharges: any[] = [];
-      const lateFeeAmount = 0; // No late fee initially
+      let lateFeeAmount = 0; // No late fee initially
       const discountAmount = 0;
       const extraAmount = 0;
       const amountAfterDiscounts = effectiveTuitionAmount - scholarshipAmount - discountAmount;
-      const finalAmount = amountAfterDiscounts + extraAmount + lateFeeAmount;
+      let finalAmount = amountAfterDiscounts + extraAmount + lateFeeAmount;
 
       const tuitionTypeSnapshot = {
         tuitionTypeId: tuitionType.id,
@@ -1400,7 +1401,89 @@ async function main() {
         updatedBy: adminUser.id,
       };
 
-      await prisma.billingRecord.create({
+      // Create test data with different statuses for testing
+      // First student: paid
+      // Second student: partial payment
+      // Third student: delayed (past due date)
+      // Fourth student: required taxable bill
+      // Rest: pending with not_required taxable bill
+      let paymentStatus: 'pending' | 'delayed' | 'partial_payment' | 'paid' = 'pending';
+      let paidAmount = 0;
+      let billStatus: 'not_required' | 'required' | 'sent' = 'not_required';
+      let paidAt: Date | null = null;
+
+      // Calculate late fee if overdue
+      const isOverdue = new Date() > dueDate
+      let calculatedLateFee = 0
+      if (isOverdue && paymentStatus !== 'paid' && billStatus !== 'not_required') {
+        const amountAfterDiscounts = effectiveTuitionAmount - scholarshipAmount - discountAmount
+        if (tuitionType.lateFeeType === 'fixed') {
+          calculatedLateFee = Number(tuitionType.lateFeeValue)
+        } else {
+          calculatedLateFee = amountAfterDiscounts * (Number(tuitionType.lateFeeValue) / 100)
+        }
+      }
+
+      if (studentIndex === 0) {
+        // First student (Demo Student): fully paid on Dec 31, 2025
+        paymentStatus = 'paid';
+        paidAmount = finalAmount;
+        paidAt = new Date(2025, 11, 31); // Dec 31, 2025
+        billStatus = 'not_required';
+        lateFeeAmount = 0; // No late fee for paid bills
+      } else if (studentIndex === 1) {
+        // Second student: partial payment (50% paid)
+        // Note: Partial payments can remain partial_payment even if overdue
+        paymentStatus = 'partial_payment';
+        paidAmount = Math.floor(finalAmount * 0.5 * 100) / 100; // 50% paid, rounded to 2 decimals
+        billStatus = 'not_required';
+        // If overdue, apply late fee but keep as partial_payment
+        if (isOverdue) {
+          lateFeeAmount = calculatedLateFee;
+          finalAmount = amountAfterDiscounts + extraAmount + calculatedLateFee;
+        } else {
+          lateFeeAmount = 0; // No late fee yet
+        }
+      } else if (studentIndex === 2) {
+        // Third student: delayed (past due date) with late fee
+        paymentStatus = 'delayed';
+        billStatus = 'not_required';
+        lateFeeAmount = calculatedLateFee;
+        finalAmount = amountAfterDiscounts + extraAmount + calculatedLateFee;
+      } else if (studentIndex === 3) {
+        // Fourth student: required taxable bill
+        billStatus = 'required';
+        // If overdue, mark as delayed; otherwise pending
+        if (isOverdue) {
+          paymentStatus = 'delayed';
+          lateFeeAmount = calculatedLateFee;
+          finalAmount = amountAfterDiscounts + extraAmount + calculatedLateFee;
+        } else {
+          paymentStatus = 'pending';
+          lateFeeAmount = 0;
+        }
+      } else if (studentIndex === 4) {
+        // Fifth student: sent taxable bill, paid with late fee
+        billStatus = 'sent';
+        paymentStatus = 'paid';
+        lateFeeAmount = calculatedLateFee;
+        finalAmount = amountAfterDiscounts + extraAmount + calculatedLateFee;
+        paidAmount = finalAmount;
+        paidAt = new Date(2025, 11, 10); // Paid on Dec 10, 2025 (after due date)
+      } else {
+        // Other students: if overdue, mark as delayed; otherwise pending
+        billStatus = 'not_required';
+        if (isOverdue) {
+          paymentStatus = 'delayed';
+          lateFeeAmount = calculatedLateFee;
+          finalAmount = amountAfterDiscounts + extraAmount + calculatedLateFee;
+        } else {
+          paymentStatus = 'pending';
+          lateFeeAmount = 0;
+        }
+      }
+
+      const billingRecord = await prisma.billingRecord.create({
         data: {
           id: randomUUID(),
           studentId: student.id,
@@ -1414,13 +1497,45 @@ async function main() {
           extraCharges,
           lateFeeAmount,
           finalAmount,
-          billStatus: 'required',
-          paymentStatus: 'unpaid',
+          billStatus,
+          paymentStatus,
+          paidAmount,
+          paidAt,
           dueDate,
           auditMetadata,
         },
       });
+
+      // Create payment transactions for paid and partial payment records
+      if (paymentStatus === 'paid' && paidAmount > 0 && paidAt) {
+        // For fully paid records, create a single transaction for the full amount
+        await prisma.billingPaymentTransaction.create({
+          data: {
+            billingRecordId: billingRecord.id,
+            amount: paidAmount,
+            paymentMethod: 'manual',
+            paymentNote: 'Initial payment',
+            paidBy: adminUser.id,
+            paidAt: paidAt,
+          },
+        });
+      } else if (paymentStatus === 'partial_payment' && paidAmount > 0) {
+        // For partial payments, create a transaction for the paid amount
+        // Simulate a partial payment made on the due date
+        await prisma.billingPaymentTransaction.create({
+          data: {
+            billingRecordId: billingRecord.id,
+            amount: paidAmount,
+            paymentMethod: 'manual',
+            paymentNote: 'Partial payment',
+            paidBy: adminUser.id,
+            paidAt: dueDate,
+          },
+        });
+      }
+
       billingRecordsCreated++;
+      studentIndex++;
     }
   }
   console.log(`✅ Created ${billingRecordsCreated} billing records for ${currentMonth}/${currentYear}`);

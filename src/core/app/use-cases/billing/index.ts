@@ -2,6 +2,8 @@ export * from './CreateBillingRecordUseCase';
 export * from './BulkCreateBillingRecordsUseCase';
 export * from './UpdateBillingRecordUseCase';
 export * from './RecordManualPaymentUseCase';
+export * from './RecordPartialPaymentUseCase';
+export * from './UpdateTaxableBillStatusUseCase';
 export * from './ApplyLateFeeUseCase';
 export * from './BulkApplyLateFeeUseCase';
 export * from './GetBillingRecordsUseCase';

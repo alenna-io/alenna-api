@@ -656,15 +656,16 @@ model TuitionConfig {
 }
 
 model StudentScholarship {
-  id              String      @id @default(cuid())
-  studentId       String      @unique @map("student_id")
-  tuitionTypeId   String?     @map("tuition_type_id")
-  scholarshipType String?     @map("scholarship_type")
-  scholarshipValue Decimal?   @map("scholarship_value") @db.Decimal(10, 2)
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  student         Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  tuitionType     TuitionType? @relation(fields: [tuitionTypeId], references: [id])
+  id                  String      @id @default(cuid())
+  studentId           String      @unique @map("student_id")
+  tuitionTypeId       String?     @map("tuition_type_id")
+  scholarshipType     String?     @map("scholarship_type")
+  scholarshipValue    Decimal?   @map("scholarship_value") @db.Decimal(10, 2)
+  taxableBillRequired Boolean    @default(false) @map("taxable_bill_required")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+  student             Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tuitionType         TuitionType? @relation(fields: [tuitionTypeId], references: [id])
 
   @@index([studentId])
   @@index([tuitionTypeId])
@@ -685,7 +686,8 @@ model BillingRecord {
   lateFeeAmount           Decimal   @default(0) @map("late_fee_amount") @db.Decimal(10, 2)
   finalAmount             Decimal   @map("final_amount") @db.Decimal(10, 2)
   billStatus              String    @map("bill_status")
-  paymentStatus           String    @default("unpaid") @map("payment_status")
+  paymentStatus           String    @default("pending") @map("payment_status")
+  paidAmount              Decimal   @default(0) @map("paid_amount") @db.Decimal(10, 2)
   paidAt                  DateTime? @map("paid_at")
   lockedAt                DateTime? @map("locked_at")
   auditMetadata           Json      @map("audit_metadata")
@@ -700,6 +702,7 @@ model BillingRecord {
   updatedAt               DateTime  @updatedAt @map("updated_at")
   student                 Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   schoolYear              SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  paymentTransactions     BillingPaymentTransaction[]
 
   @@unique([studentId, billingMonth, billingYear])
   @@index([studentId])
@@ -709,4 +712,21 @@ model BillingRecord {
   @@index([billingMonth, billingYear])
   @@index([paymentTransactionId])
   @@map("billing_records")
+}
+
+model BillingPaymentTransaction {
+  id              String        @id @default(cuid())
+  billingRecordId String        @map("billing_record_id")
+  amount          Decimal       @db.Decimal(10, 2)
+  paymentMethod   String        @map("payment_method")
+  paymentNote     String?       @map("payment_note")
+  paidBy          String        @map("paid_by")
+  paidAt          DateTime      @default(now()) @map("paid_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  billingRecord   BillingRecord @relation(fields: [billingRecordId], references: [id], onDelete: Cascade)
+
+  @@index([billingRecordId])
+  @@index([paidAt])
+  @@map("billing_payment_transactions")
 }

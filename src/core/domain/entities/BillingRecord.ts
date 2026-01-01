@@ -1,6 +1,9 @@
-export type BillStatus = 'required' | 'sent' | 'not_required' | 'cancelled';
-export type PaymentStatus = 'unpaid' | 'paid';
+export type TaxableBillStatus = 'not_required' | 'required' | 'sent';
+export type PaymentStatus = 'pending' | 'delayed' | 'partial_payment' | 'paid';
 export type PaymentMethod = 'manual' | 'online' | 'other';
+
+// Keep BillStatus as alias for backward compatibility during migration
+export type BillStatus = TaxableBillStatus;
 
 export interface TuitionTypeSnapshot {
   tuitionTypeId: string;
@@ -45,6 +48,7 @@ export class BillingRecord {
     public readonly finalAmount: number,
     public readonly billStatus: BillStatus,
     public readonly paymentStatus: PaymentStatus,
+    public readonly paidAmount: number,
     public readonly paidAt: Date | null,
     public readonly lockedAt: Date | null,
     public readonly auditMetadata: AuditMetadata,
@@ -130,7 +134,8 @@ export class BillingRecord {
       lateFeeAmount,
       finalAmount,
       props.billStatus ?? 'not_required',
-      'unpaid',
+      'pending',
+      0,
       null,
       null,
       {
@@ -205,6 +210,7 @@ export class BillingRecord {
       this.finalAmount,
       this.billStatus,
       'paid',
+      this.finalAmount,
       now,
       now,
       newAuditMetadata,
@@ -220,9 +226,10 @@ export class BillingRecord {
     );
   }
 
-  updateBillStatus(newStatus: BillStatus, updatedBy: string): BillingRecord {
-    if (this.lockedAt !== null) {
-      throw new Error('Cannot change bill status of a locked record');
+  updateTaxableBillStatus(newStatus: TaxableBillStatus, updatedBy: string): BillingRecord {
+    // Allow updating taxable bill status for paid bills even if locked
+    if (this.lockedAt !== null && this.paymentStatus !== 'paid') {
+      throw new Error('Cannot change taxable bill status of a locked record');
     }
 
     const newAuditMetadata = {
@@ -246,6 +253,130 @@ export class BillingRecord {
       this.finalAmount,
       newStatus,
       this.paymentStatus,
+      this.paidAmount,
+      this.paidAt,
+      this.lockedAt,
+      newAuditMetadata,
+      this.paymentNote,
+      this.paymentMethod,
+      this.paymentGateway,
+      this.paymentTransactionId,
+      this.paymentGatewayStatus,
+      this.paymentWebhookReceivedAt,
+      this.dueDate,
+      this.createdAt,
+      new Date()
+    );
+  }
+
+  // Keep for backward compatibility
+  updateBillStatus(newStatus: BillStatus, updatedBy: string): BillingRecord {
+    return this.updateTaxableBillStatus(newStatus, updatedBy);
+  }
+
+  recordPartialPayment(props: {
+    amount: number;
+    paymentMethod: PaymentMethod;
+    paymentNote?: string;
+    paidBy: string;
+  }): BillingRecord {
+    if (this.paymentStatus === 'paid') {
+      throw new Error('Bill is already fully paid');
+    }
+    if (this.lockedAt !== null) {
+      throw new Error('Cannot record partial payment on a locked bill');
+    }
+    if (props.amount <= 0) {
+      throw new Error('Partial payment amount must be greater than 0');
+    }
+    if (props.amount >= this.finalAmount) {
+      throw new Error('Partial payment amount must be less than final amount. Use markAsPaid for full payment.');
+    }
+
+    const newPaidAmount = this.paidAmount + props.amount;
+    if (newPaidAmount >= this.finalAmount) {
+      // If this payment makes it fully paid, mark as paid
+      return this.markAsPaid({
+        paymentMethod: props.paymentMethod,
+        paymentNote: props.paymentNote,
+        paidBy: props.paidBy,
+      });
+    }
+
+    const newAuditMetadata = {
+      ...this.auditMetadata,
+      paidBy: props.paidBy,
+      updatedBy: props.paidBy,
+    };
+
+    return new BillingRecord(
+      this.id,
+      this.studentId,
+      this.schoolYearId,
+      this.billingMonth,
+      this.billingYear,
+      this.tuitionTypeSnapshot,
+      this.effectiveTuitionAmount,
+      this.scholarshipAmount,
+      this.discountAdjustments,
+      this.extraCharges,
+      this.lateFeeAmount,
+      this.finalAmount,
+      this.billStatus,
+      'partial_payment',
+      newPaidAmount,
+      this.paidAt,
+      this.lockedAt,
+      newAuditMetadata,
+      props.paymentNote ?? this.paymentNote,
+      props.paymentMethod,
+      this.paymentGateway,
+      this.paymentTransactionId,
+      this.paymentGatewayStatus,
+      this.paymentWebhookReceivedAt,
+      this.dueDate,
+      this.createdAt,
+      new Date()
+    );
+  }
+
+  markAsDelayed(): BillingRecord {
+    if (this.paymentStatus === 'paid') {
+      return this; // Already paid, no need to mark as delayed
+    }
+    if (this.paymentStatus === 'delayed') {
+      return this; // Already delayed
+    }
+    if (this.lockedAt !== null) {
+      return this; // Locked records shouldn't be auto-updated
+    }
+
+    const now = new Date();
+    if (now <= this.dueDate) {
+      return this; // Not past due date yet
+    }
+
+    const newAuditMetadata = {
+      ...this.auditMetadata,
+      updatedBy: this.auditMetadata.updatedBy || 'system',
+    };
+
+    return new BillingRecord(
+      this.id,
+      this.studentId,
+      this.schoolYearId,
+      this.billingMonth,
+      this.billingYear,
+      this.tuitionTypeSnapshot,
+      this.effectiveTuitionAmount,
+      this.scholarshipAmount,
+      this.discountAdjustments,
+      this.extraCharges,
+      this.lateFeeAmount,
+      this.finalAmount,
+      this.billStatus,
+      'delayed',
+      this.paidAmount,
       this.paidAt,
       this.lockedAt,
       newAuditMetadata,
@@ -295,6 +426,7 @@ export class BillingRecord {
       newFinalAmount,
       this.billStatus,
       this.paymentStatus,
+      this.paidAmount,
       this.paidAt,
       this.lockedAt,
       newAuditMetadata,
@@ -352,6 +484,7 @@ export class BillingRecord {
       newFinalAmount,
       newBillStatus,
       this.paymentStatus,
+      this.paidAmount,
       this.paidAt,
       this.lockedAt,
       newAuditMetadata,
@@ -368,7 +501,7 @@ export class BillingRecord {
   }
 
   get isOverdue(): boolean {
-    if (this.paymentStatus === 'paid' || this.billStatus === 'cancelled') {
+    if (this.paymentStatus === 'paid') {
       return false;
     }
     const now = new Date();

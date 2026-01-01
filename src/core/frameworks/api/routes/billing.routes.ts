@@ -40,6 +40,7 @@ router.get('/:id', requirePermission('billing.read'), billingController.getBilli
 router.post('/', requirePermission('billing.create'), billingController.createBillingRecord.bind(billingController));
 router.put('/:id', requirePermission('billing.update'), billingController.updateBillingRecord.bind(billingController));
 router.post('/:id/record-payment', requirePermission('billing.update'), billingController.recordManualPayment.bind(billingController));
+router.post('/:id/record-partial-payment', requirePermission('billing.update'), billingController.recordPartialPayment.bind(billingController));
 router.post('/:id/apply-late-fee', requirePermission('billing.update'), billingController.applyLateFee.bind(billingController));
 
 export default router;

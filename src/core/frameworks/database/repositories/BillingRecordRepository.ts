@@ -76,7 +76,9 @@ export class BillingRecordRepository implements IBillingRecordRepository {
         schoolId,
         deletedAt: null,
       },
-      paymentStatus: 'unpaid',
+      paymentStatus: {
+        in: ['pending', 'delayed', 'partial_payment'],
+      },
     };
 
     if (startDate || endDate) {
@@ -113,17 +115,18 @@ export class BillingRecordRepository implements IBillingRecordRepository {
           schoolId,
           deletedAt: null,
         },
-        paymentStatus: 'unpaid',
+        paymentStatus: {
+          in: ['pending', 'delayed', 'partial_payment'],
+        },
         lateFeeAmount: 0,
-        OR: [
-          {
-            billingYear: dueDate.getFullYear(),
-            billingMonth: { lt: dueDate.getMonth() + 1 },
-          },
-          {
-            billingYear: { lt: dueDate.getFullYear() },
-          },
-        ],
+        billStatus: {
+          not: 'not_required',
+        },
+        dueDate: {
+          lt: dueDate,
+        },
+        paidAt: null,
+        lockedAt: null,
       },
     });
 
@@ -137,6 +140,9 @@ export class BillingRecordRepository implements IBillingRecordRepository {
     billingMonth?: number;
     billingYear?: number;
     status?: string;
+    paymentStatus?: string;
+    billStatus?: string;
+    taxableBillStatus?: string;
     startDate?: Date;
     endDate?: Date;
   }): Promise<BillingRecord[]> {
@@ -163,13 +169,34 @@ export class BillingRecordRepository implements IBillingRecordRepository {
       where.billingYear = filters.billingYear;
     }
 
-    if (filters.status) {
-      // Support both old 'status' filter (for backward compatibility) and new status fields
-      // If status is 'paid', check paymentStatus; otherwise check billStatus
+    // Handle paymentStatus filter
+    if (filters.paymentStatus) {
+      where.paymentStatus = filters.paymentStatus;
+    }
+
+    // Handle taxableBillStatus (preferred) or billStatus (backward compatibility)
+    if (filters.taxableBillStatus) {
+      where.billStatus = filters.taxableBillStatus;
+    } else if (filters.billStatus) {
+      // Map old status values to new ones
+      if (filters.billStatus === 'cancelled') {
+        where.billStatus = 'not_required';
+      } else {
+        where.billStatus = filters.billStatus;
+      }
+    }
+
+    // Support old 'status' filter for backward compatibility
+    if (filters.status && !filters.paymentStatus && !filters.billStatus && !filters.taxableBillStatus) {
+      // If status is 'paid' or 'unpaid', check paymentStatus; otherwise check billStatus
       if (filters.status === 'paid') {
         where.paymentStatus = 'paid';
+      } else if (filters.status === 'unpaid') {
+        where.paymentStatus = {
+          in: ['pending', 'delayed', 'partial_payment'],
+        };
       } else {
-        where.billStatus = filters.status;
+        where.billStatus = filters.status === 'cancelled' ? 'not_required' : filters.status;
       }
     }
 
@@ -240,6 +267,7 @@ export class BillingRecordRepository implements IBillingRecordRepository {
       });
       return BillingRecordMapper.toDomain(updated);
     }
+
 
     // Fallback to field-level updates (for Partial<BillingRecord>)
     const updateData: any = {};
@@ -322,67 +350,51 @@ export class BillingRecordRepository implements IBillingRecordRepository {
       }
     }
 
-    const [paidRecords, expectedRecords, unpaidStudents, lateFeeRecords] = await Promise.all([
-      prisma.billingRecord.aggregate({
-        where: {
-          ...where,
-          paymentStatus: 'paid',
-        },
-        _sum: {
-          finalAmount: true,
-        },
-      }),
-      prisma.billingRecord.aggregate({
-        where: {
-          ...where,
-          billStatus: {
-            in: ['required', 'sent', 'not_required'],
-          },
-        },
-        _sum: {
-          finalAmount: true,
-        },
-      }),
-      prisma.billingRecord.findMany({
-        where: {
-          ...where,
-          paymentStatus: 'unpaid',
-        },
-        select: {
-          studentId: true,
-        },
-        distinct: ['studentId'],
-      }),
-      prisma.billingRecord.aggregate({
-        where: {
-          ...where,
-          lateFeeAmount: {
-            gt: 0,
-          },
-        },
-        _sum: {
-          lateFeeAmount: true,
-        },
-      }),
-    ]);
-
-    const paidStudents = await prisma.billingRecord.findMany({
-      where: {
-        ...where,
-        paymentStatus: 'paid',
-      },
+    // Get all billing records to calculate metrics accurately
+    const allRecords = await prisma.billingRecord.findMany({
+      where,
       select: {
+        finalAmount: true,
+        paidAmount: true,
+        paymentStatus: true,
+        billStatus: true,
+        lateFeeAmount: true,
         studentId: true,
       },
-      distinct: ['studentId'],
     });
 
-    const totalIncome = Number(paidRecords._sum.finalAmount || 0);
-    const expectedIncome = Number(expectedRecords._sum.finalAmount || 0);
+    // Calculate total income: sum of paidAmount for all records (includes partial payments)
+    const totalIncome = allRecords.reduce((sum, record) => {
+      return sum + Number(record.paidAmount || 0);
+    }, 0);
+
+    // Calculate expected income: sum of finalAmount for all records
+    const expectedIncome = allRecords.reduce((sum, record) => {
+      return sum + Number(record.finalAmount || 0);
+    }, 0);
+
+    // Calculate late fees: sum of all lateFeeAmount
+    const lateFeesApplied = allRecords.reduce((sum, record) => {
+      return sum + Number(record.lateFeeAmount || 0);
+    }, 0);
+
+    // Count paid students (fully paid only)
+    const paidStudentIds = new Set(
+      allRecords
+        .filter(record => record.paymentStatus === 'paid')
+        .map(record => record.studentId)
+    );
+    const totalStudentsPaid = paidStudentIds.size;
+
+    // Count unpaid students (pending, delayed, or partial payment)
+    const unpaidStudentIds = new Set(
+      allRecords
+        .filter(record => ['pending', 'delayed', 'partial_payment'].includes(record.paymentStatus))
+        .map(record => record.studentId)
+    );
+    const totalStudentsNotPaid = unpaidStudentIds.size;
+
     const missingIncome = expectedIncome - totalIncome;
-    const totalStudentsPaid = paidStudents.length;
-    const totalStudentsNotPaid = unpaidStudents.length;
-    const lateFeesApplied = Number(lateFeeRecords._sum.lateFeeAmount || 0);
 
     return {
       totalIncome,
@@ -485,7 +497,7 @@ export class BillingRecordRepository implements IBillingRecordRepository {
       if (record.paymentStatus === 'paid') {
         data.actualIncome += amount;
         data.paidCount++;
-      } else if (record.paymentStatus === 'unpaid') {
+      } else if (['pending', 'delayed', 'partial_payment'].includes(record.paymentStatus)) {
         data.unpaidCount++;
       }
 
@@ -503,6 +515,131 @@ export class BillingRecordRepository implements IBillingRecordRepository {
     return result.sort((a, b) => {
       if (a.year !== b.year) return b.year - a.year;
       return b.month - a.month;
+    });
+  }
+
+  async createPaymentTransaction(data: {
+    billingRecordId: string;
+    amount: number;
+    paymentMethod: string;
+    paymentNote?: string | null;
+    paidBy: string;
+    paidAt?: Date;
+  }): Promise<void> {
+    await prisma.billingPaymentTransaction.create({
+      data: {
+        billingRecordId: data.billingRecordId,
+        amount: data.amount,
+        paymentMethod: data.paymentMethod,
+        paymentNote: data.paymentNote || null,
+        paidBy: data.paidBy,
+        paidAt: data.paidAt || new Date(),
+      },
+    });
+  }
+
+  async findPaymentTransactions(billingRecordId: string): Promise<Array<{
+    id: string;
+    amount: number;
+    paymentMethod: string;
+    paymentNote: string | null;
+    paidBy: string;
+    paidAt: Date;
+    createdAt: Date;
+  }>> {
+    const transactions = await prisma.billingPaymentTransaction.findMany({
+      where: {
+        billingRecordId,
+      },
+      orderBy: {
+        paidAt: 'desc',
+      },
+    });
+
+    return transactions.map(tx => ({
+      id: tx.id,
+      amount: Number(tx.amount),
+      paymentMethod: tx.paymentMethod,
+      paymentNote: tx.paymentNote,
+      paidBy: tx.paidBy,
+      paidAt: tx.paidAt,
+      createdAt: tx.createdAt,
+    }));
+  }
+
+  async findPaymentTransactionsByRecordIds(billingRecordIds: string[]): Promise<Array<{
+    id: string;
+    billingRecordId: string;
+    amount: number;
+    paymentMethod: string;
+    paymentNote: string | null;
+    paidBy: string;
+    paidAt: Date;
+    createdAt: Date;
+  }>> {
+    if (billingRecordIds.length === 0) {
+      return [];
+    }
+
+    const transactions = await prisma.billingPaymentTransaction.findMany({
+      where: {
+        billingRecordId: { in: billingRecordIds },
+      },
+      orderBy: {
+        paidAt: 'desc',
+      },
+    });
+
+    return transactions.map(tx => ({
+      id: tx.id,
+      billingRecordId: tx.billingRecordId,
+      amount: Number(tx.amount),
+      paymentMethod: tx.paymentMethod,
+      paymentNote: tx.paymentNote,
+      paidBy: tx.paidBy,
+      paidAt: tx.paidAt,
+      createdAt: tx.createdAt,
+    }));
+  }
+
+  async updateWithPaymentTransaction(
+    id: string,
+    billingRecord: BillingRecord,
+    paymentTransaction: {
+      amount: number;
+      paymentMethod: string;
+      paymentNote?: string | null;
+      paidBy: string;
+      paidAt?: Date;
+    },
+    schoolId: string
+  ): Promise<BillingRecord> {
+    return await prisma.$transaction(async (tx) => {
+      // Update the billing record
+      const prismaData = BillingRecordMapper.toPrisma(billingRecord);
+      const { id: _, ...updateData } = prismaData;
+      await tx.billingRecord.update({
+        where: { id },
+        data: updateData,
+      });
+
+      // Create payment transaction
+      await tx.billingPaymentTransaction.create({
+        data: {
+          billingRecordId: id,
+          amount: paymentTransaction.amount,
+          paymentMethod: paymentTransaction.paymentMethod,
+          paymentNote: paymentTransaction.paymentNote || null,
+          paidBy: paymentTransaction.paidBy,
+          paidAt: paymentTransaction.paidAt || new Date(),
+        },
+      });
+
+      const updated = await tx.billingRecord.findUnique({ where: { id } });
+      if (!updated) {
+        throw new Error('Billing record not found after update');
+      }
+      return BillingRecordMapper.toDomain(updated);
     });
   }
 }
