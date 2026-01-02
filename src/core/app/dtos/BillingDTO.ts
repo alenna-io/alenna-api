@@ -118,10 +118,10 @@ export const BillingFiltersDTO = z.object({
 export type BillingFiltersInput = z.infer<typeof BillingFiltersDTO>;
 
 export const GetBillingRecordsDTO = BillingFiltersDTO.extend({
-  offset: z.coerce.number().int().min(0).default(0),
-  limit: z.coerce.number().int().min(1).max(100).default(10),
+  offset: z.coerce.number().int().min(0).optional().default(0),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(10),
   sortField: z.string().optional(),
-  sortDirection: z.enum(['asc', 'desc']).default('asc'),
+  sortDirection: z.enum(['asc', 'desc']).optional().default('asc'),
 });
 
 export type GetBillingRecordsInput = z.infer<typeof GetBillingRecordsDTO>;

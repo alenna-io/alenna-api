@@ -34,16 +34,19 @@ export class BulkUpdateBillingRecordsUseCase {
       schoolYearId,
       billingMonth,
       billingYear,
+      offset: 0,
+      limit: 10000,
+      sortDirection: 'asc',
     });
 
-    if (existingRecords.length === 0) {
+    if (existingRecords.records.length === 0) {
       return { updated: 0, skipped: 0 };
     }
 
     let updated = 0;
     let skipped = 0;
 
-    for (const record of existingRecords) {
+    for (const record of existingRecords.records) {
       try {
         // Skip locked records or paid records (we don't want to modify payments)
         if (record.lockedAt !== null || record.paymentStatus === 'paid') {

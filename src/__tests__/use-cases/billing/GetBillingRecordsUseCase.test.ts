@@ -68,6 +68,7 @@ describe('GetBillingRecordsUseCase', () => {
           billingYear: 2025,
           offset: 0,
           limit: 10,
+          sortDirection: 'asc',
         },
         TEST_CONSTANTS.SCHOOL_ID
       );
@@ -115,6 +116,7 @@ describe('GetBillingRecordsUseCase', () => {
           endDate: '2025-01-31T23:59:59Z',
           offset: 0,
           limit: 10,
+          sortDirection: 'asc',
         },
         TEST_CONSTANTS.SCHOOL_ID
       );
@@ -154,7 +156,11 @@ describe('GetBillingRecordsUseCase', () => {
       const currentYear = now.getFullYear();
 
       // Act
-      const result = await useCase.execute({}, TEST_CONSTANTS.SCHOOL_ID);
+      const result = await useCase.execute({
+        offset: 0,
+        limit: 10,
+        sortDirection: 'asc',
+      }, TEST_CONSTANTS.SCHOOL_ID);
 
       // Assert
       expect(result.records).toEqual(mockRecords);
@@ -190,6 +196,9 @@ describe('GetBillingRecordsUseCase', () => {
         {
           billingMonth: 1,
           billingYear: 2025,
+          offset: 0,
+          limit: 10,
+          sortDirection: 'asc',
         },
         TEST_CONSTANTS.SCHOOL_ID
       );
@@ -224,6 +233,7 @@ describe('GetBillingRecordsUseCase', () => {
           billingYear: 2025,
           offset: 10,
           limit: 5,
+          sortDirection: 'asc',
         },
         TEST_CONSTANTS.SCHOOL_ID
       );
@@ -249,12 +259,14 @@ describe('GetBillingRecordsUseCase', () => {
       });
 
       // Act
-      const result = await useCase.execute(
+      await useCase.execute(
         {
           billingMonth: 1,
           billingYear: 2025,
           sortField: 'studentName',
           sortDirection: 'desc',
+          offset: 0,
+          limit: 10,
         },
         TEST_CONSTANTS.SCHOOL_ID
       );
@@ -280,11 +292,14 @@ describe('GetBillingRecordsUseCase', () => {
       });
 
       // Act
-      const result = await useCase.execute(
+      await useCase.execute(
         {
           billingMonth: 1,
           billingYear: 2025,
           paymentStatus: 'paid',
+          offset: 0,
+          limit: 10,
+          sortDirection: 'asc',
         },
         TEST_CONSTANTS.SCHOOL_ID
       );
@@ -307,11 +322,14 @@ describe('GetBillingRecordsUseCase', () => {
       });
 
       // Act
-      const result = await useCase.execute(
+      await useCase.execute(
         {
           billingMonth: 1,
           billingYear: 2025,
           studentId: 'student-1',
+          offset: 0,
+          limit: 10,
+          sortDirection: 'asc',
         },
         TEST_CONSTANTS.SCHOOL_ID
       );
@@ -334,7 +352,7 @@ describe('GetBillingRecordsUseCase', () => {
       });
 
       // Act
-      const result = await useCase.execute(
+      await useCase.execute(
         {
           billingMonth: 2,
           billingYear: 2025,
@@ -380,6 +398,9 @@ describe('GetBillingRecordsUseCase', () => {
         {
           billingMonth: 1,
           billingYear: 2025,
+          offset: 0,
+          limit: 10,
+          sortDirection: 'asc',
         },
         TEST_CONSTANTS.SCHOOL_ID
       );
