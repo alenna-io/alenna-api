@@ -1,7 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { SchoolController } from '../controllers';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
-import { attachUserContext, requirePermission } from '../middleware';
+import { attachUserContext, requirePermission, cacheMiddleware } from '../middleware';
 
 const router: ExpressRouter = Router();
 const schoolController = new SchoolController();
@@ -26,10 +26,10 @@ router.get('/me', requirePermission('schoolInfo.read'), schoolController.getMySc
 router.put('/me', requirePermission('schoolInfo.update'), schoolController.updateSchool.bind(schoolController));
 
 // Get teachers for current user's school
-router.get('/me/teachers', requirePermission('teachers.read'), schoolController.getMyTeachers.bind(schoolController));
+router.get('/me/teachers', cacheMiddleware({ maxAge: 1800, staleWhileRevalidate: 3600 }), requirePermission('teachers.read'), schoolController.getMyTeachers.bind(schoolController));
 
 // Get teachers count for current user's school
-router.get('/me/teachers/count', requirePermission('teachers.read'), schoolController.getMyTeachersCount.bind(schoolController));
+router.get('/me/teachers/count', cacheMiddleware({ maxAge: 1800, staleWhileRevalidate: 3600 }), requirePermission('teachers.read'), schoolController.getMyTeachersCount.bind(schoolController));
 
 // Superadmin-only routes for managing all schools
 // Get all schools
@@ -60,10 +60,10 @@ router.get('/:id/students/count', requirePermission('students.read'), schoolCont
 router.get('/:id/students', requirePermission('students.read'), schoolController.getStudents.bind(schoolController));
 
 // Get teachers count for a school
-router.get('/:id/teachers/count', requirePermission('teachers.read'), schoolController.getTeachersCount.bind(schoolController));
+router.get('/:id/teachers/count', cacheMiddleware({ maxAge: 1800, staleWhileRevalidate: 3600 }), requirePermission('teachers.read'), schoolController.getTeachersCount.bind(schoolController));
 
 // Get teachers for a school
-router.get('/:id/teachers', requirePermission('teachers.read'), schoolController.getTeachers.bind(schoolController));
+router.get('/:id/teachers', cacheMiddleware({ maxAge: 1800, staleWhileRevalidate: 3600 }), requirePermission('teachers.read'), schoolController.getTeachers.bind(schoolController));
 
 // Get parents for a school
 router.get('/:id/parents', requirePermission('students.read'), schoolController.getParents.bind(schoolController));

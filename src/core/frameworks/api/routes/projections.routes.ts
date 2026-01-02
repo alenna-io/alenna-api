@@ -1,7 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { ProjectionController } from '../controllers';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
-import { attachUserContext, ensureTenantIsolation, requirePermission, requireAnyPermission } from '../middleware';
+import { attachUserContext, ensureTenantIsolation, requirePermission, requireAnyPermission, cacheMiddleware } from '../middleware';
 
 const router: ExpressRouter = Router({ mergeParams: true }); // mergeParams to access studentId from parent route
 const projectionController = new ProjectionController();
@@ -16,9 +16,9 @@ router.use(attachUserContext);
 router.use(ensureTenantIsolation);
 
 // All routes are nested under /students/:studentId/projections
-router.get('/', requireAnyPermission('projections.read', 'projections.readOwn'), projectionController.getProjectionsByStudent.bind(projectionController));
-router.get('/:id/detail', requireAnyPermission('projections.read', 'projections.readOwn'), projectionController.getProjectionDetail.bind(projectionController)); // Must be before /:id
-router.get('/:id', requireAnyPermission('projections.read', 'projections.readOwn'), projectionController.getProjection.bind(projectionController));
+router.get('/', cacheMiddleware({ maxAge: 120, staleWhileRevalidate: 240 }), requireAnyPermission('projections.read', 'projections.readOwn'), projectionController.getProjectionsByStudent.bind(projectionController));
+router.get('/:id/detail', cacheMiddleware({ maxAge: 30, staleWhileRevalidate: 60 }), requireAnyPermission('projections.read', 'projections.readOwn'), projectionController.getProjectionDetail.bind(projectionController)); // Must be before /:id
+router.get('/:id', cacheMiddleware({ maxAge: 30, staleWhileRevalidate: 60 }), requireAnyPermission('projections.read', 'projections.readOwn'), projectionController.getProjection.bind(projectionController));
 router.post('/', requirePermission('projections.create'), projectionController.createProjection.bind(projectionController));
 router.post('/:id/paces', requirePermission('paces.create'), projectionController.addPaceToProjection.bind(projectionController)); // Add PACE to projection
 router.put('/:id', requirePermission('projections.update'), projectionController.updateProjection.bind(projectionController));
