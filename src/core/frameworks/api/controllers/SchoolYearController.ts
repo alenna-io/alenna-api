@@ -133,6 +133,7 @@ export class SchoolYearController {
       
       return res.json(currentWeek);
     } catch (error: any) {
+      console.error('Error in getCurrentWeek:', error);
       return res.status(400).json({ error: error.message || 'Error al obtener semana actual' });
     }
   };

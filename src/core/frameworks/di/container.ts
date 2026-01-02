@@ -16,6 +16,7 @@ import {
   BillingRecordRepository,
   TuitionTypeRepository
 } from '../database/repositories';
+import { CharacterTraitRepository } from '../database/repositories/CharacterTraitRepository';
 import {
   SyncUserUseCase,
   GetCurrentUserUseCase,
@@ -585,6 +586,9 @@ class Container {
   private _billingRecordRepository?: BillingRecordRepository;
   private _tuitionTypeRepository?: TuitionTypeRepository;
 
+  // Character Trait Repository
+  private _characterTraitRepository?: CharacterTraitRepository;
+
   get tuitionConfigRepository(): TuitionConfigRepository {
     if (!this._tuitionConfigRepository) {
       this._tuitionConfigRepository = new TuitionConfigRepository();
@@ -611,6 +615,13 @@ class Container {
       this._tuitionTypeRepository = new TuitionTypeRepository();
     }
     return this._tuitionTypeRepository;
+  }
+
+  get characterTraitRepository(): CharacterTraitRepository {
+    if (!this._characterTraitRepository) {
+      this._characterTraitRepository = new CharacterTraitRepository();
+    }
+    return this._characterTraitRepository;
   }
 
   // Billing Use Cases
@@ -749,6 +760,37 @@ class Container {
   get deleteTuitionTypeUseCase() {
     const { DeleteTuitionTypeUseCase } = require('../../app/use-cases/billing');
     return new DeleteTuitionTypeUseCase(this.tuitionTypeRepository);
+  }
+
+  // Character Trait Use Cases
+  get createCharacterTraitUseCase() {
+    const { CreateCharacterTraitUseCase } = require('../../app/use-cases/character-trait');
+    return new CreateCharacterTraitUseCase(this.characterTraitRepository);
+  }
+
+  get updateCharacterTraitUseCase() {
+    const { UpdateCharacterTraitUseCase } = require('../../app/use-cases/character-trait');
+    return new UpdateCharacterTraitUseCase(this.characterTraitRepository);
+  }
+
+  get getCharacterTraitUseCase() {
+    const { GetCharacterTraitUseCase } = require('../../app/use-cases/character-trait');
+    return new GetCharacterTraitUseCase(this.characterTraitRepository);
+  }
+
+  get getCharacterTraitsBySchoolYearUseCase() {
+    const { GetCharacterTraitsBySchoolYearUseCase } = require('../../app/use-cases/character-trait');
+    return new GetCharacterTraitsBySchoolYearUseCase(this.characterTraitRepository);
+  }
+
+  get getCharacterTraitByMonthUseCase() {
+    const { GetCharacterTraitByMonthUseCase } = require('../../app/use-cases/character-trait');
+    return new GetCharacterTraitByMonthUseCase(this.characterTraitRepository);
+  }
+
+  get deleteCharacterTraitUseCase() {
+    const { DeleteCharacterTraitUseCase } = require('../../app/use-cases/character-trait');
+    return new DeleteCharacterTraitUseCase(this.characterTraitRepository);
   }
 }
 

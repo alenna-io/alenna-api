@@ -1,10 +1,12 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { SchoolController } from '../controllers';
+import { CharacterTraitController } from '../controllers/CharacterTraitController';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
 import { attachUserContext, requirePermission, cacheMiddleware } from '../middleware';
 
 const router: ExpressRouter = Router();
 const schoolController = new SchoolController();
+const characterTraitController = new CharacterTraitController();
 
 // Apply Clerk middleware
 router.use(clerkMiddleware({
@@ -24,6 +26,14 @@ router.get('/me', requirePermission('schoolInfo.read'), schoolController.getMySc
 
 // Update current user's school (Admin only)
 router.put('/me', requirePermission('schoolInfo.update'), schoolController.updateSchool.bind(schoolController));
+
+// Character Trait routes
+router.post('/me/character-traits', requirePermission('schoolInfo.update'), characterTraitController.create.bind(characterTraitController));
+router.get('/me/character-traits/by-month', requirePermission('schoolInfo.read'), characterTraitController.getByMonth.bind(characterTraitController));
+router.get('/me/character-traits/:id', requirePermission('schoolInfo.read'), characterTraitController.getById.bind(characterTraitController));
+router.get('/me/character-traits', requirePermission('schoolInfo.read'), characterTraitController.getAll.bind(characterTraitController));
+router.put('/me/character-traits/:id', requirePermission('schoolInfo.update'), characterTraitController.update.bind(characterTraitController));
+router.delete('/me/character-traits/:id', requirePermission('schoolInfo.update'), characterTraitController.delete.bind(characterTraitController));
 
 // Get teachers for current user's school
 router.get('/me/teachers', cacheMiddleware({ maxAge: 1800, staleWhileRevalidate: 3600 }), requirePermission('teachers.read'), schoolController.getMyTeachers.bind(schoolController));
