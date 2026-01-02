@@ -15,6 +15,7 @@ import {
   CreateStudentScholarshipDTO,
   UpdateStudentScholarshipDTO,
   GetBillingRecordsDTO,
+  GetBillingAggregatedFinancialsDTO,
   GetBillingMetricsDTO,
   GetBillingDashboardDTO,
   CreateTuitionTypeDTO,
@@ -23,14 +24,27 @@ import {
 } from '../../../app/dtos';
 
 export class BillingController {
+  async getAggregatedFinancials(req: Request, res: Response): Promise<void> {
+    try {
+      const schoolId = req.schoolId!;
+      const validatedData = GetBillingAggregatedFinancialsDTO.parse(req.query);
+      const metrics = await container.getBillingAggregatedFinancialsUseCase.execute(validatedData, schoolId);
+
+      res.json(metrics);
+    } catch (error: any) {
+      console.error('Error getting aggregated financials:', error);
+      res.status(500).json({ error: error.message || 'Failed to get aggregated financials' });
+    }
+  }
+
   async getBillingRecords(req: Request, res: Response): Promise<void> {
     try {
       const schoolId = req.schoolId!;
       const validatedData = GetBillingRecordsDTO.parse(req.query);
-      const records = await container.getBillingRecordsUseCase.execute(validatedData, schoolId);
+      const result = await container.getBillingRecordsUseCase.execute(validatedData, schoolId);
 
       // Get student names for all records
-      const studentIds = [...new Set(records.map((r: BillingRecord) => r.studentId))] as string[];
+      const studentIds = [...new Set(result.records.map((r: BillingRecord) => r.studentId))] as string[];
       const students = await prisma.student.findMany({
         where: {
           id: { in: studentIds },
@@ -43,7 +57,7 @@ export class BillingController {
       const studentMap = new Map(students.map((s: any) => [s.id, s]));
 
       // Get payment transactions for all records
-      const recordIds = records.map((r: BillingRecord) => r.id);
+      const recordIds = result.records.map((r: BillingRecord) => r.id);
       const allPaymentTransactions = recordIds.length > 0 ? await prisma.billingPaymentTransaction.findMany({
         where: {
           billingRecordId: { in: recordIds },
@@ -62,7 +76,7 @@ export class BillingController {
 
       // Get user names for audit metadata and payment transactions
       const userIds = new Set<string>();
-      records.forEach((r: BillingRecord) => {
+      result.records.forEach((r: BillingRecord) => {
         const audit = r.auditMetadata as any;
         if (audit?.paidBy) userIds.add(audit.paidBy);
         if (audit?.createdBy) userIds.add(audit.createdBy);
@@ -85,7 +99,8 @@ export class BillingController {
       }) : [];
       const userMap = new Map(users.map((u: any) => [u.id, `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || u.id]));
 
-      res.json(records.map((record: BillingRecord) => {
+      res.json({
+        records: result.records.map((record: BillingRecord) => {
         const student = studentMap.get(record.studentId);
         const studentName = student?.user
           ? `${(student.user as any).firstName} ${(student.user as any).lastName}`
@@ -150,7 +165,11 @@ export class BillingController {
             createdAt: tx.createdAt.toISOString(),
           })),
         };
-      }));
+        }),
+        total: result.total,
+        offset: result.offset,
+        limit: result.limit,
+      });
     } catch (error: any) {
       console.error('Error getting billing records:', error);
       res.status(500).json({ error: error.message || 'Failed to get billing records' });

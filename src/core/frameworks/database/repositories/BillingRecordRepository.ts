@@ -145,7 +145,11 @@ export class BillingRecordRepository implements IBillingRecordRepository {
     taxableBillStatus?: string;
     startDate?: Date;
     endDate?: Date;
-  }): Promise<BillingRecord[]> {
+    offset?: number;
+    limit?: number;
+    sortField?: string;
+    sortDirection?: 'asc' | 'desc';
+  }): Promise<{ records: BillingRecord[]; total: number }> {
     const where: any = {
       student: {
         schoolId: filters.schoolId,
@@ -161,12 +165,65 @@ export class BillingRecordRepository implements IBillingRecordRepository {
       where.schoolYearId = filters.schoolYearId;
     }
 
-    if (filters.billingMonth) {
+    // Filter logic: If billingMonth + billingYear provided, use them and ignore dates
+    // Otherwise, use date range if provided
+    if (filters.billingMonth && filters.billingYear) {
       where.billingMonth = filters.billingMonth;
-    }
-
-    if (filters.billingYear) {
       where.billingYear = filters.billingYear;
+    } else if (filters.startDate || filters.endDate) {
+      // Date range filtering
+      if (filters.startDate && filters.endDate) {
+        // Both dates provided - filter within range
+        const startYear = filters.startDate.getFullYear();
+        const startMonth = filters.startDate.getMonth() + 1;
+        const endYear = filters.endDate.getFullYear();
+        const endMonth = filters.endDate.getMonth() + 1;
+
+        if (startYear === endYear) {
+          where.billingYear = startYear;
+          where.billingMonth = { gte: startMonth, lte: endMonth };
+        } else {
+          where.OR = [
+            {
+              billingYear: startYear,
+              billingMonth: { gte: startMonth },
+            },
+            {
+              billingYear: { gt: startYear, lt: endYear },
+            },
+            {
+              billingYear: endYear,
+              billingMonth: { lte: endMonth },
+            },
+          ];
+        }
+      } else if (filters.startDate) {
+        // Only startDate provided - filter from that date onwards
+        const startYear = filters.startDate.getFullYear();
+        const startMonth = filters.startDate.getMonth() + 1;
+        where.OR = [
+          {
+            billingYear: { gt: startYear },
+          },
+          {
+            billingYear: startYear,
+            billingMonth: { gte: startMonth },
+          },
+        ];
+      } else if (filters.endDate) {
+        // Only endDate provided - filter up to that date
+        const endYear = filters.endDate.getFullYear();
+        const endMonth = filters.endDate.getMonth() + 1;
+        where.OR = [
+          {
+            billingYear: { lt: endYear },
+          },
+          {
+            billingYear: endYear,
+            billingMonth: { lte: endMonth },
+          },
+        ];
+      }
     }
 
     // Handle paymentStatus filter
@@ -200,31 +257,64 @@ export class BillingRecordRepository implements IBillingRecordRepository {
       }
     }
 
-    if (filters.startDate || filters.endDate) {
-      where.OR = [];
-      if (filters.startDate) {
-        where.OR.push({
-          billingYear: filters.startDate.getFullYear(),
-          billingMonth: { gte: filters.startDate.getMonth() + 1 },
-        });
+    // Get total count for pagination
+    const total = await prisma.billingRecord.count({ where });
+
+    // Build orderBy clause
+    const orderBy: any[] = [];
+    if (filters.sortField) {
+      const direction = filters.sortDirection === 'desc' ? 'desc' : 'asc';
+      switch (filters.sortField) {
+        case 'studentName':
+          orderBy.push({ student: { user: { firstName: direction } } });
+          orderBy.push({ student: { user: { lastName: direction } } });
+          break;
+        case 'month':
+          orderBy.push({ billingYear: direction });
+          orderBy.push({ billingMonth: direction });
+          break;
+        case 'tuition':
+          orderBy.push({ effectiveTuitionAmount: direction });
+          break;
+        case 'lateFee':
+          orderBy.push({ lateFeeAmount: direction });
+          break;
+        case 'total':
+          orderBy.push({ finalAmount: direction });
+          break;
+        case 'paymentStatus':
+          orderBy.push({ paymentStatus: direction });
+          break;
+        case 'dueDate':
+          orderBy.push({ dueDate: direction });
+          break;
+        case 'paidDate':
+          orderBy.push({ paidAt: direction });
+          break;
+        case 'billStatus':
+          orderBy.push({ billStatus: direction });
+          break;
+        default:
+          orderBy.push({ billingYear: 'desc' });
+          orderBy.push({ billingMonth: 'desc' });
       }
-      if (filters.endDate) {
-        where.OR.push({
-          billingYear: filters.endDate.getFullYear(),
-          billingMonth: { lte: filters.endDate.getMonth() + 1 },
-        });
-      }
+    } else {
+      // Default sorting
+      orderBy.push({ billingYear: 'desc' });
+      orderBy.push({ billingMonth: 'desc' });
     }
 
     const records = await prisma.billingRecord.findMany({
       where,
-      orderBy: [
-        { billingYear: 'desc' },
-        { billingMonth: 'desc' },
-      ],
+      orderBy,
+      skip: filters.offset || 0,
+      take: filters.limit || 10,
     });
 
-    return records.map(BillingRecordMapper.toDomain);
+    return {
+      records: records.map(BillingRecordMapper.toDomain),
+      total,
+    };
   }
 
   async create(billingRecord: BillingRecord): Promise<BillingRecord> {
@@ -314,6 +404,10 @@ export class BillingRecordRepository implements IBillingRecordRepository {
     schoolId: string;
     startDate?: Date;
     endDate?: Date;
+    billingMonth?: number;
+    billingYear?: number;
+    paymentStatus?: string;
+    studentId?: string;
     schoolYearId?: string;
   }): Promise<{
     totalIncome: number;
@@ -330,23 +424,76 @@ export class BillingRecordRepository implements IBillingRecordRepository {
       },
     };
 
+    if (filters.studentId) {
+      where.studentId = filters.studentId;
+    }
+
     if (filters.schoolYearId) {
       where.schoolYearId = filters.schoolYearId;
     }
 
-    if (filters.startDate || filters.endDate) {
-      where.OR = [];
-      if (filters.startDate) {
-        where.OR.push({
-          billingYear: filters.startDate.getFullYear(),
-          billingMonth: { gte: filters.startDate.getMonth() + 1 },
-        });
-      }
-      if (filters.endDate) {
-        where.OR.push({
-          billingYear: filters.endDate.getFullYear(),
-          billingMonth: { lte: filters.endDate.getMonth() + 1 },
-        });
+    if (filters.paymentStatus) {
+      where.paymentStatus = filters.paymentStatus;
+    }
+
+    // Filter logic: If billingMonth + billingYear provided, use them and ignore dates
+    // Otherwise, use date range if provided
+    if (filters.billingMonth && filters.billingYear) {
+      where.billingMonth = filters.billingMonth;
+      where.billingYear = filters.billingYear;
+    } else if (filters.startDate || filters.endDate) {
+      // Date range filtering
+      if (filters.startDate && filters.endDate) {
+        // Both dates provided - filter within range
+        const startYear = filters.startDate.getFullYear();
+        const startMonth = filters.startDate.getMonth() + 1;
+        const endYear = filters.endDate.getFullYear();
+        const endMonth = filters.endDate.getMonth() + 1;
+
+        if (startYear === endYear) {
+          where.billingYear = startYear;
+          where.billingMonth = { gte: startMonth, lte: endMonth };
+        } else {
+          where.OR = [
+            {
+              billingYear: startYear,
+              billingMonth: { gte: startMonth },
+            },
+            {
+              billingYear: { gt: startYear, lt: endYear },
+            },
+            {
+              billingYear: endYear,
+              billingMonth: { lte: endMonth },
+            },
+          ];
+        }
+      } else if (filters.startDate) {
+        // Only startDate provided - filter from that date onwards
+        const startYear = filters.startDate.getFullYear();
+        const startMonth = filters.startDate.getMonth() + 1;
+        where.OR = [
+          {
+            billingYear: { gt: startYear },
+          },
+          {
+            billingYear: startYear,
+            billingMonth: { gte: startMonth },
+          },
+        ];
+      } else if (filters.endDate) {
+        // Only endDate provided - filter up to that date
+        const endYear = filters.endDate.getFullYear();
+        const endMonth = filters.endDate.getMonth() + 1;
+        where.OR = [
+          {
+            billingYear: { lt: endYear },
+          },
+          {
+            billingYear: endYear,
+            billingMonth: { lte: endMonth },
+          },
+        ];
       }
     }
 

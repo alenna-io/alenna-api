@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository, IProjectionRepository, IDailyGoalRepository } from '../../core/adapters_interface/repositories';
+import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository, IProjectionRepository, IDailyGoalRepository, IBillingRecordRepository } from '../../core/adapters_interface/repositories';
 import { IProjectionTemplateRepository } from '../../core/adapters_interface/repositories/IProjectionTemplateRepository';
 
 /**
@@ -192,5 +192,31 @@ export function createMockStudentRepositoryWithDefaults(
   }
   
   return mock;
+}
+
+/**
+ * Creates a mock BillingRecordRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockBillingRecordRepository(): IBillingRecordRepository {
+  return {
+    findById: vi.fn(),
+    findByStudentId: vi.fn(),
+    findByMonthAndYear: vi.fn(),
+    findBySchoolYear: vi.fn(),
+    findUnpaidBills: vi.fn(),
+    findBillsRequiringLateFee: vi.fn(),
+    findByFilters: vi.fn(),
+    create: vi.fn(),
+    createMany: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    getMetrics: vi.fn(),
+    getDashboardData: vi.fn(),
+    createPaymentTransaction: vi.fn(),
+    findPaymentTransactions: vi.fn(),
+    findPaymentTransactionsByRecordIds: vi.fn(),
+    updateWithPaymentTransaction: vi.fn(),
+  };
 }
 

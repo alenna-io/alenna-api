@@ -681,6 +681,11 @@ class Container {
     return new GetBillingRecordsUseCase(this.billingRecordRepository);
   }
 
+  get getBillingAggregatedFinancialsUseCase() {
+    const { GetBillingAggregatedFinancialsUseCase } = require('../../app/use-cases/billing');
+    return new GetBillingAggregatedFinancialsUseCase(this.billingRecordRepository);
+  }
+
   get getBillingRecordByIdUseCase() {
     const { GetBillingRecordByIdUseCase } = require('../../app/use-cases/billing');
     return new GetBillingRecordByIdUseCase(this.billingRecordRepository);

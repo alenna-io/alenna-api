@@ -8,6 +8,7 @@ export * from './UpdateTaxableBillStatusUseCase';
 export * from './ApplyLateFeeUseCase';
 export * from './BulkApplyLateFeeUseCase';
 export * from './GetBillingRecordsUseCase';
+export * from './GetBillingAggregatedFinancialsUseCase';
 export * from './GetBillingRecordByIdUseCase';
 export * from './CreateTuitionConfigUseCase';
 export * from './UpdateTuitionConfigUseCase';

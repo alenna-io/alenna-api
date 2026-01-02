@@ -15,7 +15,8 @@ router.use(attachUserContext);
 router.use(ensureTenantIsolation);
 
 // Specific routes must come before parameterized routes
-router.get('/', requirePermission('billing.read'), billingController.getBillingRecords.bind(billingController));
+router.get('/aggregated-financials', requirePermission('billing.read'), billingController.getAggregatedFinancials.bind(billingController));
+router.get('/records', requirePermission('billing.read'), billingController.getBillingRecords.bind(billingController));
 router.get('/metrics', requirePermission('billing.read'), billingController.getBillingMetrics.bind(billingController));
 router.get('/dashboard', requirePermission('billing.read'), billingController.getBillingDashboard.bind(billingController));
 router.post('/bulk', requirePermission('billing.create'), billingController.bulkCreateBillingRecords.bind(billingController));

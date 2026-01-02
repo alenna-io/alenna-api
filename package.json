@@ -15,6 +15,7 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:seed:clean": "tsx prisma/seed-clean.ts && tsx prisma/seed.ts",
     "prisma:backfill-categories": "tsx prisma/backfill-projection-categories.ts",
+    "billing:run": "tsx scripts/run-billing-job.ts",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:reset": "docker-compose down -v && docker-compose up -d",

@@ -14,9 +14,16 @@ export interface IBillingRecordRepository {
     billingMonth?: number;
     billingYear?: number;
     status?: string;
+    paymentStatus?: string;
+    billStatus?: string;
+    taxableBillStatus?: string;
     startDate?: Date;
     endDate?: Date;
-  }): Promise<BillingRecord[]>;
+    offset?: number;
+    limit?: number;
+    sortField?: string;
+    sortDirection?: 'asc' | 'desc';
+  }): Promise<{ records: BillingRecord[]; total: number }>;
   create(billingRecord: BillingRecord): Promise<BillingRecord>;
   createMany(billingRecords: BillingRecord[]): Promise<BillingRecord[]>;
   update(id: string, billingRecord: Partial<BillingRecord>, schoolId: string): Promise<BillingRecord>;
@@ -25,6 +32,10 @@ export interface IBillingRecordRepository {
     schoolId: string;
     startDate?: Date;
     endDate?: Date;
+    billingMonth?: number;
+    billingYear?: number;
+    paymentStatus?: string;
+    studentId?: string;
     schoolYearId?: string;
   }): Promise<{
     totalIncome: number;

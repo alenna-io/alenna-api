@@ -101,20 +101,34 @@ export const UpdateStudentScholarshipDTO = CreateStudentScholarshipDTO.partial()
 
 export type UpdateStudentScholarshipInput = z.infer<typeof UpdateStudentScholarshipDTO>;
 
-export const GetBillingRecordsDTO = z.object({
-  studentId: z.string().optional(),
-  schoolYearId: z.string().optional(),
-  billingMonth: z.number().int().min(1).max(12).optional(),
-  billingYear: z.number().int().min(2020).max(2100).optional(),
-  taxableBillStatus: z.enum(['not_required', 'required', 'sent']).optional(),
-  paymentStatus: z.enum(['pending', 'delayed', 'partial_payment', 'paid']).optional(),
+// Shared filter DTO for both records and aggregated-financials
+export const BillingFiltersDTO = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
+  billingMonth: z.coerce.number().int().min(1).max(12).optional(),
+  billingYear: z.coerce.number().int().min(2020).max(2100).optional(),
+  paymentStatus: z.enum(['pending', 'delayed', 'partial_payment', 'paid']).optional(),
+  studentId: z.string().optional(),
+  schoolYearId: z.string().optional(),
   // Keep for backward compatibility
+  taxableBillStatus: z.enum(['not_required', 'required', 'sent']).optional(),
   billStatus: z.enum(['required', 'sent', 'not_required', 'cancelled']).optional(),
 });
 
+export type BillingFiltersInput = z.infer<typeof BillingFiltersDTO>;
+
+export const GetBillingRecordsDTO = BillingFiltersDTO.extend({
+  offset: z.coerce.number().int().min(0).default(0),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  sortField: z.string().optional(),
+  sortDirection: z.enum(['asc', 'desc']).default('asc'),
+});
+
 export type GetBillingRecordsInput = z.infer<typeof GetBillingRecordsDTO>;
+
+export const GetBillingAggregatedFinancialsDTO = BillingFiltersDTO;
+
+export type GetBillingAggregatedFinancialsInput = z.infer<typeof GetBillingAggregatedFinancialsDTO>;
 
 export const GetBillingMetricsDTO = z.object({
   startDate: z.string().datetime().optional(),

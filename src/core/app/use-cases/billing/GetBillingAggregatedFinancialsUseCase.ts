@@ -1,14 +1,16 @@
 import { IBillingRecordRepository } from '../../../adapters_interface/repositories';
-import { GetBillingRecordsInput } from '../../dtos';
+import { GetBillingAggregatedFinancialsInput } from '../../dtos';
 
-export class GetBillingRecordsUseCase {
+export class GetBillingAggregatedFinancialsUseCase {
   constructor(private billingRecordRepository: IBillingRecordRepository) {}
 
-  async execute(input: GetBillingRecordsInput, schoolId: string): Promise<{
-    records: any[];
-    total: number;
-    offset: number;
-    limit: number;
+  async execute(input: GetBillingAggregatedFinancialsInput, schoolId: string): Promise<{
+    totalIncome: number;
+    expectedIncome: number;
+    missingIncome: number;
+    totalStudentsPaid: number;
+    totalStudentsNotPaid: number;
+    lateFeesApplied: number;
   }> {
     // Apply default filters: if no filters provided, use current month
     const now = new Date();
@@ -27,26 +29,14 @@ export class GetBillingRecordsUseCase {
       schoolId,
       studentId: input.studentId,
       schoolYearId: input.schoolYearId,
+      paymentStatus: input.paymentStatus,
       billingMonth,
       billingYear,
-      paymentStatus: input.paymentStatus,
-      taxableBillStatus: input.taxableBillStatus,
-      billStatus: input.billStatus, // For backward compatibility
       startDate,
       endDate,
-      offset: input.offset || 0,
-      limit: input.limit || 10,
-      sortField: input.sortField,
-      sortDirection: input.sortDirection || 'asc',
     };
 
-    const result = await this.billingRecordRepository.findByFilters(filters);
-
-    return {
-      records: result.records,
-      total: result.total,
-      offset: input.offset || 0,
-      limit: input.limit || 10,
-    };
+    return await this.billingRecordRepository.getMetrics(filters);
   }
 }
+
