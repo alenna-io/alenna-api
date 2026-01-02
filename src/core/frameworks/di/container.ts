@@ -727,6 +727,11 @@ class Container {
     return new GetStudentScholarshipUseCase(this.studentScholarshipRepository);
   }
 
+  get getStudentsWithScholarshipsUseCase() {
+    const { GetStudentsWithScholarshipsUseCase } = require('../../app/use-cases/billing');
+    return new GetStudentsWithScholarshipsUseCase();
+  }
+
   get updateStudentScholarshipUseCase() {
     const { UpdateStudentScholarshipUseCase } = require('../../app/use-cases/billing');
     return new UpdateStudentScholarshipUseCase(this.studentScholarshipRepository);

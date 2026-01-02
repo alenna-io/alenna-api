@@ -22,4 +22,5 @@ export * from './CreateTuitionTypeUseCase';
 export * from './UpdateTuitionTypeUseCase';
 export * from './GetTuitionTypesUseCase';
 export * from './DeleteTuitionTypeUseCase';
+export * from './GetStudentsWithScholarshipsUseCase';
 

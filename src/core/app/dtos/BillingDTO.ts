@@ -109,6 +109,7 @@ export const BillingFiltersDTO = z.object({
   billingYear: z.coerce.number().int().min(2020).max(2100).optional(),
   paymentStatus: z.enum(['pending', 'delayed', 'partial_payment', 'paid']).optional(),
   studentId: z.string().optional(),
+  studentName: z.string().optional(),
   schoolYearId: z.string().optional(),
   // Keep for backward compatibility
   taxableBillStatus: z.enum(['not_required', 'required', 'sent']).optional(),
@@ -161,4 +162,16 @@ export type CreateTuitionTypeInput = z.infer<typeof CreateTuitionTypeDTO>;
 export const UpdateTuitionTypeDTO = CreateTuitionTypeDTO.partial();
 
 export type UpdateTuitionTypeInput = z.infer<typeof UpdateTuitionTypeDTO>;
+
+export const GetStudentsWithScholarshipsDTO = z.object({
+  search: z.string().optional(),
+  tuitionTypeId: z.string().optional(),
+  hasScholarship: z.enum(['all', 'yes', 'no']).optional(),
+  sortField: z.string().optional(),
+  sortDirection: z.enum(['asc', 'desc']).optional().default('asc'),
+  offset: z.coerce.number().int().min(0).optional().default(0),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(10),
+});
+
+export type GetStudentsWithScholarshipsInput = z.infer<typeof GetStudentsWithScholarshipsDTO>;
 

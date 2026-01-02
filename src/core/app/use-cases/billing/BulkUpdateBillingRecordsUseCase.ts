@@ -48,14 +48,57 @@ export class BulkUpdateBillingRecordsUseCase {
 
     for (const record of existingRecords.records) {
       try {
-        // Skip locked records or paid records (we don't want to modify payments)
+        // Get current scholarship for the student
+        const scholarship = await this.studentScholarshipRepository.findByStudentId(record.studentId, schoolId);
+
+        // Update taxable bill status based on current scholarship config
+        const newTaxableBillStatus = scholarship?.taxableBillRequired ? 'required' : 'not_required';
+
+        // Always update billStatus if it doesn't match, even for paid/locked records
+        if (record.billStatus !== newTaxableBillStatus) {
+          const updatedRecord = new BillingRecord(
+            record.id,
+            record.studentId,
+            record.schoolYearId,
+            record.billingMonth,
+            record.billingYear,
+            record.tuitionTypeSnapshot,
+            record.effectiveTuitionAmount,
+            record.scholarshipAmount,
+            record.discountAdjustments,
+            record.extraCharges,
+            record.lateFeeAmount,
+            record.finalAmount,
+            newTaxableBillStatus,
+            record.paymentStatus,
+            record.paidAmount,
+            record.paidAt,
+            record.lockedAt,
+            {
+              ...record.auditMetadata,
+              updatedBy,
+            },
+            record.paymentNote,
+            record.paymentMethod,
+            record.paymentGateway,
+            record.paymentTransactionId,
+            record.paymentGatewayStatus,
+            record.paymentWebhookReceivedAt,
+            record.dueDate,
+            record.createdAt,
+            new Date()
+          );
+
+          await this.billingRecordRepository.update(record.id, updatedRecord, schoolId);
+          updated++;
+          continue;
+        }
+
+        // Skip locked records or paid records for other updates (we don't want to modify payment amounts)
         if (record.lockedAt !== null || record.paymentStatus === 'paid') {
           skipped++;
           continue;
         }
-
-        // Get current scholarship for the student
-        const scholarship = await this.studentScholarshipRepository.findByStudentId(record.studentId, schoolId);
 
         // Get tuition type (from scholarship or default)
         let tuitionType = defaultTuitionType;
@@ -71,13 +114,8 @@ export class BulkUpdateBillingRecordsUseCase {
         if (scholarship) {
           newScholarshipAmount = scholarship.calculateDiscount(record.effectiveTuitionAmount);
         }
-
-        // Update taxable bill status based on current scholarship config
-        const newTaxableBillStatus = scholarship?.taxableBillRequired ? 'required' : 'not_required';
-
-        // Only update if scholarship amount or taxable bill status changed
-        // We preserve effectiveTuitionAmount, discountAdjustments, and extraCharges
-        // Only recalculate based on new scholarship
+        
+        // Calculate amounts for comparison
         const discountAmount = BillingRecord.calculateDiscountAmount(record.discountAdjustments, record.effectiveTuitionAmount - newScholarshipAmount);
         const extraAmount = BillingRecord.calculateExtraAmount(record.extraCharges);
         const amountAfterDiscounts = record.effectiveTuitionAmount - newScholarshipAmount - discountAmount;
@@ -96,11 +134,12 @@ export class BulkUpdateBillingRecordsUseCase {
 
         const newFinalAmount = amountAfterDiscounts + extraAmount + newLateFeeAmount;
 
-        // Only update if values actually changed
+        // Only update if values actually changed (also check if finalAmount is significantly different due to floating point)
+        const finalAmountChanged = Math.abs(record.finalAmount - newFinalAmount) > 0.01;
         if (record.scholarshipAmount !== newScholarshipAmount ||
             record.billStatus !== newTaxableBillStatus ||
             record.lateFeeAmount !== newLateFeeAmount ||
-            record.finalAmount !== newFinalAmount) {
+            finalAmountChanged) {
           
           // Create updated record with new values
           const updatedRecord = new BillingRecord(

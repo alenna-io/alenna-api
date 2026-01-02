@@ -10,6 +10,8 @@ export interface IBillingRecordRepository {
   findByFilters(filters: {
     schoolId: string;
     studentId?: string;
+    studentIds?: string[];
+    studentName?: string;
     schoolYearId?: string;
     billingMonth?: number;
     billingYear?: number;

@@ -33,6 +33,7 @@ router.post('/tuition-types', requirePermission('billing.create'), billingContro
 router.put('/tuition-types/:id', requirePermission('billing.update'), billingController.updateTuitionType.bind(billingController));
 router.delete('/tuition-types/:id', requirePermission('billing.delete'), billingController.deleteTuitionType.bind(billingController));
 
+router.get('/students/scholarships', requirePermission('billing.read'), billingController.getStudentsWithScholarships.bind(billingController));
 router.get('/students/:studentId/scholarship', requirePermission('billing.read'), billingController.getStudentScholarship.bind(billingController));
 router.post('/students/:studentId/scholarship', requirePermission('billing.create'), billingController.createStudentScholarship.bind(billingController));
 router.put('/students/:studentId/scholarship', requirePermission('billing.update'), billingController.updateStudentScholarship.bind(billingController));

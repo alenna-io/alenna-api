@@ -21,6 +21,7 @@ import {
   CreateTuitionTypeDTO,
   UpdateTuitionTypeDTO,
   BulkUpdateBillingRecordsDTO,
+  GetStudentsWithScholarshipsDTO,
 } from '../../../app/dtos';
 
 export class BillingController {
@@ -353,9 +354,29 @@ export class BillingController {
       const userId = req.userId!;
       const validatedData = UpdateBillingRecordDTO.parse(req.body);
       const record = await container.updateBillingRecordUseCase.execute(id, schoolId, validatedData, userId);
+      
+      // Fetch student name
+      const student = await prisma.student.findFirst({
+        where: { id: record.studentId, deletedAt: null },
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      });
+      
+      const studentName = student?.user
+        ? `${(student.user as any).firstName} ${(student.user as any).lastName}`
+        : 'Unknown Student';
 
       res.json({
         id: record.id,
+        studentId: record.studentId,
+        studentName,
         effectiveTuitionAmount: record.effectiveTuitionAmount,
         scholarshipAmount: record.scholarshipAmount,
         discountAdjustments: record.discountAdjustments,
@@ -368,7 +389,7 @@ export class BillingController {
         updatedAt: record.updatedAt?.toISOString(),
       });
     } catch (error: any) {
-      console.error('Error updating billing record:', error);
+      console.error('[BillingController] Error updating billing record:', error);
       res.status(400).json({ error: error.message || 'Failed to update billing record' });
     }
   }
@@ -629,6 +650,18 @@ export class BillingController {
     } catch (error: any) {
       console.error('Error getting student scholarship:', error);
       res.status(500).json({ error: error.message || 'Failed to get student scholarship' });
+    }
+  }
+
+  async getStudentsWithScholarships(req: Request, res: Response): Promise<void> {
+    try {
+      const schoolId = req.schoolId!;
+      const validatedData = GetStudentsWithScholarshipsDTO.parse(req.query);
+      const result = await container.getStudentsWithScholarshipsUseCase.execute(validatedData, schoolId);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error getting students with scholarships:', error);
+      res.status(500).json({ error: error.message || 'Failed to get students with scholarships' });
     }
   }
 

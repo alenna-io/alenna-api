@@ -136,6 +136,8 @@ export class BillingRecordRepository implements IBillingRecordRepository {
   async findByFilters(filters: {
     schoolId: string;
     studentId?: string;
+    studentIds?: string[];
+    studentName?: string;
     schoolYearId?: string;
     billingMonth?: number;
     billingYear?: number;
@@ -159,6 +161,22 @@ export class BillingRecordRepository implements IBillingRecordRepository {
 
     if (filters.studentId) {
       where.studentId = filters.studentId;
+    }
+
+    // Use studentIds array if provided (for accent-insensitive search)
+    if (filters.studentIds && filters.studentIds.length > 0) {
+      where.studentId = { in: filters.studentIds };
+    }
+
+    // Fallback to studentName search (kept for backward compatibility)
+    if (filters.studentName && !filters.studentIds) {
+      where.student = {
+        ...where.student,
+        OR: [
+          { firstName: { contains: filters.studentName, mode: 'insensitive' } },
+          { lastName: { contains: filters.studentName, mode: 'insensitive' } },
+        ],
+      };
     }
 
     if (filters.schoolYearId) {
@@ -304,6 +322,51 @@ export class BillingRecordRepository implements IBillingRecordRepository {
       orderBy.push({ billingMonth: 'desc' });
     }
 
+    // Special handling for tuition sorting (includes discounts and extras)
+    if (filters.sortField === 'tuition') {
+      // Fetch all matching records for sorting
+      const allRecords = await prisma.billingRecord.findMany({
+        where,
+      });
+
+      // Calculate tuition with adjustments and sort
+      const recordsWithCalc = allRecords.map(record => {
+        const discountAdjustments = (record.discountAdjustments as any) || [];
+        const extraCharges = (record.extraCharges as any) || [];
+        
+        const discountAmount = discountAdjustments.reduce((sum: number, adj: any) => {
+          if (adj.type === 'percentage') {
+            return sum + (Number(record.effectiveTuitionAmount) - Number(record.scholarshipAmount)) * (adj.value / 100);
+          }
+          return sum + Number(adj.value);
+        }, 0);
+        
+        const extraAmount = extraCharges.reduce((sum: number, charge: any) => sum + Number(charge.amount), 0);
+        const tuitionWithAdjustments = Number(record.effectiveTuitionAmount) - Number(record.scholarshipAmount) - discountAmount + extraAmount;
+        
+        return { record, tuitionWithAdjustments };
+      });
+
+      // Sort by calculated value
+      recordsWithCalc.sort((a, b) => {
+        if (filters.sortDirection === 'desc') {
+          return b.tuitionWithAdjustments - a.tuitionWithAdjustments;
+        }
+        return a.tuitionWithAdjustments - b.tuitionWithAdjustments;
+      });
+
+      // Apply pagination
+      const paginatedRecords = recordsWithCalc
+        .slice(filters.offset || 0, (filters.offset || 0) + (filters.limit || 10))
+        .map(item => item.record);
+
+      return {
+        records: paginatedRecords.map(BillingRecordMapper.toDomain),
+        total,
+      };
+    }
+
+    // Normal sorting for other fields
     const records = await prisma.billingRecord.findMany({
       where,
       orderBy,
