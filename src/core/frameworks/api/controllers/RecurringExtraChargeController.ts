@@ -18,25 +18,32 @@ export class RecurringExtraChargeController {
     }
   }
 
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response): Promise<Response> {
     try {
       const { studentId } = req.params;
-      const schoolId = req.schoolId!;
 
       const validatedData = CreateRecurringExtraChargeDTO.parse(req.body);
 
       const useCase = container.createRecurringExtraChargeUseCase;
       const charge = await useCase.execute(validatedData, studentId);
 
-      res.status(201).json(charge);
+      return res.status(201).json(charge);
     } catch (error: any) {
       console.error('Error creating recurring charge:', error);
+
       if (error.name === 'ZodError') {
-        return res.status(400).json({ error: 'Validation error', details: error.errors });
+        return res.status(400).json({
+          error: 'Validation error',
+          details: error.errors
+        });
       }
-      res.status(500).json({ error: error.message || 'Failed to create recurring charge' });
+
+      return res.status(500).json({
+        error: error.message || 'Failed to create recurring charge'
+      });
     }
   }
+
 
   async update(req: Request, res: Response) {
     try {
@@ -52,9 +59,11 @@ export class RecurringExtraChargeController {
     } catch (error: any) {
       console.error('Error updating recurring charge:', error);
       if (error.name === 'ZodError') {
-        return res.status(400).json({ error: 'Validation error', details: error.errors });
+        res.status(400).json({ error: 'Validation error', details: error.errors });
+        return;
       }
       res.status(500).json({ error: error.message || 'Failed to update recurring charge' });
+      return;
     }
   }
 

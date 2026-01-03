@@ -1,4 +1,6 @@
-export interface StudentTuitionAssignmentRepository {
+import { StudentTuitionAssignment } from '../../domain/entities';
+
+export interface IStudentTuitionAssignmentRepository {
   findByStudentId(
     studentId: string,
     schoolId: string

@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository, IProjectionRepository, IDailyGoalRepository, IBillingRecordRepository } from '../../core/adapters_interface/repositories';
+import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository, IProjectionRepository, IDailyGoalRepository, IBillingRecordRepository, IStudentScholarshipRepository, IStudentBillingConfigRepository } from '../../core/adapters_interface/repositories';
 import { IProjectionTemplateRepository } from '../../core/adapters_interface/repositories/IProjectionTemplateRepository';
 
 /**
@@ -170,7 +170,7 @@ export function createMockStudentRepositoryWithDefaults(
   defaults: Partial<Record<keyof IStudentRepository, any>>
 ): IStudentRepository {
   const mock = createMockStudentRepository();
-  
+
   // Apply defaults
   if (defaults.findById !== undefined) {
     vi.mocked(mock.findById).mockResolvedValue(defaults.findById);
@@ -190,7 +190,7 @@ export function createMockStudentRepositoryWithDefaults(
   if (defaults.delete !== undefined) {
     vi.mocked(mock.delete).mockResolvedValue(defaults.delete);
   }
-  
+
   return mock;
 }
 
@@ -220,3 +220,24 @@ export function createMockBillingRecordRepository(): IBillingRecordRepository {
   };
 }
 
+
+export function createMockStudentBillingConfigRepository(): IStudentBillingConfigRepository {
+  return {
+    findBySchoolId: vi.fn(),
+    findByStudentId: vi.fn(),
+    findById: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  };
+}
+
+export function createMockStudentScholarshipRepository(): IStudentScholarshipRepository {
+  return {
+    findByStudentId: vi.fn(),
+    findBySchoolId: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  };
+}

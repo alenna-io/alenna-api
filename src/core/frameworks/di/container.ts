@@ -649,7 +649,8 @@ class Container {
       this.tuitionConfigRepository,
       this.studentScholarshipRepository,
       this.tuitionTypeRepository,
-      this.studentRepository
+      this.studentRepository,
+      this.studentBillingConfigRepository
     );
   }
 
@@ -661,7 +662,8 @@ class Container {
       this.studentScholarshipRepository,
       this.tuitionTypeRepository,
       this.studentRepository,
-      this.recurringExtraChargeRepository
+      this.recurringExtraChargeRepository,
+      this.studentBillingConfigRepository
     );
   }
 

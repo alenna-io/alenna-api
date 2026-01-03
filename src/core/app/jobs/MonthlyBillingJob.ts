@@ -5,7 +5,9 @@ import { TuitionConfigRepository } from '../../frameworks/database/repositories/
 import { StudentScholarshipRepository } from '../../frameworks/database/repositories/StudentScholarshipRepository';
 import { TuitionTypeRepository } from '../../frameworks/database/repositories/TuitionTypeRepository';
 import { StudentRepository } from '../../frameworks/database/repositories/StudentRepository';
+import { RecurringExtraChargeRepository } from '../../frameworks/database/repositories/RecurringExtraChargeRepository';
 import { logger } from '../../../utils/logger';
+import { StudentBillingConfigRepository } from '../../frameworks/database/repositories/StudentBillingConfigRepository';
 
 export class MonthlyBillingJob {
   private bulkCreateBillingRecordsUseCase: BulkCreateBillingRecordsUseCase;
@@ -16,13 +18,17 @@ export class MonthlyBillingJob {
     const studentScholarshipRepository = new StudentScholarshipRepository();
     const tuitionTypeRepository = new TuitionTypeRepository();
     const studentRepository = new StudentRepository();
+    const recurringExtraChargeRepository = new RecurringExtraChargeRepository();
+    const studentBillingConfigRepository = new StudentBillingConfigRepository();
 
     this.bulkCreateBillingRecordsUseCase = new BulkCreateBillingRecordsUseCase(
       billingRecordRepository,
       tuitionConfigRepository,
       studentScholarshipRepository,
       tuitionTypeRepository,
-      studentRepository
+      studentRepository,
+      recurringExtraChargeRepository,
+      studentBillingConfigRepository
     );
   }
 

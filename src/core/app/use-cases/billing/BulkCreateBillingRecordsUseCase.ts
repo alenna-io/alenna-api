@@ -1,4 +1,4 @@
-import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository, IStudentRepository, IRecurringExtraChargeRepository } from '../../../adapters_interface/repositories';
+import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository, IStudentRepository, IRecurringExtraChargeRepository, IStudentBillingConfigRepository } from '../../../adapters_interface/repositories';
 import { BillingRecord } from '../../../domain/entities';
 import { BulkCreateBillingRecordsInput } from '../../dtos';
 import { randomUUID } from 'crypto';
@@ -10,13 +10,18 @@ export class BulkCreateBillingRecordsUseCase {
     private studentScholarshipRepository: IStudentScholarshipRepository,
     private tuitionTypeRepository: ITuitionTypeRepository,
     private studentRepository: IStudentRepository,
-    private recurringExtraChargeRepository: IRecurringExtraChargeRepository
+    private recurringExtraChargeRepository: IRecurringExtraChargeRepository,
+    private studentBillingConfigRepository: IStudentBillingConfigRepository
   ) { }
 
   async execute(input: BulkCreateBillingRecordsInput, schoolId: string, createdBy: string): Promise<BillingRecord[]> {
     const tuitionConfig = await this.tuitionConfigRepository.findBySchoolId(schoolId);
+    const studentBillingConfigs = await this.studentBillingConfigRepository.findBySchoolId(schoolId);
     if (!tuitionConfig) {
       throw new Error('Tuition configuration not found. Please configure tuition settings first.');
+    }
+    if (studentBillingConfigs.length === 0) {
+      throw new Error('No student billing configs found. Please configure student billing configs first.');
     }
 
     // Get all tuition types for the school (for fallback)
@@ -42,6 +47,7 @@ export class BulkCreateBillingRecordsUseCase {
 
     for (const student of students) {
       const studentId = (student as any).id || student;
+      const studentBillingConfig = studentBillingConfigs.find(config => config.studentId === studentId);
       const existingBill = await this.billingRecordRepository.findByMonthAndYear(
         student.id,
         input.billingMonth,
@@ -80,7 +86,7 @@ export class BulkCreateBillingRecordsUseCase {
       }
 
       // Set taxable bill status based on student's scholarship config
-      const taxableBillStatus = scholarship?.taxableBillRequired ? 'required' : 'not_required';
+      const taxableBillStatus = studentBillingConfig?.requiresTaxableInvoice ? 'required' : 'not_required';
 
       // Apply active recurring extra charges
       const recurringCharges = await this.recurringExtraChargeRepository.findActiveByStudentIdAndDate(

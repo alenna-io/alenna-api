@@ -1,4 +1,4 @@
-import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository, IStudentRepository } from '../../../adapters_interface/repositories';
+import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository, IStudentRepository, IStudentBillingConfigRepository } from '../../../adapters_interface/repositories';
 import { BillingRecord } from '../../../domain/entities';
 import { CreateBillingRecordInput } from '../../dtos';
 import { randomUUID } from 'crypto';
@@ -9,11 +9,13 @@ export class CreateBillingRecordUseCase {
     private tuitionConfigRepository: ITuitionConfigRepository,
     private studentScholarshipRepository: IStudentScholarshipRepository,
     private tuitionTypeRepository: ITuitionTypeRepository,
-    private studentRepository: IStudentRepository
+    private studentRepository: IStudentRepository,
+    private studentBillingConfigRepository: IStudentBillingConfigRepository
   ) { }
 
   async execute(input: CreateBillingRecordInput, schoolId: string, createdBy: string): Promise<BillingRecord> {
     const student = await this.studentRepository.findById(input.studentId, schoolId);
+    const studentBillingConfig = await this.studentBillingConfigRepository.findByStudentId(input.studentId);
 
     if (!student) {
       throw new Error('Student not found');
@@ -71,7 +73,7 @@ export class CreateBillingRecordUseCase {
     }
 
     // Set taxable bill status based on student's scholarship config
-    const taxableBillStatus = scholarship?.taxableBillRequired ? 'required' : 'not_required';
+    const taxableBillStatus = studentBillingConfig?.requiresTaxableInvoice ? 'required' : 'not_required';
 
     const billingRecord = BillingRecord.create({
       id: randomUUID(),

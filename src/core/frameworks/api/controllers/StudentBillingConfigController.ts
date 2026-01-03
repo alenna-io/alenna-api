@@ -28,13 +28,13 @@ export class StudentBillingConfigController {
       const useCase = container.updateBillingConfigByStudentUseCase;
       const config = await useCase.execute(studentId, validatedData);
 
-      res.json(config);
+      return res.status(200).json(config);
     } catch (error: any) {
       console.error('Error updating student billing config:', error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: 'Validation error', details: error.errors });
       }
-      res.status(500).json({ error: error.message || 'Failed to update student billing config' });
+      return res.status(500).json({ error: error.message || 'Failed to update student billing config' });
     }
   }
 }

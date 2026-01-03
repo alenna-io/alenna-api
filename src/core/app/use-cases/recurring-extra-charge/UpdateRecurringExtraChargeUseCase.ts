@@ -5,7 +5,7 @@ import { UpdateRecurringExtraChargeInput } from '../../dtos/RecurringExtraCharge
 export class UpdateRecurringExtraChargeUseCase {
   constructor(
     private recurringExtraChargeRepository: IRecurringExtraChargeRepository
-  ) {}
+  ) { }
 
   async execute(
     id: string,
@@ -17,19 +17,15 @@ export class UpdateRecurringExtraChargeUseCase {
       throw new Error('Recurring extra charge not found');
     }
 
-    const updateData: Partial<RecurringExtraCharge> = {};
+    const updatedEntity = existing.update({
+      description: input.description,
+      amount: input.amount,
+      expiresAt: input.expiresAt
+        ? new Date(input.expiresAt)
+        : undefined
+    });
 
-    if (input.description !== undefined) {
-      updateData.description = input.description;
-    }
-    if (input.amount !== undefined) {
-      updateData.amount = input.amount;
-    }
-    if (input.expiresAt !== undefined) {
-      updateData.expiresAt = new Date(input.expiresAt);
-    }
-
-    return await this.recurringExtraChargeRepository.update(id, updateData);
+    return await this.recurringExtraChargeRepository.update(id, updatedEntity);
   }
 }
 

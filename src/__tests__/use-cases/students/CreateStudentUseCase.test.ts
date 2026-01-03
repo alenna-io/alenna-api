@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CreateStudentUseCase } from '../../../core/app/use-cases/students/CreateStudentUseCase';
-import { createMockStudentRepository } from '../../utils/mockRepositories';
+import { createMockStudentBillingConfigRepository, createMockStudentRepository, createMockStudentScholarshipRepository } from '../../utils/mockRepositories';
 import {
   createTestStudent,
   createTestCreateStudentInput,
@@ -61,19 +61,23 @@ vi.mock('../../../core/frameworks/services/ClerkService', () => {
 describe('CreateStudentUseCase', () => {
   let useCase: CreateStudentUseCase;
   let mockRepository: ReturnType<typeof createMockStudentRepository>;
+  let mockBillingConfigRepository: ReturnType<typeof createMockStudentBillingConfigRepository>;
+  let mockScholarshipRepository: ReturnType<typeof createMockStudentScholarshipRepository>;
   let mockPrisma: any;
   let consoleErrorSpy: any;
 
   beforeEach(() => {
     mockRepository = createMockStudentRepository();
-    useCase = new CreateStudentUseCase(mockRepository);
-    
+    mockBillingConfigRepository = createMockStudentBillingConfigRepository();
+    mockScholarshipRepository = createMockStudentScholarshipRepository();
+    useCase = new CreateStudentUseCase(mockRepository, mockBillingConfigRepository, mockScholarshipRepository);
+
     // Get the mocked Prisma instance (same instance is returned)
     mockPrisma = mockPrismaInstance;
-    
+
     // Suppress console.error for cleaner test output (Clerk is mocked, no real connections)
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
     // Reset all mocks
     vi.clearAllMocks();
   });
@@ -396,7 +400,7 @@ describe('CreateStudentUseCase', () => {
       const today = new Date();
       const birthYear = today.getFullYear() - 15;
       const birthDate = new Date(birthYear, today.getMonth(), today.getDate() - 1); // Yesterday, 15 years ago
-      
+
       const input = createTestCreateStudentInput({
         birthDate: birthDate.toISOString(),
       });
@@ -459,7 +463,7 @@ describe('CreateStudentUseCase', () => {
       const today = new Date();
       const birthYear = today.getFullYear() - 15;
       const birthDate = new Date(birthYear, today.getMonth() + 1, today.getDate()); // Next month, 15 years ago
-      
+
       const input = createTestCreateStudentInput({
         birthDate: birthDate.toISOString(),
       });
