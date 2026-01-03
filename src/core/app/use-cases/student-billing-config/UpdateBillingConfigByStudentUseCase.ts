@@ -18,6 +18,6 @@ export class UpdateBillingConfigByStudentUseCase {
     }
 
     const updatedConfig = existing.update(input);
-    return await this.studentBillingConfigRepository.update(id, updatedConfig);
+    return await this.studentBillingConfigRepository.update(existing.id, updatedConfig);
   }
 }
