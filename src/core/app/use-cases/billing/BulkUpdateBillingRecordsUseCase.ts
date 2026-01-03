@@ -1,4 +1,11 @@
-import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository, IRecurringExtraChargeRepository } from '../../../adapters_interface/repositories';
+import {
+  IBillingRecordRepository,
+  ITuitionConfigRepository,
+  IStudentScholarshipRepository,
+  ITuitionTypeRepository,
+  IRecurringExtraChargeRepository,
+  IStudentBillingConfigRepository
+} from '../../../adapters_interface/repositories';
 import { BillingRecord } from '../../../domain/entities';
 
 export class BulkUpdateBillingRecordsUseCase {
@@ -7,7 +14,8 @@ export class BulkUpdateBillingRecordsUseCase {
     private tuitionConfigRepository: ITuitionConfigRepository,
     private studentScholarshipRepository: IStudentScholarshipRepository,
     private tuitionTypeRepository: ITuitionTypeRepository,
-    private recurringExtraChargeRepository: IRecurringExtraChargeRepository
+    private recurringExtraChargeRepository: IRecurringExtraChargeRepository,
+    private studentBillingConfigRepository: IStudentBillingConfigRepository
   ) { }
 
   async execute(
@@ -18,8 +26,12 @@ export class BulkUpdateBillingRecordsUseCase {
     updatedBy: string
   ): Promise<{ updated: number; skipped: number }> {
     const tuitionConfig = await this.tuitionConfigRepository.findBySchoolId(schoolId);
+    const studentBillingConfigs = await this.studentBillingConfigRepository.findBySchoolId(schoolId);
     if (!tuitionConfig) {
       throw new Error('Tuition configuration not found. Please configure tuition settings first.');
+    }
+    if (studentBillingConfigs.length === 0) {
+      throw new Error('No student billing configs found. Please configure student billing configs first.');
     }
 
     // Get all tuition types for the school (for fallback)
@@ -51,49 +63,7 @@ export class BulkUpdateBillingRecordsUseCase {
       try {
         // Get current scholarship for the student
         const scholarship = await this.studentScholarshipRepository.findByStudentId(record.studentId, schoolId);
-
-        // Update taxable bill status based on current scholarship config
-        const newTaxableBillStatus = scholarship?.taxableBillRequired ? 'required' : 'not_required';
-
-        // Always update billStatus if it doesn't match, even for paid/locked records
-        if (record.billStatus !== newTaxableBillStatus) {
-          const updatedRecord = new BillingRecord(
-            record.id,
-            record.studentId,
-            record.schoolYearId,
-            record.billingMonth,
-            record.billingYear,
-            record.tuitionTypeSnapshot,
-            record.effectiveTuitionAmount,
-            record.scholarshipAmount,
-            record.discountAdjustments,
-            record.extraCharges,
-            record.lateFeeAmount,
-            record.finalAmount,
-            newTaxableBillStatus,
-            record.paymentStatus,
-            record.paidAmount,
-            record.paidAt,
-            record.lockedAt,
-            {
-              ...record.auditMetadata,
-              updatedBy,
-            },
-            record.paymentNote,
-            record.paymentMethod,
-            record.paymentGateway,
-            record.paymentTransactionId,
-            record.paymentGatewayStatus,
-            record.paymentWebhookReceivedAt,
-            record.dueDate,
-            record.createdAt,
-            new Date()
-          );
-
-          await this.billingRecordRepository.update(record.id, updatedRecord, schoolId);
-          updated++;
-          continue;
-        }
+        const requireTaxableInvoice = studentBillingConfigs.find(config => config.studentId === record.studentId)?.requiresTaxableInvoice;
 
         // Skip locked records or paid records for other updates (we don't want to modify payment amounts)
         if (record.lockedAt !== null || record.paymentStatus === 'paid') {
@@ -143,7 +113,7 @@ export class BulkUpdateBillingRecordsUseCase {
         let newLateFeeAmount = record.lateFeeAmount;
         const now = new Date();
         const isOverdue = now > record.dueDate;
-        if (isOverdue && record.lateFeeAmount === 0 && newTaxableBillStatus !== 'not_required') {
+        if (isOverdue && record.lateFeeAmount === 0) {
           if (tuitionType.lateFeeType === 'fixed') {
             newLateFeeAmount = tuitionType.lateFeeValue;
           } else {
@@ -153,59 +123,50 @@ export class BulkUpdateBillingRecordsUseCase {
 
         const newFinalAmount = amountAfterDiscounts + extraAmount + newLateFeeAmount;
 
-        // Only update if values actually changed (also check if finalAmount is significantly different due to floating point)
-        const finalAmountChanged = Math.abs(record.finalAmount - newFinalAmount) > 0.01;
-        if (record.scholarshipAmount !== newScholarshipAmount ||
-          record.billStatus !== newTaxableBillStatus ||
-          record.lateFeeAmount !== newLateFeeAmount ||
-          finalAmountChanged) {
+        // Create updated record with new values
+        const updatedRecord = new BillingRecord(
+          record.id,
+          record.studentId,
+          record.schoolYearId,
+          record.billingMonth,
+          record.billingYear,
+          {
+            ...record.tuitionTypeSnapshot,
+            tuitionTypeId: tuitionType.id,
+            tuitionTypeName: tuitionType.name,
+            baseAmount: tuitionType.baseAmount,
+            lateFeeType: tuitionType.lateFeeType,
+            lateFeeValue: tuitionType.lateFeeValue,
+          },
+          record.effectiveTuitionAmount, // Preserve original
+          newScholarshipAmount,
+          record.discountAdjustments, // Preserve discounts
+          updatedExtraCharges, // Updated with recurring charges
+          newLateFeeAmount,
+          newFinalAmount,
+          requireTaxableInvoice ? 'required' : 'not_required',
+          record.paymentStatus, // Preserve payment status
+          record.paidAmount, // Preserve paid amount
+          record.paidAt, // Preserve paid date
+          record.lockedAt, // Preserve locked status
+          {
+            ...record.auditMetadata,
+            updatedBy,
+          },
+          record.paymentNote,
+          record.paymentMethod,
+          record.paymentGateway,
+          record.paymentTransactionId,
+          record.paymentGatewayStatus,
+          record.paymentWebhookReceivedAt,
+          record.dueDate,
+          record.createdAt,
+          new Date()
+        );
 
-          // Create updated record with new values
-          const updatedRecord = new BillingRecord(
-            record.id,
-            record.studentId,
-            record.schoolYearId,
-            record.billingMonth,
-            record.billingYear,
-            {
-              ...record.tuitionTypeSnapshot,
-              tuitionTypeId: tuitionType.id,
-              tuitionTypeName: tuitionType.name,
-              baseAmount: tuitionType.baseAmount,
-              lateFeeType: tuitionType.lateFeeType,
-              lateFeeValue: tuitionType.lateFeeValue,
-            },
-            record.effectiveTuitionAmount, // Preserve original
-            newScholarshipAmount,
-            record.discountAdjustments, // Preserve discounts
-            updatedExtraCharges, // Updated with recurring charges
-            newLateFeeAmount,
-            newFinalAmount,
-            newTaxableBillStatus,
-            record.paymentStatus, // Preserve payment status
-            record.paidAmount, // Preserve paid amount
-            record.paidAt, // Preserve paid date
-            record.lockedAt, // Preserve locked status
-            {
-              ...record.auditMetadata,
-              updatedBy,
-            },
-            record.paymentNote,
-            record.paymentMethod,
-            record.paymentGateway,
-            record.paymentTransactionId,
-            record.paymentGatewayStatus,
-            record.paymentWebhookReceivedAt,
-            record.dueDate,
-            record.createdAt,
-            new Date()
-          );
+        await this.billingRecordRepository.update(record.id, updatedRecord, schoolId);
+        updated++;
 
-          await this.billingRecordRepository.update(record.id, updatedRecord, schoolId);
-          updated++;
-        } else {
-          skipped++;
-        }
       } catch (error) {
         console.error(`Error updating billing record ${record.id}:`, error);
         skipped++;

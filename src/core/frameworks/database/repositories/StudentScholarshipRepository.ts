@@ -65,9 +65,6 @@ export class StudentScholarshipRepository implements IStudentScholarshipReposito
     if (scholarship.scholarshipValue !== undefined) {
       updateData.scholarshipValue = scholarship.scholarshipValue;
     }
-    if (scholarship.taxableBillRequired !== undefined) {
-      updateData.taxableBillRequired = scholarship.taxableBillRequired;
-    }
 
     const updated = await prisma.studentScholarship.update({
       where: { id },

@@ -1,14 +1,20 @@
+// Todo: replace prisma with repositories
 import { IStudentRepository } from '../../../adapters_interface/repositories';
-import { Student, CertificationType } from '../../../domain/entities';
+import { Student, CertificationType, StudentBillingConfig, StudentScholarship } from '../../../domain/entities';
 import { CreateStudentInput } from '../../dtos';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { clerkService } from '../../../frameworks/services/ClerkService';
+import { IStudentBillingConfigRepository, IStudentScholarshipRepository } from '../../../adapters_interface/repositories';
 
 const prisma = new PrismaClient();
 
 export class CreateStudentUseCase {
-  constructor(private studentRepository: IStudentRepository) {}
+  constructor(
+    private studentRepository: IStudentRepository,
+    private studentBillingConfigRepository: IStudentBillingConfigRepository,
+    private studentScholarshipRepository: IStudentScholarshipRepository
+  ) { }
 
   async execute(input: CreateStudentInput, schoolId: string): Promise<Student> {
     // 1. Check student limit if school has one set
@@ -226,7 +232,25 @@ export class CreateStudentUseCase {
       }
     }
 
-    // 8. Return student with updated parents list
+    // 10. Create billing config for student
+    const billingConfig = StudentBillingConfig.create({
+      id: randomUUID(),
+      studentId: createdStudent.id,
+      requiresTaxableInvoice: false,
+    });
+    await this.studentBillingConfigRepository.create(billingConfig);
+
+    // 11. Create scholarship for student
+    const scholarship = StudentScholarship.create({
+      id: randomUUID(),
+      studentId: createdStudent.id,
+      tuitionTypeId: null,
+      scholarshipType: 'percentage',
+      scholarshipValue: 0
+    });
+    await this.studentScholarshipRepository.create(scholarship);
+
+    // 12. Return student with updated parents list
     const studentWithParents = await this.studentRepository.findById(createdStudent.id, schoolId);
     return studentWithParents || createdStudent;
   }

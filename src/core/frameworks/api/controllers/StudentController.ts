@@ -10,16 +10,16 @@ export class StudentController {
     try {
       const schoolId = req.schoolId!;
       const userId = req.userId; // For parent filtering
-      
+
       const students = await container.getStudentsUseCase.execute(schoolId, userId);
 
       // Fetch user contact info for all students in one query
       const studentIds = students.map(s => s.id);
       const studentsWithUsers = await prisma.student.findMany({
         where: { id: { in: studentIds } },
-        include: { 
-          user: { 
-            select: { 
+        include: {
+          user: {
+            select: {
               email: true,
               phone: true,
               streetAddress: true,
@@ -27,12 +27,12 @@ export class StudentController {
               state: true,
               country: true,
               zipCode: true
-            } 
-          } 
+            }
+          }
         }
       });
       const userInfoMap = new Map(studentsWithUsers.map(s => [
-        s.id, 
+        s.id,
         {
           email: s.user?.email,
           phone: s.user?.phone,
@@ -103,10 +103,10 @@ export class StudentController {
       // Get student's user contact info (need to fetch user separately)
       const studentWithUser = await prisma.student.findUnique({
         where: { id: student.id },
-        include: { 
-          user: { 
-            select: { 
-              email: true, 
+        include: {
+          user: {
+            select: {
+              email: true,
               id: true,
               phone: true,
               streetAddress: true,
@@ -114,8 +114,8 @@ export class StudentController {
               state: true,
               country: true,
               zipCode: true
-            } 
-          } 
+            }
+          }
         }
       });
 
@@ -153,12 +153,12 @@ export class StudentController {
       });
     } catch (error: any) {
       console.error('Error getting student:', error);
-      
+
       if (error.message === 'Student not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get student' });
     }
   }
@@ -167,26 +167,8 @@ export class StudentController {
     try {
       const schoolId = req.schoolId!;
       const validatedData = CreateStudentDTO.parse(req.body);
-      
-      const student = await container.createStudentUseCase.execute(validatedData, schoolId);
 
-      // Fetch user info for the student
-      const studentWithUser = await prisma.student.findUnique({
-        where: { id: student.id },
-        include: {
-          user: {
-            select: {
-              email: true,
-              phone: true,
-              streetAddress: true,
-              city: true,
-              state: true,
-              country: true,
-              zipCode: true,
-            }
-          }
-        }
-      });
+      const student = await container.createStudentUseCase.execute(validatedData, schoolId);
 
       res.status(201).json({
         id: student.id,
@@ -198,26 +180,19 @@ export class StudentController {
         certificationType: student.certificationType.name,
         certificationTypeId: student.certificationTypeId,
         graduationDate: student.graduationDate.toISOString(),
-        email: studentWithUser?.user?.email || undefined,
-        phone: studentWithUser?.user?.phone || undefined,
         isLeveled: student.isLeveled,
         expectedLevel: student.expectedLevel,
         currentLevel: student.currentLevel,
-        streetAddress: studentWithUser?.user?.streetAddress || undefined,
-        city: studentWithUser?.user?.city || undefined,
-        state: studentWithUser?.user?.state || undefined,
-        country: studentWithUser?.user?.country || undefined,
-        zipCode: studentWithUser?.user?.zipCode || undefined,
         parents: student.parents,
       });
     } catch (error: any) {
       console.error('Error creating student:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to create student' });
     }
   }
@@ -227,7 +202,7 @@ export class StudentController {
       const { id } = req.params;
       const schoolId = req.schoolId!;
       const validatedData = UpdateStudentDTO.parse(req.body);
-      
+
       const student = await container.updateStudentUseCase.execute(id, validatedData, schoolId);
 
       // Fetch user info for the student
@@ -272,17 +247,17 @@ export class StudentController {
       });
     } catch (error: any) {
       console.error('Error updating student:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'Student not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to update student' });
     }
   }
@@ -292,13 +267,13 @@ export class StudentController {
       const { id } = req.params;
       const schoolId = req.schoolId!;
       const currentUserRoles = req.userRoles || [];
-      
+
       await container.deleteStudentUseCase.execute(id, schoolId, currentUserRoles);
 
       res.status(204).send();
     } catch (error: any) {
       console.error('Error deleting student:', error);
-      
+
       if (error.message === 'Student not found' || error.message.includes('not found')) {
         res.status(404).json({ error: error.message });
         return;
@@ -308,7 +283,7 @@ export class StudentController {
         res.status(500).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to delete student' });
     }
   }

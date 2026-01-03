@@ -10,7 +10,6 @@ export class StudentScholarshipMapper {
       prismaScholarship.tuitionTypeId ?? null,
       prismaScholarship.scholarshipType as ScholarshipType | null,
       prismaScholarship.scholarshipValue ? Number(prismaScholarship.scholarshipValue) : null,
-      prismaScholarship.taxableBillRequired ?? false,
       prismaScholarship.createdAt,
       prismaScholarship.updatedAt
     );
@@ -23,7 +22,6 @@ export class StudentScholarshipMapper {
       tuitionTypeId: scholarship.tuitionTypeId,
       scholarshipType: scholarship.scholarshipType,
       scholarshipValue: scholarship.scholarshipValue !== null ? new Decimal(scholarship.scholarshipValue) : null,
-      taxableBillRequired: scholarship.taxableBillRequired,
     };
   }
 }

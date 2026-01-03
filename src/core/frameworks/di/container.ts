@@ -263,7 +263,7 @@ class Container {
 
   // Student Use Cases
   get createStudentUseCase(): CreateStudentUseCase {
-    return new CreateStudentUseCase(this.studentRepository);
+    return new CreateStudentUseCase(this.studentRepository, this.studentBillingConfigRepository, this.studentScholarshipRepository);
   }
 
   get getStudentsUseCase(): GetStudentsUseCase {
@@ -672,7 +672,8 @@ class Container {
       this.tuitionConfigRepository,
       this.studentScholarshipRepository,
       this.tuitionTypeRepository,
-      this.recurringExtraChargeRepository
+      this.recurringExtraChargeRepository,
+      this.studentBillingConfigRepository
     );
   }
 
