@@ -15,7 +15,8 @@ import {
   StudentScholarshipRepository,
   RecurringExtraChargeRepository,
   BillingRecordRepository,
-  TuitionTypeRepository
+  TuitionTypeRepository,
+  StudentBillingConfigRepository,
 } from '../database/repositories';
 import { CharacterTraitRepository } from '../database/repositories/CharacterTraitRepository';
 import {
@@ -587,7 +588,7 @@ class Container {
   private _recurringExtraChargeRepository?: RecurringExtraChargeRepository;
   private _billingRecordRepository?: BillingRecordRepository;
   private _tuitionTypeRepository?: TuitionTypeRepository;
-
+  private _studentBillingConfigRepository?: StudentBillingConfigRepository;
   // Character Trait Repository
   private _characterTraitRepository?: CharacterTraitRepository;
 
@@ -624,6 +625,13 @@ class Container {
       this._tuitionTypeRepository = new TuitionTypeRepository();
     }
     return this._tuitionTypeRepository;
+  }
+
+  get studentBillingConfigRepository(): StudentBillingConfigRepository {
+    if (!this._studentBillingConfigRepository) {
+      this._studentBillingConfigRepository = new StudentBillingConfigRepository();
+    }
+    return this._studentBillingConfigRepository;
   }
 
   get characterTraitRepository(): CharacterTraitRepository {
@@ -744,8 +752,19 @@ class Container {
       this.studentRepository,
       this.studentScholarshipRepository,
       this.recurringExtraChargeRepository,
-      this.tuitionTypeRepository
+      this.tuitionTypeRepository,
+      this.studentBillingConfigRepository
     );
+  }
+
+  get getBillingConfigByStudentUseCase() {
+    const { GetBillingConfigByStudentUseCase } = require('../../app/use-cases/student-billing-config');
+    return new GetBillingConfigByStudentUseCase(this.studentBillingConfigRepository);
+  }
+
+  get updateBillingConfigByStudentUseCase() {
+    const { UpdateBillingConfigByStudentUseCase } = require('../../app/use-cases/student-billing-config');
+    return new UpdateBillingConfigByStudentUseCase(this.studentBillingConfigRepository);
   }
 
   get updateStudentScholarshipUseCase() {

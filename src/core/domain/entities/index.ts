@@ -25,4 +25,5 @@ export * from './TuitionType';
 export * from './StudentScholarship';
 export * from './RecurringExtraCharge';
 export * from './BillingRecord';
-
+export * from './TaxableInvoice';
+export * from './StudentBillingConfig';

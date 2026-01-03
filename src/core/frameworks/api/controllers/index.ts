@@ -13,4 +13,4 @@ export * from './ReportCardController';
 export * from './GroupController';
 export * from './BillingController';
 export * from './RecurringExtraChargeController';
-
+export * from './StudentBillingConfigController';

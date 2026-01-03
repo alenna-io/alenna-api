@@ -191,6 +191,8 @@ model Student {
   scholarship         StudentScholarship?
   billingRecords      BillingRecord[]
   recurringExtraCharges RecurringExtraCharge[]
+  billingConfig       StudentBillingConfig?
+  taxableInvoice      TaxableInvoice?
 
   @@index([schoolId])
   @@index([certificationTypeId])
@@ -658,13 +660,24 @@ model TuitionConfig {
   @@map("tuition_configs")
 }
 
+model StudentBillingConfig {
+  id          String    @id @default(cuid())
+  studentId   String    @unique @map("student_id")
+  requiresTaxableInvoice     Boolean   @default(false) @map("requires_taxable_invoice")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  student                  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@map("student_billing_configs")
+}
+
 model StudentScholarship {
   id                  String      @id @default(cuid())
   studentId           String      @unique @map("student_id")
   tuitionTypeId       String?     @map("tuition_type_id")
   scholarshipType     String?     @map("scholarship_type")
   scholarshipValue    Decimal?   @map("scholarship_value") @db.Decimal(10, 2)
-  taxableBillRequired Boolean    @default(false) @map("taxable_bill_required")
   createdAt           DateTime    @default(now()) @map("created_at")
   updatedAt           DateTime    @updatedAt @map("updated_at")
   student             Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -673,6 +686,20 @@ model StudentScholarship {
   @@index([studentId])
   @@index([tuitionTypeId])
   @@map("student_scholarships")
+}
+
+model TaxableInvoice {
+  id          String    @id @default(cuid())
+  studentId   String    @unique @map("student_id")
+  taxable     Boolean   @default(false) @map("taxable")
+  pdfFileUrl  String?   @map("pdf_file_url")
+  xmlFileUrl  String?   @map("xml_file_url")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@map("taxable_invoices")
 }
 
 model RecurringExtraCharge {

@@ -3,9 +3,10 @@ import {
   IStudentRepository,
   IStudentScholarshipRepository,
   ITuitionTypeRepository,
-  IRecurringExtraChargeRepository
+  IRecurringExtraChargeRepository,
+  IStudentBillingConfigRepository
 } from '../../../adapters_interface/repositories'
-import { StudentScholarship, RecurringExtraCharge } from '../../../domain/entities'
+import { StudentScholarship, RecurringExtraCharge, StudentBillingConfig } from '../../../domain/entities'
 
 // Helper function to normalize text
 function normalizeText(text: string): string {
@@ -31,7 +32,7 @@ export type StudentBillingRow = {
   recurringChargesTotal: number
   totalAmount: number
 
-  taxableBillRequired: boolean
+  requiresTaxableInvoice: boolean
 }
 
 export class GetStudentsBillingOverviewQuery {
@@ -39,7 +40,8 @@ export class GetStudentsBillingOverviewQuery {
     private readonly studentRepository: IStudentRepository,
     private readonly scholarshipRepository: IStudentScholarshipRepository,
     private readonly recurringExtraChargeRepository: IRecurringExtraChargeRepository,
-    private readonly tuitionTypeRepository: ITuitionTypeRepository
+    private readonly tuitionTypeRepository: ITuitionTypeRepository,
+    private readonly studentBillingConfigRepository: IStudentBillingConfigRepository
   ) { }
 
   async execute(
@@ -56,6 +58,7 @@ export class GetStudentsBillingOverviewQuery {
     const tuitionTypes = await this.tuitionTypeRepository.findBySchoolId(schoolId)
     const recurringExtraCharges =
       await this.recurringExtraChargeRepository.findActiveBySchoolId(schoolId)
+    const studentBillingConfigs = await this.studentBillingConfigRepository.findBySchoolId(schoolId)
 
     const scholarshipByStudentId: Record<string, StudentScholarship> = {}
     scholarships.forEach(s => {
@@ -68,6 +71,11 @@ export class GetStudentsBillingOverviewQuery {
         recurringChargesByStudentId[c.studentId] = []
       }
       recurringChargesByStudentId[c.studentId].push(c)
+    })
+
+    const studentBillingConfigByStudentId: Record<string, StudentBillingConfig> = {}
+    studentBillingConfigs.forEach(c => {
+      studentBillingConfigByStudentId[c.studentId] = c
     })
 
     // SEARCH
@@ -84,6 +92,7 @@ export class GetStudentsBillingOverviewQuery {
     let rows: StudentBillingRow[] = filtered.map(student => {
       const scholarship = scholarshipByStudentId[student.id] ?? null
       const charges = recurringChargesByStudentId[student.id] ?? []
+      const studentBillingConfig = studentBillingConfigByStudentId[student.id] ?? null
 
       const tuitionType =
         tuitionTypes.find(t => t.id === scholarship?.tuitionTypeId) ??
@@ -127,7 +136,7 @@ export class GetStudentsBillingOverviewQuery {
         recurringChargesTotal,
         totalAmount,
 
-        taxableBillRequired: scholarship?.taxableBillRequired ?? false
+        requiresTaxableInvoice: studentBillingConfig?.requiresTaxableInvoice ?? false
       }
     })
 

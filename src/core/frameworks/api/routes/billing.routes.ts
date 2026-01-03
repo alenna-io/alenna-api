@@ -1,11 +1,12 @@
 import { Router, type Router as ExpressRouter } from 'express';
-import { BillingController, RecurringExtraChargeController } from '../controllers';
+import { BillingController, RecurringExtraChargeController, StudentBillingConfigController } from '../controllers';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
 import { attachUserContext, ensureTenantIsolation, requirePermission } from '../middleware';
 
 const router: ExpressRouter = Router();
 const billingController = new BillingController();
 const recurringExtraChargeController = new RecurringExtraChargeController();
+const studentBillingConfigController = new StudentBillingConfigController();
 
 router.use(clerkMiddleware({
   publishableKey: process.env.CLERK_PUBLISHABLE_KEY!,
@@ -38,6 +39,10 @@ router.get('/students/config', requirePermission('billing.read'), billingControl
 router.get('/students/:studentId/scholarship', requirePermission('billing.read'), billingController.getStudentScholarship.bind(billingController));
 router.post('/students/:studentId/scholarship', requirePermission('billing.create'), billingController.createStudentScholarship.bind(billingController));
 router.put('/students/:studentId/scholarship', requirePermission('billing.update'), billingController.updateStudentScholarship.bind(billingController));
+
+// Student Billing Configuration Routes
+router.get('/students/:studentId/billing-config', requirePermission('billing.read'), studentBillingConfigController.getByStudentId.bind(studentBillingConfigController));
+router.put('/students/:studentId/billing-config', requirePermission('billing.update'), studentBillingConfigController.update.bind(studentBillingConfigController));
 
 // Recurring extra charges routes
 router.get('/students/:studentId/recurring-charges', requirePermission('billing.read'), recurringExtraChargeController.getByStudentId.bind(recurringExtraChargeController));
