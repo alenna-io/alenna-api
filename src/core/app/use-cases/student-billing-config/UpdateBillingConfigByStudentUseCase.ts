@@ -13,7 +13,7 @@ export class UpdateBillingConfigByStudentUseCase {
       throw new Error('Student billing config not found');
     }
 
-    if (id !== existing.id) {
+    if (id !== existing.studentId) {
       throw new Error('Student billing config ID mismatch');
     }
 
