@@ -8,7 +8,7 @@ export class UpdateBillingConfigByStudentUseCase {
   ) { }
 
   async execute(id: string, input: UpdateStudentBillingConfigInput): Promise<StudentBillingConfig> {
-    const existing = await this.studentBillingConfigRepository.findById(id);
+    const existing = await this.studentBillingConfigRepository.findByStudentId(id);
     if (!existing) {
       throw new Error('Student billing config not found');
     }
