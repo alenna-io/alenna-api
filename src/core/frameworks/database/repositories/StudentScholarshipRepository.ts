@@ -18,6 +18,20 @@ export class StudentScholarshipRepository implements IStudentScholarshipReposito
     return scholarship ? StudentScholarshipMapper.toDomain(scholarship) : null;
   }
 
+  async findBySchoolId(schoolId: string): Promise<StudentScholarship[]> {
+    const scholarships = await prisma.studentScholarship.findMany({
+      where: {
+        student: {
+          schoolId,
+          deletedAt: null,
+        },
+      },
+    });
+
+    return scholarships.map(StudentScholarshipMapper.toDomain);
+  }
+
+
   async create(scholarship: StudentScholarship): Promise<StudentScholarship> {
     const created = await prisma.studentScholarship.create({
       data: StudentScholarshipMapper.toPrisma(scholarship),

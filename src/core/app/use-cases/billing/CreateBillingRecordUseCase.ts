@@ -36,13 +36,13 @@ export class CreateBillingRecordUseCase {
     }
 
     const scholarship = await this.studentScholarshipRepository.findByStudentId(input.studentId, schoolId);
-    
+
     // Get tuition type (from scholarship or default)
     let tuitionType = null;
     if (scholarship?.tuitionTypeId) {
       tuitionType = await this.tuitionTypeRepository.findById(scholarship.tuitionTypeId, schoolId);
     }
-    
+
     // If no tuition type found, get the first/default one for the school
     if (!tuitionType) {
       const tuitionTypes = await this.tuitionTypeRepository.findBySchoolId(schoolId);

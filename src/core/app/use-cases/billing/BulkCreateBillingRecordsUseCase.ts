@@ -1,4 +1,4 @@
-import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository, IStudentRepository } from '../../../adapters_interface/repositories';
+import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository, IStudentRepository, IRecurringExtraChargeRepository } from '../../../adapters_interface/repositories';
 import { BillingRecord } from '../../../domain/entities';
 import { BulkCreateBillingRecordsInput } from '../../dtos';
 import { randomUUID } from 'crypto';
@@ -9,7 +9,8 @@ export class BulkCreateBillingRecordsUseCase {
     private tuitionConfigRepository: ITuitionConfigRepository,
     private studentScholarshipRepository: IStudentScholarshipRepository,
     private tuitionTypeRepository: ITuitionTypeRepository,
-    private studentRepository: IStudentRepository
+    private studentRepository: IStudentRepository,
+    private recurringExtraChargeRepository: IRecurringExtraChargeRepository
   ) { }
 
   async execute(input: BulkCreateBillingRecordsInput, schoolId: string, createdBy: string): Promise<BillingRecord[]> {
@@ -53,7 +54,7 @@ export class BulkCreateBillingRecordsUseCase {
       }
 
       const scholarship = await this.studentScholarshipRepository.findByStudentId(student.id, schoolId);
-      
+
       // Get tuition type (from scholarship or default)
       let tuitionType = defaultTuitionType;
       if (scholarship?.tuitionTypeId) {
@@ -81,6 +82,19 @@ export class BulkCreateBillingRecordsUseCase {
       // Set taxable bill status based on student's scholarship config
       const taxableBillStatus = scholarship?.taxableBillRequired ? 'required' : 'not_required';
 
+      // Apply active recurring extra charges
+      const recurringCharges = await this.recurringExtraChargeRepository.findActiveByStudentIdAndDate(
+        student.id,
+        input.billingMonth,
+        input.billingYear,
+        schoolId
+      );
+
+      const extraCharges = recurringCharges.map(charge => ({
+        amount: Number(charge.amount),
+        description: charge.description
+      }));
+
       const billingRecord = BillingRecord.create({
         id: randomUUID(),
         studentId: studentId,
@@ -90,6 +104,7 @@ export class BulkCreateBillingRecordsUseCase {
         tuitionTypeSnapshot,
         effectiveTuitionAmount,
         scholarshipAmount,
+        extraCharges,
         billStatus: taxableBillStatus,
         dueDay: tuitionConfig.dueDay,
         createdBy,

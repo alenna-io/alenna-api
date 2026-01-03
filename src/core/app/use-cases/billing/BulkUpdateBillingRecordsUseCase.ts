@@ -1,4 +1,4 @@
-import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository } from '../../../adapters_interface/repositories';
+import { IBillingRecordRepository, ITuitionConfigRepository, IStudentScholarshipRepository, ITuitionTypeRepository, IRecurringExtraChargeRepository } from '../../../adapters_interface/repositories';
 import { BillingRecord } from '../../../domain/entities';
 
 export class BulkUpdateBillingRecordsUseCase {
@@ -6,8 +6,9 @@ export class BulkUpdateBillingRecordsUseCase {
     private billingRecordRepository: IBillingRecordRepository,
     private tuitionConfigRepository: ITuitionConfigRepository,
     private studentScholarshipRepository: IStudentScholarshipRepository,
-    private tuitionTypeRepository: ITuitionTypeRepository
-  ) {}
+    private tuitionTypeRepository: ITuitionTypeRepository,
+    private recurringExtraChargeRepository: IRecurringExtraChargeRepository
+  ) { }
 
   async execute(
     schoolYearId: string,
@@ -114,12 +115,30 @@ export class BulkUpdateBillingRecordsUseCase {
         if (scholarship) {
           newScholarshipAmount = scholarship.calculateDiscount(record.effectiveTuitionAmount);
         }
-        
+
+        // Fetch active recurring extra charges and merge with existing manual charges
+        const recurringCharges = await this.recurringExtraChargeRepository.findActiveByStudentIdAndDate(
+          record.studentId,
+          record.billingMonth,
+          record.billingYear,
+          schoolId
+        );
+
+        const recurringExtraCharges = recurringCharges.map(charge => ({
+          amount: Number(charge.amount),
+          description: charge.description
+        }));
+
+        // Merge: Keep existing extra charges, add recurring ones that aren't already there (by description)
+        const existingDescriptions = new Set(record.extraCharges.map((ec: any) => ec.description));
+        const newRecurringCharges = recurringExtraCharges.filter(rc => !existingDescriptions.has(rc.description));
+        const updatedExtraCharges = [...record.extraCharges, ...newRecurringCharges];
+
         // Calculate amounts for comparison
         const discountAmount = BillingRecord.calculateDiscountAmount(record.discountAdjustments, record.effectiveTuitionAmount - newScholarshipAmount);
-        const extraAmount = BillingRecord.calculateExtraAmount(record.extraCharges);
+        const extraAmount = BillingRecord.calculateExtraAmount(updatedExtraCharges);
         const amountAfterDiscounts = record.effectiveTuitionAmount - newScholarshipAmount - discountAmount;
-        
+
         // Recalculate late fee if overdue and not already applied
         let newLateFeeAmount = record.lateFeeAmount;
         const now = new Date();
@@ -137,10 +156,10 @@ export class BulkUpdateBillingRecordsUseCase {
         // Only update if values actually changed (also check if finalAmount is significantly different due to floating point)
         const finalAmountChanged = Math.abs(record.finalAmount - newFinalAmount) > 0.01;
         if (record.scholarshipAmount !== newScholarshipAmount ||
-            record.billStatus !== newTaxableBillStatus ||
-            record.lateFeeAmount !== newLateFeeAmount ||
-            finalAmountChanged) {
-          
+          record.billStatus !== newTaxableBillStatus ||
+          record.lateFeeAmount !== newLateFeeAmount ||
+          finalAmountChanged) {
+
           // Create updated record with new values
           const updatedRecord = new BillingRecord(
             record.id,
@@ -159,7 +178,7 @@ export class BulkUpdateBillingRecordsUseCase {
             record.effectiveTuitionAmount, // Preserve original
             newScholarshipAmount,
             record.discountAdjustments, // Preserve discounts
-            record.extraCharges, // Preserve extra charges
+            updatedExtraCharges, // Updated with recurring charges
             newLateFeeAmount,
             newFinalAmount,
             newTaxableBillStatus,

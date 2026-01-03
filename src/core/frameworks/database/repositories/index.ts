@@ -10,5 +10,6 @@ export * from './GroupRepository';
 export * from './TuitionConfigRepository';
 export * from './TuitionTypeRepository';
 export * from './StudentScholarshipRepository';
+export * from './RecurringExtraChargeRepository';
 export * from './BillingRecordRepository';
 

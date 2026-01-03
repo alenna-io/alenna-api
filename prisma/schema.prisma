@@ -190,6 +190,7 @@ model Student {
   userStudents        UserStudent[]
   scholarship         StudentScholarship?
   billingRecords      BillingRecord[]
+  recurringExtraCharges RecurringExtraCharge[]
 
   @@index([schoolId])
   @@index([certificationTypeId])
@@ -672,6 +673,24 @@ model StudentScholarship {
   @@index([studentId])
   @@index([tuitionTypeId])
   @@map("student_scholarships")
+}
+
+model RecurringExtraCharge {
+  id          String    @id @default(cuid())
+  studentId   String    @map("student_id")
+  description String    @db.VarChar(100)
+  amount      Decimal   @db.Decimal(10, 2)
+  expiresAt   DateTime  @map("expires_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@index([studentId])
+  @@index([expiresAt])
+  @@index([studentId, expiresAt])
+  @@map("recurring_extra_charges")
 }
 
 model BillingRecord {

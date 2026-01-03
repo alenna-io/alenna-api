@@ -21,7 +21,7 @@ import {
   CreateTuitionTypeDTO,
   UpdateTuitionTypeDTO,
   BulkUpdateBillingRecordsDTO,
-  GetStudentsWithScholarshipsDTO,
+  getStudentsWithBillingConfigDTO,
 } from '../../../app/dtos';
 
 export class BillingController {
@@ -102,70 +102,70 @@ export class BillingController {
 
       res.json({
         records: result.records.map((record: BillingRecord) => {
-        const student = studentMap.get(record.studentId);
-        const studentName = student?.user
-          ? `${(student.user as any).firstName} ${(student.user as any).lastName}`
-          : 'Unknown Student';
+          const student = studentMap.get(record.studentId);
+          const studentName = student?.user
+            ? `${(student.user as any).firstName} ${(student.user as any).lastName}`
+            : 'Unknown Student';
 
-        // Enhance audit metadata with user names
-        const audit = record.auditMetadata as any;
-        const enhancedAudit = { ...audit };
-        if (audit?.paidBy) {
-          enhancedAudit.paidByName = userMap.get(audit.paidBy) || audit.paidBy;
-        }
-        if (audit?.createdBy) {
-          enhancedAudit.createdByName = userMap.get(audit.createdBy) || audit.createdBy;
-        }
-        if (audit?.updatedBy) {
-          enhancedAudit.updatedByName = userMap.get(audit.updatedBy) || audit.updatedBy;
-        }
-        if (audit?.lateFeeAppliedBy) {
-          enhancedAudit.lateFeeAppliedByName = userMap.get(audit.lateFeeAppliedBy) || audit.lateFeeAppliedBy;
-        }
+          // Enhance audit metadata with user names
+          const audit = record.auditMetadata as any;
+          const enhancedAudit = { ...audit };
+          if (audit?.paidBy) {
+            enhancedAudit.paidByName = userMap.get(audit.paidBy) || audit.paidBy;
+          }
+          if (audit?.createdBy) {
+            enhancedAudit.createdByName = userMap.get(audit.createdBy) || audit.createdBy;
+          }
+          if (audit?.updatedBy) {
+            enhancedAudit.updatedByName = userMap.get(audit.updatedBy) || audit.updatedBy;
+          }
+          if (audit?.lateFeeAppliedBy) {
+            enhancedAudit.lateFeeAppliedByName = userMap.get(audit.lateFeeAppliedBy) || audit.lateFeeAppliedBy;
+          }
 
-        return {
-          id: record.id,
-          studentId: record.studentId,
-          studentName,
-          schoolYearId: record.schoolYearId,
-          billingMonth: record.billingMonth,
-          billingYear: record.billingYear,
-          tuitionTypeSnapshot: record.tuitionTypeSnapshot,
-          effectiveTuitionAmount: record.effectiveTuitionAmount,
-          scholarshipAmount: record.scholarshipAmount,
-          discountAdjustments: record.discountAdjustments,
-          extraCharges: record.extraCharges,
-          lateFeeAmount: record.lateFeeAmount,
-          finalAmount: record.finalAmount,
-          billStatus: record.billStatus,
-          paymentStatus: record.paymentStatus,
-          paidAmount: record.paidAmount,
-          paidAt: record.paidAt?.toISOString() || null,
-          lockedAt: record.lockedAt?.toISOString() || null,
-          paymentMethod: record.paymentMethod,
-          paymentNote: record.paymentNote,
-          paymentGateway: record.paymentGateway,
-          paymentTransactionId: record.paymentTransactionId,
-          paymentGatewayStatus: record.paymentGatewayStatus,
-          paymentWebhookReceivedAt: record.paymentWebhookReceivedAt?.toISOString() || null,
-          auditMetadata: enhancedAudit,
-          dueDate: record.dueDate.toISOString(),
-          createdAt: record.createdAt?.toISOString(),
-          updatedAt: record.updatedAt?.toISOString(),
-          isOverdue: record.isOverdue,
-          isPaid: record.isPaid,
-          canEdit: record.canEdit,
-          paymentTransactions: (transactionsByRecordId.get(record.id) || []).map((tx: any) => ({
-            id: tx.id,
-            amount: Number(tx.amount),
-            paymentMethod: tx.paymentMethod,
-            paymentNote: tx.paymentNote,
-            paidBy: tx.paidBy,
-            paidByName: userMap.get(tx.paidBy) || tx.paidBy,
-            paidAt: tx.paidAt.toISOString(),
-            createdAt: tx.createdAt.toISOString(),
-          })),
-        };
+          return {
+            id: record.id,
+            studentId: record.studentId,
+            studentName,
+            schoolYearId: record.schoolYearId,
+            billingMonth: record.billingMonth,
+            billingYear: record.billingYear,
+            tuitionTypeSnapshot: record.tuitionTypeSnapshot,
+            effectiveTuitionAmount: record.effectiveTuitionAmount,
+            scholarshipAmount: record.scholarshipAmount,
+            discountAdjustments: record.discountAdjustments,
+            extraCharges: record.extraCharges,
+            lateFeeAmount: record.lateFeeAmount,
+            finalAmount: record.finalAmount,
+            billStatus: record.billStatus,
+            paymentStatus: record.paymentStatus,
+            paidAmount: record.paidAmount,
+            paidAt: record.paidAt?.toISOString() || null,
+            lockedAt: record.lockedAt?.toISOString() || null,
+            paymentMethod: record.paymentMethod,
+            paymentNote: record.paymentNote,
+            paymentGateway: record.paymentGateway,
+            paymentTransactionId: record.paymentTransactionId,
+            paymentGatewayStatus: record.paymentGatewayStatus,
+            paymentWebhookReceivedAt: record.paymentWebhookReceivedAt?.toISOString() || null,
+            auditMetadata: enhancedAudit,
+            dueDate: record.dueDate.toISOString(),
+            createdAt: record.createdAt?.toISOString(),
+            updatedAt: record.updatedAt?.toISOString(),
+            isOverdue: record.isOverdue,
+            isPaid: record.isPaid,
+            canEdit: record.canEdit,
+            paymentTransactions: (transactionsByRecordId.get(record.id) || []).map((tx: any) => ({
+              id: tx.id,
+              amount: Number(tx.amount),
+              paymentMethod: tx.paymentMethod,
+              paymentNote: tx.paymentNote,
+              paidBy: tx.paidBy,
+              paidByName: userMap.get(tx.paidBy) || tx.paidBy,
+              paidAt: tx.paidAt.toISOString(),
+              createdAt: tx.createdAt.toISOString(),
+            })),
+          };
         }),
         total: result.total,
         offset: result.offset,
@@ -354,7 +354,7 @@ export class BillingController {
       const userId = req.userId!;
       const validatedData = UpdateBillingRecordDTO.parse(req.body);
       const record = await container.updateBillingRecordUseCase.execute(id, schoolId, validatedData, userId);
-      
+
       // Fetch student name
       const student = await prisma.student.findFirst({
         where: { id: record.studentId, deletedAt: null },
@@ -368,7 +368,7 @@ export class BillingController {
           },
         },
       });
-      
+
       const studentName = student?.user
         ? `${(student.user as any).firstName} ${(student.user as any).lastName}`
         : 'Unknown Student';
@@ -653,11 +653,11 @@ export class BillingController {
     }
   }
 
-  async getStudentsWithScholarships(req: Request, res: Response): Promise<void> {
+  async getStudentsWithBillingConfig(req: Request, res: Response): Promise<void> {
     try {
       const schoolId = req.schoolId!;
-      const validatedData = GetStudentsWithScholarshipsDTO.parse(req.query);
-      const result = await container.getStudentsWithScholarshipsUseCase.execute(validatedData, schoolId);
+      const validatedData = getStudentsWithBillingConfigDTO.parse(req.query);
+      const result = await container.getStudentsBillingOverviewQuery.execute(validatedData, schoolId);
       res.json(result);
     } catch (error: any) {
       console.error('Error getting students with scholarships:', error);

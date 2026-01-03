@@ -163,7 +163,7 @@ export const UpdateTuitionTypeDTO = CreateTuitionTypeDTO.partial();
 
 export type UpdateTuitionTypeInput = z.infer<typeof UpdateTuitionTypeDTO>;
 
-export const GetStudentsWithScholarshipsDTO = z.object({
+export const getStudentsWithBillingConfigDTO = z.object({
   search: z.string().optional(),
   tuitionTypeId: z.string().optional(),
   hasScholarship: z.enum(['all', 'yes', 'no']).optional(),
@@ -173,5 +173,5 @@ export const GetStudentsWithScholarshipsDTO = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional().default(10),
 });
 
-export type GetStudentsWithScholarshipsInput = z.infer<typeof GetStudentsWithScholarshipsDTO>;
+export type getStudentsWithBillingConfigInput = z.infer<typeof getStudentsWithBillingConfigDTO>;
 

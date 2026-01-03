@@ -10,5 +10,6 @@ export * from './IGroupRepository';
 export * from './ITuitionConfigRepository';
 export * from './ITuitionTypeRepository';
 export * from './IStudentScholarshipRepository';
+export * from './IRecurringExtraChargeRepository';
 export * from './IBillingRecordRepository';
 

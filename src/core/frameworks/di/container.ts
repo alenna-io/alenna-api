@@ -13,6 +13,7 @@ import {
   GroupRepository,
   TuitionConfigRepository,
   StudentScholarshipRepository,
+  RecurringExtraChargeRepository,
   BillingRecordRepository,
   TuitionTypeRepository
 } from '../database/repositories';
@@ -583,6 +584,7 @@ class Container {
   // Billing Repositories
   private _tuitionConfigRepository?: TuitionConfigRepository;
   private _studentScholarshipRepository?: StudentScholarshipRepository;
+  private _recurringExtraChargeRepository?: RecurringExtraChargeRepository;
   private _billingRecordRepository?: BillingRecordRepository;
   private _tuitionTypeRepository?: TuitionTypeRepository;
 
@@ -601,6 +603,13 @@ class Container {
       this._studentScholarshipRepository = new StudentScholarshipRepository();
     }
     return this._studentScholarshipRepository;
+  }
+
+  get recurringExtraChargeRepository(): RecurringExtraChargeRepository {
+    if (!this._recurringExtraChargeRepository) {
+      this._recurringExtraChargeRepository = new RecurringExtraChargeRepository();
+    }
+    return this._recurringExtraChargeRepository;
   }
 
   get billingRecordRepository(): BillingRecordRepository {
@@ -643,7 +652,8 @@ class Container {
       this.tuitionConfigRepository,
       this.studentScholarshipRepository,
       this.tuitionTypeRepository,
-      this.studentRepository
+      this.studentRepository,
+      this.recurringExtraChargeRepository
     );
   }
 
@@ -653,7 +663,8 @@ class Container {
       this.billingRecordRepository,
       this.tuitionConfigRepository,
       this.studentScholarshipRepository,
-      this.tuitionTypeRepository
+      this.tuitionTypeRepository,
+      this.recurringExtraChargeRepository
     );
   }
 
@@ -727,14 +738,39 @@ class Container {
     return new GetStudentScholarshipUseCase(this.studentScholarshipRepository);
   }
 
-  get getStudentsWithScholarshipsUseCase() {
-    const { GetStudentsWithScholarshipsUseCase } = require('../../app/use-cases/billing');
-    return new GetStudentsWithScholarshipsUseCase();
+  get getStudentsBillingOverviewQuery() {
+    const { GetStudentsBillingOverviewQuery } = require('../../app/use-cases/billing');
+    return new GetStudentsBillingOverviewQuery(
+      this.studentRepository,
+      this.studentScholarshipRepository,
+      this.recurringExtraChargeRepository,
+      this.tuitionTypeRepository
+    );
   }
 
   get updateStudentScholarshipUseCase() {
     const { UpdateStudentScholarshipUseCase } = require('../../app/use-cases/billing');
     return new UpdateStudentScholarshipUseCase(this.studentScholarshipRepository);
+  }
+
+  get createRecurringExtraChargeUseCase() {
+    const { CreateRecurringExtraChargeUseCase } = require('../../app/use-cases/recurring-extra-charge');
+    return new CreateRecurringExtraChargeUseCase(this.recurringExtraChargeRepository);
+  }
+
+  get updateRecurringExtraChargeUseCase() {
+    const { UpdateRecurringExtraChargeUseCase } = require('../../app/use-cases/recurring-extra-charge');
+    return new UpdateRecurringExtraChargeUseCase(this.recurringExtraChargeRepository);
+  }
+
+  get getRecurringExtraChargesUseCase() {
+    const { GetRecurringExtraChargesUseCase } = require('../../app/use-cases/recurring-extra-charge');
+    return new GetRecurringExtraChargesUseCase(this.recurringExtraChargeRepository);
+  }
+
+  get deleteRecurringExtraChargeUseCase() {
+    const { DeleteRecurringExtraChargeUseCase } = require('../../app/use-cases/recurring-extra-charge');
+    return new DeleteRecurringExtraChargeUseCase(this.recurringExtraChargeRepository);
   }
 
   get getBillingMetricsUseCase() {

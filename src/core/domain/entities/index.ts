@@ -23,5 +23,6 @@ export * from './MonthlyAssignment';
 export * from './TuitionConfig';
 export * from './TuitionType';
 export * from './StudentScholarship';
+export * from './RecurringExtraCharge';
 export * from './BillingRecord';
 

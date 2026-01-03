@@ -1,10 +1,11 @@
 import { Router, type Router as ExpressRouter } from 'express';
-import { BillingController } from '../controllers';
+import { BillingController, RecurringExtraChargeController } from '../controllers';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
 import { attachUserContext, ensureTenantIsolation, requirePermission } from '../middleware';
 
 const router: ExpressRouter = Router();
 const billingController = new BillingController();
+const recurringExtraChargeController = new RecurringExtraChargeController();
 
 router.use(clerkMiddleware({
   publishableKey: process.env.CLERK_PUBLISHABLE_KEY!,
@@ -33,10 +34,16 @@ router.post('/tuition-types', requirePermission('billing.create'), billingContro
 router.put('/tuition-types/:id', requirePermission('billing.update'), billingController.updateTuitionType.bind(billingController));
 router.delete('/tuition-types/:id', requirePermission('billing.delete'), billingController.deleteTuitionType.bind(billingController));
 
-router.get('/students/scholarships', requirePermission('billing.read'), billingController.getStudentsWithScholarships.bind(billingController));
+router.get('/students/config', requirePermission('billing.read'), billingController.getStudentsWithBillingConfig.bind(billingController));
 router.get('/students/:studentId/scholarship', requirePermission('billing.read'), billingController.getStudentScholarship.bind(billingController));
 router.post('/students/:studentId/scholarship', requirePermission('billing.create'), billingController.createStudentScholarship.bind(billingController));
 router.put('/students/:studentId/scholarship', requirePermission('billing.update'), billingController.updateStudentScholarship.bind(billingController));
+
+// Recurring extra charges routes
+router.get('/students/:studentId/recurring-charges', requirePermission('billing.read'), recurringExtraChargeController.getByStudentId.bind(recurringExtraChargeController));
+router.post('/students/:studentId/recurring-charges', requirePermission('billing.create'), recurringExtraChargeController.create.bind(recurringExtraChargeController));
+router.put('/students/:studentId/recurring-charges/:id', requirePermission('billing.update'), recurringExtraChargeController.update.bind(recurringExtraChargeController));
+router.delete('/students/:studentId/recurring-charges/:id', requirePermission('billing.delete'), recurringExtraChargeController.delete.bind(recurringExtraChargeController));
 
 // Parameterized routes must come last
 router.get('/:id', requirePermission('billing.read'), billingController.getBillingRecordById.bind(billingController));
