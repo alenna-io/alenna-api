@@ -12,5 +12,13 @@ export class PaceCatalogMapper {
       paceCatalog.updatedAt
     );
   }
+  static toPrisma(paceCatalog: PaceCatalog): Omit<PrismaPaceCatalog, 'createdAt' | 'updatedAt'> {
+    return {
+      id: paceCatalog.id,
+      code: paceCatalog.code,
+      name: paceCatalog.name,
+      subSubjectId: paceCatalog.subSubjectId,
+    };
+  }
 }
 

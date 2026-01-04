@@ -17,6 +17,10 @@ import {
   BillingRecordRepository,
   TuitionTypeRepository,
   StudentBillingConfigRepository,
+  CategoryRepository,
+  SubSubjectRepository,
+  PaceCatalogRepository,
+  LevelRepository,
 } from '../database/repositories';
 import { CharacterTraitRepository } from '../database/repositories/CharacterTraitRepository';
 import {
@@ -129,8 +133,40 @@ class Container {
   private _dailyGoalRepository?: DailyGoalRepository;
   private _roleRepository?: RoleRepository;
   private _groupRepository?: GroupRepository;
+  private _categoryRepository?: CategoryRepository;
+  private _subSubjectRepository?: SubSubjectRepository;
+  private _paceCatalogRepository?: PaceCatalogRepository;
+  private _levelRepository?: LevelRepository;
 
   // Repositories getters (Lazy initialization)
+  get categoryRepository(): CategoryRepository {
+    if (!this._categoryRepository) {
+      this._categoryRepository = new CategoryRepository();
+    }
+    return this._categoryRepository;
+  }
+
+  get subSubjectRepository(): SubSubjectRepository {
+    if (!this._subSubjectRepository) {
+      this._subSubjectRepository = new SubSubjectRepository();
+    }
+    return this._subSubjectRepository;
+  }
+
+  get paceCatalogRepository(): PaceCatalogRepository {
+    if (!this._paceCatalogRepository) {
+      this._paceCatalogRepository = new PaceCatalogRepository();
+    }
+    return this._paceCatalogRepository;
+  }
+
+  get levelRepository(): LevelRepository {
+    if (!this._levelRepository) {
+      this._levelRepository = new LevelRepository();
+    }
+    return this._levelRepository;
+  }
+
   get schoolRepository(): SchoolRepository {
     if (!this._schoolRepository) {
       this._schoolRepository = new SchoolRepository();
@@ -350,7 +386,12 @@ class Container {
   }
 
   get createSubSubjectWithPacesUseCase(): CreateSubSubjectWithPacesUseCase {
-    return new CreateSubSubjectWithPacesUseCase();
+    return new CreateSubSubjectWithPacesUseCase(
+      this.categoryRepository,
+      this.subSubjectRepository,
+      this.paceCatalogRepository,
+      this.levelRepository
+    );
   }
 
   // Projection Template Use Cases

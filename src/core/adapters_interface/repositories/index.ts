@@ -13,4 +13,7 @@ export * from './IStudentScholarshipRepository';
 export * from './IRecurringExtraChargeRepository';
 export * from './IBillingRecordRepository';
 export * from './IStudentBillingConfigRepository';
-
+export * from './IPaceCatalogRepository';
+export * from './ISubSubjectRepository';
+export * from './ICategoryRepository';
+export * from './ILevelRepository';
