@@ -1,7 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { PaceCatalogController } from '../controllers/PaceCatalogController';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
-import { attachUserContext, ensureTenantIsolation, cacheMiddleware } from '../middleware';
+import { attachUserContext, ensureTenantIsolation } from '../middleware';
 
 const router: ExpressRouter = Router();
 const paceCatalogController = new PaceCatalogController();
@@ -16,7 +16,7 @@ router.use(attachUserContext);
 router.use(ensureTenantIsolation);
 
 // GET /pace-catalog?category=Math&level=L8
-router.get('/', cacheMiddleware({ maxAge: 1800, staleWhileRevalidate: 3600 }), paceCatalogController.getPaceCatalog.bind(paceCatalogController));
+router.get('/', paceCatalogController.getPaceCatalog.bind(paceCatalogController));
 
 export default router;
 

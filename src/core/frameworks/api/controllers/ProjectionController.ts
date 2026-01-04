@@ -8,7 +8,7 @@ export class ProjectionController {
       const { studentId } = req.params;
       const schoolId = req.schoolId!;
       const userId = req.userId; // For parent access check
-      
+
       // Verify student belongs to school (and parent has access if applicable)
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId, userId);
       if (!student) {
@@ -39,7 +39,7 @@ export class ProjectionController {
     try {
       const { studentId, id } = req.params;
       const schoolId = req.schoolId!;
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -62,12 +62,12 @@ export class ProjectionController {
       });
     } catch (error: any) {
       console.error('Error getting projection:', error);
-      
+
       if (error.message === 'Projection not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get projection' });
     }
   }
@@ -76,7 +76,7 @@ export class ProjectionController {
     try {
       const { studentId, id } = req.params;
       const schoolId = req.schoolId!;
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -89,12 +89,12 @@ export class ProjectionController {
       res.json(projectionDetail);
     } catch (error: any) {
       console.error('Error getting projection detail:', error);
-      
+
       if (error.message === 'Projection not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to get projection detail' });
     }
   }
@@ -104,7 +104,7 @@ export class ProjectionController {
       const { studentId } = req.params;
       const schoolId = req.schoolId!;
       const validatedData = CreateProjectionDTO.parse(req.body);
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -127,12 +127,12 @@ export class ProjectionController {
       });
     } catch (error: any) {
       console.error('Error creating projection:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to create projection' });
     }
   }
@@ -142,7 +142,7 @@ export class ProjectionController {
       const { studentId, id } = req.params;
       const schoolId = req.schoolId!;
       const validatedData = UpdateProjectionDTO.parse(req.body);
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -165,17 +165,17 @@ export class ProjectionController {
       });
     } catch (error: any) {
       console.error('Error updating projection:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'Projection not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to update projection' });
     }
   }
@@ -184,7 +184,7 @@ export class ProjectionController {
     try {
       const { studentId, id } = req.params;
       const schoolId = req.schoolId!;
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -197,12 +197,12 @@ export class ProjectionController {
       res.status(204).send();
     } catch (error: any) {
       console.error('Error deleting projection:', error);
-      
+
       if (error.message === 'Projection not found') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to delete projection' });
     }
   }
@@ -212,7 +212,7 @@ export class ProjectionController {
       const { studentId, id } = req.params;
       const schoolId = req.schoolId!;
       const validatedData = AddPaceToProjectionDTO.parse(req.body);
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -243,12 +243,12 @@ export class ProjectionController {
       });
     } catch (error: any) {
       console.error('Error al agregar la lección a la proyección:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'Proyección no encontrada' || error.message === 'PACE no encontrado en el catálogo') {
         res.status(404).json({ error: error.message });
         return;
@@ -258,7 +258,7 @@ export class ProjectionController {
         res.status(409).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to add PACE to projection' });
     }
   }
@@ -267,7 +267,7 @@ export class ProjectionController {
     try {
       const { studentId, id, paceId } = req.params;
       const schoolId = req.schoolId!;
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -280,12 +280,12 @@ export class ProjectionController {
       res.status(204).send();
     } catch (error: any) {
       console.error('Error removing PACE from projection:', error);
-      
+
       if (error.message === 'Projection not found' || error.message === 'PACE not found in projection') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to remove PACE from projection' });
     }
   }
@@ -295,7 +295,7 @@ export class ProjectionController {
       const { studentId, id, paceId } = req.params;
       const schoolId = req.schoolId!;
       const validatedData = UpdatePaceGradeDTO.parse(req.body);
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -329,17 +329,17 @@ export class ProjectionController {
       });
     } catch (error: any) {
       console.error('Error updating PACE grade:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'Projection not found' || error.message === 'PACE not found in projection') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to update PACE grade' });
     }
   }
@@ -349,7 +349,7 @@ export class ProjectionController {
       const { studentId, id, paceId } = req.params;
       const schoolId = req.schoolId!;
       const validatedData = MovePaceDTO.parse(req.body);
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -380,12 +380,12 @@ export class ProjectionController {
       });
     } catch (error: any) {
       console.error('Error moving PACE:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       if (error.message === 'Projection not found' || error.message === 'PACE not found in projection') {
         res.status(404).json({ error: error.message });
         return;
@@ -395,7 +395,7 @@ export class ProjectionController {
         res.status(409).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to move PACE' });
     }
   }
@@ -404,7 +404,7 @@ export class ProjectionController {
     try {
       const { studentId, id, paceId } = req.params;
       const schoolId = req.schoolId!;
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -429,12 +429,12 @@ export class ProjectionController {
       });
     } catch (error: any) {
       console.error('Error marking PACE incomplete:', error);
-      
+
       if (error.message === 'Proyección no encontrada' || error.message === 'PACE no encontrado en la proyección') {
         res.status(404).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to mark PACE incomplete' });
     }
   }
@@ -443,7 +443,7 @@ export class ProjectionController {
     try {
       const schoolId = req.schoolId!;
       const year = req.query.year as string | undefined;
-      
+
       const projections = await container.getAllProjectionsUseCase.execute(schoolId, year);
 
       res.json(projections.map(projection => ({
@@ -468,12 +468,12 @@ export class ProjectionController {
     try {
       const schoolId = req.schoolId!;
       const { studentId, schoolYear, templateId } = req.body;
-      
+
       if (!studentId || !schoolYear || !templateId) {
         res.status(400).json({ error: 'studentId, schoolYear, and templateId are required' });
         return;
       }
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(studentId, schoolId);
       if (!student) {
@@ -500,7 +500,7 @@ export class ProjectionController {
       });
     } catch (error: any) {
       console.error('Error generating projection from default template:', error);
-      
+
       if (error.message.includes('no encontrada') || error.message.includes('not found')) {
         res.status(404).json({ error: error.message });
         return;
@@ -515,7 +515,7 @@ export class ProjectionController {
         res.status(400).json({ error: error.message });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to generate projection from template' });
     }
   }
@@ -524,7 +524,7 @@ export class ProjectionController {
     try {
       const schoolId = req.schoolId!;
       const validatedData = GenerateProjectionDTO.parse(req.body);
-      
+
       // Verify student belongs to school
       const student = await container.getStudentByIdUseCase.execute(validatedData.studentId, schoolId);
       if (!student) {
@@ -547,12 +547,12 @@ export class ProjectionController {
       });
     } catch (error: any) {
       console.error('Error generating projection:', error);
-      
+
       if (error.name === 'ZodError') {
         res.status(400).json({ error: error.errors });
         return;
       }
-      
+
       res.status(500).json({ error: error.message || 'Failed to generate projection' });
     }
   }
