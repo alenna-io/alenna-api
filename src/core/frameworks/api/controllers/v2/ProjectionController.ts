@@ -1,10 +1,11 @@
 import { CreateProjectionDTO } from '../../../../app/dtos/v2/projections/CreateProjectionInput';
 import { CreateProjectionUseCase } from '../../../../app/use-cases/projections/v2/CreateProjectionUseCase';
 import { NextFunction, Request, Response } from 'express';
+import { container } from '../../../di/v2/container';
 
 export class ProjectionController {
   constructor(
-    private readonly createProjection: CreateProjectionUseCase
+    private readonly createProjection: CreateProjectionUseCase = container.useCase.createProjectionUseCase
   ) { }
 
   async create(req: Request, res: Response, next: NextFunction): Promise<Response | void> {

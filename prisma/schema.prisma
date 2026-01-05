@@ -9,17 +9,17 @@ datasource db {
 
 model School {
   id                  String               @id @default(cuid())
-  name                String
+  name                String               @db.VarChar(100)
   address             String?
   phone               String?
   email               String?
   logoUrl             String?               @map("logo_url")
-  deletedAt           DateTime?            @map("deleted_at")
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
   teacherLimit        Int?                 @map("teacher_limit")
   userLimit           Int?                 @map("user_limit")
   isActive            Boolean              @default(true) @map("is_active")
+  deletedAt           DateTime?            @map("deleted_at")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
   certificationTypes  CertificationType[]
   groups              Group[]
   projectionTemplates ProjectionTemplate[]
@@ -68,13 +68,19 @@ model User {
   @@map("users")
 }
 
+enum SchoolYearStatus {
+  CURRENT_YEAR
+  ARCHIVED
+}
+
 model SchoolYear {
   id                               String                            @id @default(cuid())
   schoolId                         String                            @map("school_id")
   name                             String
   startDate                        DateTime                          @map("start_date")
   endDate                          DateTime                          @map("end_date")
-  isActive                         Boolean                           @default(false) @map("is_active")
+  status                           SchoolYearStatus                  @default(CURRENT_YEAR) @map("status")
+  isActive                         Boolean                           @default(false) @map("is_active") // Delete this after v2 refactor
   deletedAt                        DateTime?                         @map("deleted_at")
   createdAt                        DateTime                          @default(now()) @map("created_at")
   updatedAt                        DateTime                          @updatedAt @map("updated_at")
@@ -168,19 +174,28 @@ model CertificationType {
   @@map("certification_types")
 }
 
+enum StudentStatus {
+  ENROLLED
+  ON_TRACK
+  BEHIND_SCHEDULE
+  AHEAD_OF_SCHEDULE
+  GRADUATED
+}
+
 model Student {
   id                  String            @id @default(cuid())
-  birthDate           DateTime          @map("birth_date")
-  graduationDate      DateTime          @map("graduation_date")
-  isLeveled           Boolean           @default(false) @map("is_leveled")
-  expectedLevel       String?           @map("expected_level")
-  currentLevel        String?           @map("current_level")
   userId              String            @unique @map("user_id")
   schoolId            String            @map("school_id")
+  birthDate           DateTime          @map("birth_date")
+  graduationDate      DateTime          @map("graduation_date")
+  status              StudentStatus     @default(ENROLLED) @map("status")
   certificationTypeId String            @map("certification_type_id")
+  expectedLevel       String?           @map("expected_level")
+  currentLevel        String?           @map("current_level")
   deletedAt           DateTime?         @map("deleted_at")
   createdAt           DateTime          @default(now()) @map("created_at")
   updatedAt           DateTime          @updatedAt @map("updated_at")
+  isLeveled           Boolean           @default(false) @map("is_leveled") // Delete this after v2 refactor
   groupStudents       GroupStudent[]
   projections         Projection[]
   certificationType   CertificationType @relation(fields: [certificationTypeId], references: [id])

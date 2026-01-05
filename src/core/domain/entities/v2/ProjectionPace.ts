@@ -1,8 +1,11 @@
-export type PaceStatus =
-  | 'PENDING'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'UNFINISHED';
+export enum ProjectionPaceStatusEnum {
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  UNFINISHED = "UNFINISHED",
+}
+
+export type ProjectionPaceStatus = keyof typeof ProjectionPaceStatusEnum;
 
 export class ProjectionPace {
   constructor(
@@ -11,9 +14,8 @@ export class ProjectionPace {
     public readonly paceCatalogId: string,
     public readonly quarter: string,
     public readonly week: number,
-    public readonly status: PaceStatus,
+    public readonly status: ProjectionPaceStatus,
     public readonly grade?: number,
-    public readonly comments?: string,
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date,
   ) { }
