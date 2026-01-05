@@ -19,7 +19,6 @@ export class UserRepository implements IUserRepository {
             student: true,
           },
         },
-        student: true,
       },
     });
 

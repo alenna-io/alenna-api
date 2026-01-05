@@ -1,13 +1,22 @@
-import { 
-  Student as PrismaStudent, 
+import {
+  Student as PrismaStudent,
   User as PrismaUser,
   UserStudent as PrismaUserStudent,
-  CertificationType as PrismaCertificationType 
+  CertificationType as PrismaCertificationType,
+  UserRole as PrismaUserRole,
+  Role as PrismaRole
 } from '@prisma/client';
-import { Student, CertificationType } from '../../../domain/entities';
+import { Student, CertificationType, User } from '../../../domain/entities';
+import { RoleType } from '../../../domain/roles/RoleTypes';
+
+type PrismaUserWithRoles = PrismaUser & {
+  userRoles?: (PrismaUserRole & {
+    role: PrismaRole;
+  })[];
+};
 
 type PrismaStudentWithRelations = PrismaStudent & {
-  user?: PrismaUser;
+  user?: PrismaUserWithRoles;
   userStudents?: (PrismaUserStudent & { user: PrismaUser })[];
   certificationType?: PrismaCertificationType;
 };
@@ -21,6 +30,26 @@ export class StudentMapper {
     if (!prismaStudent.user) {
       throw new Error('User must be included when mapping student');
     }
+
+    const roles = prismaStudent.user.userRoles?.map(ur => ({
+      id: ur.role.id,
+      name: ur.role.name as RoleType,
+      displayName: ur.role.displayName,
+    })) || [];
+
+    const user = new User(
+      prismaStudent.user.id,
+      prismaStudent.user.clerkId,
+      prismaStudent.user.email,
+      prismaStudent.user.schoolId,
+      prismaStudent.user.firstName || undefined,
+      prismaStudent.user.lastName || undefined,
+      prismaStudent.user.phone || undefined,
+      prismaStudent.user.language || undefined,
+      prismaStudent.user.isActive,
+      prismaStudent.user.createdPassword,
+      roles,
+    );
 
     const certificationType = new CertificationType(
       prismaStudent.certificationType.id,
@@ -68,7 +97,8 @@ export class StudentMapper {
       prismaStudent.currentLevel || undefined,
       parents,
       prismaStudent.createdAt,
-      prismaStudent.updatedAt
+      prismaStudent.updatedAt,
+      user
     );
   }
 

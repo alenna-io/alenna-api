@@ -320,7 +320,7 @@ class Container {
   }
 
   get deactivateUserUseCase(): DeactivateUserUseCase {
-    return new DeactivateUserUseCase(this.userRepository);
+    return new DeactivateUserUseCase(this.userRepository, this.studentRepository);
   }
 
   get reactivateUserUseCase(): ReactivateUserUseCase {

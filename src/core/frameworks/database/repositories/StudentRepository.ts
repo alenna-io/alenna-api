@@ -6,7 +6,7 @@ import { StudentMapper } from '../mappers';
 export class StudentRepository implements IStudentRepository {
   async findById(id: string, schoolId?: string): Promise<Student | null> {
     const student = await prisma.student.findFirst({
-      where: { 
+      where: {
         id,
         ...(schoolId && { schoolId }), // Only filter by schoolId if provided
         deletedAt: null, // Soft delete filter for student record
@@ -15,7 +15,15 @@ export class StudentRepository implements IStudentRepository {
         },
       },
       include: {
-        user: true, // Student's user account
+        user: {
+          include: {
+            userRoles: {
+              include: {
+                role: true,
+              }
+            },
+          }
+        },
         userStudents: {
           include: {
             user: true, // Parent users
@@ -30,7 +38,7 @@ export class StudentRepository implements IStudentRepository {
 
   async findBySchoolId(schoolId: string): Promise<Student[]> {
     const students = await prisma.student.findMany({
-      where: { 
+      where: {
         schoolId,
         deletedAt: null, // Soft delete filter for student record
         user: {
@@ -46,7 +54,7 @@ export class StudentRepository implements IStudentRepository {
         },
         certificationType: true,
       },
-      orderBy: { 
+      orderBy: {
         user: {
           lastName: 'asc',
         },

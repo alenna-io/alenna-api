@@ -5,7 +5,7 @@ import {
   UserStudent as PrismaUserStudent
 } from '@prisma/client';
 import { User, UserRoleInfo, UserStudent } from '../../../domain/entities';
-import { StudentMapper } from './StudentMapper';
+import { RoleType } from '../../../domain/roles/RoleTypes';
 
 export class UserMapper {
   static toDomain(
@@ -13,12 +13,11 @@ export class UserMapper {
     {
       userRoles?: { role: PrismaRole }[],
       userStudents?: (PrismaUserStudent & { student: PrismaStudent })[],
-      student?: PrismaStudent | null
     }
   ): User {
     const roles: UserRoleInfo[] = prismaUser.userRoles?.map(ur => ({
       id: ur.role.id,
-      name: ur.role.name,
+      name: ur.role.name as RoleType,
       displayName: ur.role.displayName,
     })) || [];
 
@@ -33,8 +32,6 @@ export class UserMapper {
       )
     ) ?? [];
 
-    const student = prismaUser.student ? StudentMapper.toDomain(prismaUser.student) : undefined;
-
     return new User(
       prismaUser.id,
       prismaUser.clerkId || null,
@@ -48,7 +45,6 @@ export class UserMapper {
       prismaUser.createdPassword ?? false,
       roles,
       userStudents,
-      student,
       prismaUser.createdAt,
       prismaUser.updatedAt
     );

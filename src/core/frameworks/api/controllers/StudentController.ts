@@ -295,31 +295,31 @@ export class StudentController {
    */
   async deactivateStudent(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const { id: studentId } = req.params;
       const schoolId = req.schoolId!;
       const currentUserId = req.userId!;
       const currentUserRoles = req.userRoles || [];
 
       // Ensure student exists in current school and get linked userId
-      const student = await prisma.student.findFirst({
-        where: {
-          id,
-          schoolId,
-          deletedAt: null,
-        },
-        select: {
-          userId: true,
-        },
-      });
+      // const student = await prisma.student.findFirst({
+      //   where: {
+      //     id,
+      //     schoolId,
+      //     deletedAt: null,
+      //   },
+      //   select: {
+      //     userId: true,
+      //   },
+      // });
 
-      if (!student) {
-        res.status(404).json({ error: 'Student not found' });
-        return;
-      }
+      // if (!student) {
+      //   res.status(404).json({ error: 'Student not found' });
+      //   return;
+      // }
 
       // Delegate to user deactivation use case (handles students/parents logic)
       await container.deactivateUserUseCase.execute(
-        student.userId,
+        studentId,
         currentUserId,
         schoolId,
         currentUserRoles,

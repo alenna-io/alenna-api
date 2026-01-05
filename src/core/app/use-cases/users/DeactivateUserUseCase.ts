@@ -1,18 +1,35 @@
-import { IUserRepository } from '../../../adapters_interface/repositories';
+import { IStudentRepository, IUserRepository } from '../../../adapters_interface/repositories';
 import { clerkService } from '../../../frameworks/services/ClerkService';
+import { RoleTypes } from '../../../domain/roles/RoleTypes';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 export class DeactivateUserUseCase {
-  constructor(private userRepository: IUserRepository) {}
+  constructor(
+    private userRepository: IUserRepository,
+    private studentRepository: IStudentRepository
+  ) { }
 
   async execute(
-    userId: string,
+    studentId: string,
     currentUserId: string,
     schoolId: string,
     currentUserRoles: string[]
   ): Promise<void> {
+
+    const student = await this.studentRepository.findById(studentId, schoolId);
+
+    if (!student) {
+      throw new Error('Student not found');
+    }
+
+    if (!student.user) {
+      throw new Error('Student user not found');
+    }
+
+    const userId = student.user.id;
+
     // Cannot deactivate yourself
     if (currentUserId === userId) {
       throw new Error('Cannot deactivate your own account');
@@ -31,8 +48,8 @@ export class DeactivateUserUseCase {
     }
 
     // Check if current user is super admin
-    const isSuperAdmin = currentUserRoles.includes('SUPERADMIN');
-    const isSchoolAdmin = currentUserRoles.includes('SCHOOL_ADMIN');
+    const isSuperAdmin = currentUserRoles.includes(RoleTypes.SUPERADMIN);
+    const isSchoolAdmin = currentUserRoles.includes(RoleTypes.SCHOOL_ADMIN);
 
     // Super admins can deactivate any user (skip school check)
     // School admins can only deactivate users from their own school
@@ -41,15 +58,16 @@ export class DeactivateUserUseCase {
     }
 
     // Get user's roles to determine if they are a student or parent
-    const userRoles = await prisma.userRole.findMany({
-      where: { userId },
-      include: { role: true },
-    });
+    const userRoles = student.user.roles;
+    // const userRoles = await prisma.userRole.findMany({
+    //   where: { userId },
+    //   include: { role: true },
+    // });
 
-    const userRoleNames = userRoles.map((ur) => ur.role.name);
-    const isStudent = userRoleNames.includes('STUDENT');
-    const isParent = userRoleNames.includes('PARENT');
-    const isTeacher = userRoleNames.includes('TEACHER');
+    const userRoleNames = userRoles.map((ur) => ur.name);
+    const isStudent = userRoleNames.includes(RoleTypes.STUDENT);
+    const isParent = userRoleNames.includes(RoleTypes.PARENT);
+    const isTeacher = userRoleNames.includes(RoleTypes.TEACHER);
 
     // Prevent direct parent deactivation - parents must be deactivated through their students
     if (isParent && !isSuperAdmin) {

@@ -3,9 +3,6 @@ import { container } from '../../di/container';
 import { clerkMiddleware, requireAuth } from '@clerk/express';
 import { attachUserContext, ensureTenantIsolation, cacheMiddleware } from '../middleware';
 
-console.log('🔥 sub-subjects.routes.ts LOADED');
-
-
 const router: ExpressRouter = Router({ mergeParams: true });
 const subSubjectController = container.subSubjectController;
 

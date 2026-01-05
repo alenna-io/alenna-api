@@ -1,4 +1,4 @@
-import { CertificationType } from './CertificationType';
+import { CertificationType, User } from '.';
 
 // Domain Entity: Student
 export interface Parent {
@@ -28,8 +28,9 @@ export class Student {
     public readonly currentLevel?: string,
     public readonly parents: Parent[] = [],
     public readonly createdAt?: Date,
-    public readonly updatedAt?: Date
-  ) {}
+    public readonly updatedAt?: Date,
+    public readonly user?: User
+  ) { }
 
   static create(props: {
     id: string;

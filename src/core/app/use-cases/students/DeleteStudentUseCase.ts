@@ -5,7 +5,7 @@ import { clerkService } from '../../../frameworks/services/ClerkService';
 const prisma = new PrismaClient();
 
 export class DeleteStudentUseCase {
-  constructor(private studentRepository: IStudentRepository) {}
+  constructor(private studentRepository: IStudentRepository) { }
 
   async execute(
     studentId: string,
@@ -13,6 +13,9 @@ export class DeleteStudentUseCase {
     currentUserRoles: string[]
   ): Promise<void> {
     // Check if student exists and belongs to school
+    console.log('studentId', studentId);
+    console.log('schoolId', schoolId);
+    console.log('currentUserRoles', currentUserRoles);
     const student = await this.studentRepository.findById(studentId, schoolId);
 
     if (!student) {
@@ -52,6 +55,7 @@ export class DeleteStudentUseCase {
 
     // Soft delete student from database
     await this.studentRepository.delete(studentId, schoolId);
+    console.log("Student deleted from database");
 
     // Soft delete the user and mark as inactive
     await prisma.user.update({
@@ -65,6 +69,8 @@ export class DeleteStudentUseCase {
 
     // Handle parent deletion if they have only one child
     await this.handleParentDeletion(studentId);
+    console.log("Parents deleted from database");
+
   }
 
   /**

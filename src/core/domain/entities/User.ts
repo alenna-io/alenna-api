@@ -1,11 +1,10 @@
-import { RoleTypes } from '../roles/RoleTypes';
-import { Student } from './Student';
+import { RoleTypes, RoleType } from '../roles/RoleTypes';
 import { UserStudent } from './UserStudent';
 
 // Domain Entity: User
 export interface UserRoleInfo {
   id: string;
-  name: string;
+  name: RoleType;
   displayName: string;
 }
 
@@ -23,7 +22,6 @@ export class User {
     public readonly createdPassword: boolean = false,
     public readonly roles: UserRoleInfo[] = [],
     public readonly userStudents: UserStudent[] = [],
-    public readonly student?: Student,
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date
   ) { }
@@ -41,7 +39,6 @@ export class User {
     createdPassword?: boolean;
     roles?: UserRoleInfo[];
     userStudents?: UserStudent[];
-    student?: Student;
   }): User {
     return new User(
       props.id,
@@ -56,13 +53,12 @@ export class User {
       props.createdPassword ?? false,
       props.roles || [],
       props.userStudents || [],
-      props.student,
       new Date(),
       new Date()
     );
   }
 
-  update(props: Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'language' | 'isActive' | 'createdPassword' | 'roles' | 'email' | 'schoolId' | 'userStudents' | 'student'>>): User {
+  update(props: Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'language' | 'isActive' | 'createdPassword' | 'roles' | 'email' | 'schoolId' | 'userStudents'>>): User {
     return new User(
       this.id,
       this.clerkId,
@@ -76,7 +72,6 @@ export class User {
       props.createdPassword !== undefined ? props.createdPassword : this.createdPassword,
       props.roles ?? this.roles,
       props.userStudents ?? this.userStudents,
-      props.student ?? this.student,
       this.createdAt,
       new Date()
     );
