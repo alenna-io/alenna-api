@@ -1,15 +1,14 @@
 import { ProjectionRepository, SchoolRepository, SchoolYearRepository, StudentRepository } from '../../../../adapters_interface/repositories/v2';
 import { SchoolYearStatusEnum } from '../../../../domain/entities/v2/SchoolYear';
 import { ObjectAlreadyExistsError } from '../../../errors/v2/ObjectAlreadyExistsError';
-import { container } from '../../../../frameworks/di/v2/container';
 import { InvalidEntityError } from '../../../errors/v2';
 
 export class CreateProjectionUseCase {
   constructor(
-    private readonly projectionRepository: ProjectionRepository = container.repository.projectionRepository,
-    private readonly studentRepository: StudentRepository = container.repository.studentRepository,
-    private readonly schoolRepository: SchoolRepository = container.repository.schoolRepository,
-    private readonly schoolYearRepository: SchoolYearRepository = container.repository.schoolYearRepository,
+    private readonly projectionRepository: ProjectionRepository,
+    private readonly studentRepository: StudentRepository,
+    private readonly schoolRepository: SchoolRepository,
+    private readonly schoolYearRepository: SchoolYearRepository,
   ) { }
 
   async execute(input: {

@@ -1,4 +1,9 @@
-export type ProjectionStatus = 'OPEN' | 'CLOSED';
+export enum ProjectionStatusEnum {
+  OPEN = 'OPEN',
+  CLOSED = 'CLOSED',
+}
+
+export type ProjectionStatus = keyof typeof ProjectionStatusEnum;
 
 export class Projection {
   constructor(
