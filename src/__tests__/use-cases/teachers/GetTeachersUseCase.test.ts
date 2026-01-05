@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetUsersUseCase } from '../../../core/app/use-cases/users/GetUsersUseCase';
 import { createMockUserRepository } from '../../utils/mockRepositories';
-import { User, Role } from '../../../core/domain/entities';
+import { User } from '../../../core/domain/entities';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
+import { RoleTypes } from '../../../core/domain/roles/RoleTypes';
 
 describe('GetTeachersUseCase (via GetUsersUseCase)', () => {
   let useCase: GetUsersUseCase;
@@ -16,16 +17,17 @@ describe('GetTeachersUseCase (via GetUsersUseCase)', () => {
 
   describe('getTeachers - filtering users by TEACHER role', () => {
     it('should return only users with TEACHER role', async () => {
-      const teacherRole = new Role('teacher-role-id', 'TEACHER', 'Teacher', 'Teacher role', true, true, undefined);
-      const adminRole = new Role('admin-role-id', 'SCHOOL_ADMIN', 'School Admin', 'Admin role', true, true, undefined);
-
       const teacher1 = User.create({
         id: 'user-1',
         email: 'teacher1@test.com',
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
         firstName: 'John',
         lastName: 'Doe',
-        roles: [teacherRole],
+        roles: [{
+          id: 'teacher-role-id',
+          name: RoleTypes.TEACHER,
+          displayName: 'Teacher',
+        }],
       });
 
       const teacher2 = User.create({
@@ -34,7 +36,7 @@ describe('GetTeachersUseCase (via GetUsersUseCase)', () => {
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
         firstName: 'Jane',
         lastName: 'Smith',
-        roles: [teacherRole],
+        roles: [{ id: 'teacher-role-id', name: RoleTypes.TEACHER, displayName: 'Teacher' }],
       });
 
       const admin = User.create({
@@ -43,7 +45,7 @@ describe('GetTeachersUseCase (via GetUsersUseCase)', () => {
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
         firstName: 'Admin',
         lastName: 'User',
-        roles: [adminRole],
+        roles: [{ id: 'admin-role-id', name: RoleTypes.SCHOOL_ADMIN, displayName: 'School Admin' }],
       });
 
       const allUsers = [teacher1, teacher2, admin];
@@ -51,31 +53,29 @@ describe('GetTeachersUseCase (via GetUsersUseCase)', () => {
       vi.mocked(mockRepository.findBySchoolId).mockResolvedValue(allUsers);
 
       const users = await useCase.execute(TEST_CONSTANTS.SCHOOL_ID);
-      const teachers = users.filter(user => 
-        user.roles.some(role => role.name === 'TEACHER')
+      const teachers = users.filter(user =>
+        user.roles.some(role => role.name === RoleTypes.TEACHER)
       );
 
       expect(teachers.length).toBe(2);
-      expect(teachers.every(t => t.roles.some(r => r.name === 'TEACHER'))).toBe(true);
+      expect(teachers.every(t => t.roles.some(r => r.name === RoleTypes.TEACHER))).toBe(true);
       expect(teachers.find(t => t.email === 'teacher1@test.com')).toBeDefined();
       expect(teachers.find(t => t.email === 'teacher2@test.com')).toBeDefined();
       expect(teachers.find(t => t.email === 'admin@test.com')).toBeUndefined();
     });
 
     it('should return empty array when no teachers exist', async () => {
-      const adminRole = new Role('admin-role-id', 'SCHOOL_ADMIN', 'School Admin', 'Admin role', true, true, undefined);
-
       const admin = User.create({
         id: 'user-1',
         email: 'admin@test.com',
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
-        roles: [adminRole],
+        roles: [{ id: 'admin-role-id', name: RoleTypes.SCHOOL_ADMIN, displayName: 'School Admin' }],
       });
 
       vi.mocked(mockRepository.findBySchoolId).mockResolvedValue([admin]);
 
       const users = await useCase.execute(TEST_CONSTANTS.SCHOOL_ID);
-      const teachers = users.filter(user => 
+      const teachers = users.filter(user =>
         user.roles.some(role => role.name === 'TEACHER')
       );
 
@@ -83,37 +83,32 @@ describe('GetTeachersUseCase (via GetUsersUseCase)', () => {
     });
 
     it('should handle teachers with multiple roles', async () => {
-      const teacherRole = new Role('teacher-role-id', 'TEACHER', 'Teacher', 'Teacher role', true, true, undefined);
-      const adminRole = new Role('admin-role-id', 'SCHOOL_ADMIN', 'School Admin', 'Admin role', true, true, undefined);
-
       const teacherAdmin = User.create({
         id: 'user-1',
         email: 'teacher-admin@test.com',
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
-        roles: [teacherRole, adminRole],
+        roles: [{ id: 'teacher-role-id', name: RoleTypes.TEACHER, displayName: 'Teacher' }, { id: 'admin-role-id', name: RoleTypes.SCHOOL_ADMIN, displayName: 'School Admin' }],
       });
 
       vi.mocked(mockRepository.findBySchoolId).mockResolvedValue([teacherAdmin]);
 
       const users = await useCase.execute(TEST_CONSTANTS.SCHOOL_ID);
-      const teachers = users.filter(user => 
-        user.roles.some(role => role.name === 'TEACHER')
+      const teachers = users.filter(user =>
+        user.roles.some(role => role.name === RoleTypes.TEACHER)
       );
 
       expect(teachers.length).toBe(1);
       expect(teachers[0].roles.length).toBe(2);
-      expect(teachers[0].roles.some(r => r.name === 'TEACHER')).toBe(true);
+      expect(teachers[0].roles.some(r => r.name === RoleTypes.TEACHER)).toBe(true);
     });
 
     it('should exclude inactive teachers if needed', async () => {
-      const teacherRole = new Role('teacher-role-id', 'TEACHER', 'Teacher', 'Teacher role', true, true, undefined);
-
       const activeTeacher = User.create({
         id: 'user-1',
         email: 'active@test.com',
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
         isActive: true,
-        roles: [teacherRole],
+        roles: [{ id: 'teacher-role-id', name: RoleTypes.TEACHER, displayName: 'Teacher' }],
       });
 
       const inactiveTeacher = User.create({
@@ -121,14 +116,14 @@ describe('GetTeachersUseCase (via GetUsersUseCase)', () => {
         email: 'inactive@test.com',
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
         isActive: false,
-        roles: [teacherRole],
+        roles: [{ id: 'teacher-role-id', name: RoleTypes.TEACHER, displayName: 'Teacher' }],
       });
 
       vi.mocked(mockRepository.findBySchoolId).mockResolvedValue([activeTeacher, inactiveTeacher]);
 
       const users = await useCase.execute(TEST_CONSTANTS.SCHOOL_ID);
-      const teachers = users.filter(user => 
-        user.roles.some(role => role.name === 'TEACHER')
+      const teachers = users.filter(user =>
+        user.roles.some(role => role.name === RoleTypes.TEACHER)
       );
       const activeTeachers = teachers.filter(t => t.isActive);
 
@@ -140,35 +135,32 @@ describe('GetTeachersUseCase (via GetUsersUseCase)', () => {
 
   describe('teacher count', () => {
     it('should count teachers correctly', async () => {
-      const teacherRole = new Role('teacher-role-id', 'TEACHER', 'Teacher', 'Teacher role', true, true, undefined);
-      const adminRole = new Role('admin-role-id', 'SCHOOL_ADMIN', 'School Admin', 'Admin role', true, true, undefined);
-
       const teacher1 = User.create({
         id: 'user-1',
         email: 'teacher1@test.com',
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
-        roles: [teacherRole],
+        roles: [{ id: 'teacher-role-id', name: RoleTypes.TEACHER, displayName: 'Teacher' }],
       });
 
       const teacher2 = User.create({
         id: 'user-2',
         email: 'teacher2@test.com',
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
-        roles: [teacherRole],
+        roles: [{ id: 'teacher-role-id', name: RoleTypes.TEACHER, displayName: 'Teacher' }],
       });
 
       const admin = User.create({
         id: 'user-3',
         email: 'admin@test.com',
         schoolId: TEST_CONSTANTS.SCHOOL_ID,
-        roles: [adminRole],
+        roles: [{ id: 'admin-role-id', name: RoleTypes.SCHOOL_ADMIN, displayName: 'School Admin' }],
       });
 
       vi.mocked(mockRepository.findBySchoolId).mockResolvedValue([teacher1, teacher2, admin]);
 
       const users = await useCase.execute(TEST_CONSTANTS.SCHOOL_ID);
-      const teachersCount = users.filter(user => 
-        user.roles.some(role => role.name === 'TEACHER')
+      const teachersCount = users.filter(user =>
+        user.roles.some(role => role.name === RoleTypes.TEACHER)
       ).length;
 
       expect(teachersCount).toBe(2);

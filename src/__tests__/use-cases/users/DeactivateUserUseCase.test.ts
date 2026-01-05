@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DeactivateUserUseCase } from '../../../core/app/use-cases/users/DeactivateUserUseCase';
-import { createMockUserRepository } from '../../utils/mockRepositories';
+import { createMockStudentRepository, createMockUserRepository } from '../../utils/mockRepositories';
 import { User } from '../../../core/domain/entities';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
@@ -52,16 +52,18 @@ vi.mock('../../../core/frameworks/services/ClerkService', () => {
 describe('DeactivateUserUseCase', () => {
   let useCase: DeactivateUserUseCase;
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
+  let mockStudentRepository: ReturnType<typeof createMockStudentRepository>;
   let mockPrisma: any;
 
   beforeEach(() => {
     mockUserRepository = createMockUserRepository();
-    useCase = new DeactivateUserUseCase(mockUserRepository);
+    mockStudentRepository = createMockStudentRepository();
+    useCase = new DeactivateUserUseCase(mockUserRepository, mockStudentRepository);
     mockPrisma = mockPrismaInstance;
     vi.clearAllMocks();
     mockLockUser.mockResolvedValue(undefined);
     // Suppress console.error for cleaner test output
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   describe('execute', () => {
