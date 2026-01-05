@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository, IProjectionRepository, IDailyGoalRepository, IBillingRecordRepository, IStudentScholarshipRepository, IStudentBillingConfigRepository } from '../../core/adapters_interface/repositories';
+import { IStudentRepository, IUserRepository, ISchoolRepository, ISchoolYearRepository, IGroupRepository, IRoleRepository, IProjectionRepository, IDailyGoalRepository, IBillingRecordRepository, IStudentScholarshipRepository, IStudentBillingConfigRepository, IProjectionPaceRepository, IMonthlyAssignmentsRepository, ISchoolMonthlyAssignmentTemplateRepository } from '../../core/adapters_interface/repositories';
 import { IProjectionTemplateRepository } from '../../core/adapters_interface/repositories/IProjectionTemplateRepository';
 
 /**
@@ -78,6 +78,7 @@ export function createMockSchoolYearRepository(): ISchoolYearRepository {
     findById: vi.fn(),
     findBySchoolId: vi.fn(),
     findActiveBySchoolId: vi.fn(),
+    findByNameAndSchoolId: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
@@ -135,10 +136,49 @@ export function createMockProjectionRepository(): IProjectionRepository {
     findByStudentId: vi.fn(),
     findActiveByStudentId: vi.fn(),
     findByStudentIdAndSchoolYear: vi.fn(),
+    findByIdWithStudent: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
     hardDelete: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock ProjectionPaceRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockProjectionPaceRepository(): IProjectionPaceRepository {
+  return {
+    findById: vi.fn(),
+    findByProjectionId: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock MonthlyAssignmentRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockMonthlyAssignmentRepository(): IMonthlyAssignmentsRepository {
+  return {
+    findById: vi.fn(),
+    findByProjectionId: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  };
+}
+
+/**
+ * Creates a mock SchoolMonthlyAssignmentTemplateRepository with all methods mocked
+ * Use vi.mocked() to set return values for specific methods in tests
+ */
+export function createMockSchoolMonthlyAssignmentTemplateRepository(): ISchoolMonthlyAssignmentTemplateRepository {
+  return {
+    findBySchoolYearId: vi.fn(),
   };
 }
 

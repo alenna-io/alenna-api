@@ -127,6 +127,8 @@ export function createTestUser(overrides?: Partial<User>): User {
     overrides.isActive ?? defaultUser.isActive,
     overrides.createdPassword ?? defaultUser.createdPassword,
     overrides.roles ?? defaultUser.roles,
+    overrides.userStudents ?? defaultUser.userStudents,
+    overrides.student ?? defaultUser.student,
     overrides.createdAt ?? defaultUser.createdAt,
     overrides.updatedAt ?? defaultUser.updatedAt
   );

@@ -203,6 +203,7 @@ export class AddPaceToProjectionUseCase {
       projectionPace.originalQuarter ?? undefined,
       projectionPace.originalWeek ?? undefined,
       projectionPace.comments ?? undefined,
+      undefined,
       projectionPace.createdAt,
       projectionPace.updatedAt
     );

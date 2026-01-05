@@ -22,8 +22,8 @@ export class QuarterController {
         isClosed: quarter.isClosed,
         closedAt: quarter.closedAt?.toISOString(),
         closedBy: quarter.closedBy,
-        createdAt: quarter.createdAt.toISOString(),
-        updatedAt: quarter.updatedAt.toISOString(),
+        createdAt: quarter.createdAt?.toISOString(),
+        updatedAt: quarter.updatedAt?.toISOString(),
       });
     } catch (error: any) {
       console.error('Error closing quarter:', error);
@@ -65,8 +65,8 @@ export class QuarterController {
         closedBy: quarter.closedBy,
         status: quarter.status,
         canClose: quarter.canClose,
-        createdAt: quarter.createdAt.toISOString(),
-        updatedAt: quarter.updatedAt.toISOString(),
+        createdAt: quarter.createdAt?.toISOString(),
+        updatedAt: quarter.updatedAt?.toISOString(),
       })));
     } catch (error: any) {
       console.error('Error getting quarters status:', error);

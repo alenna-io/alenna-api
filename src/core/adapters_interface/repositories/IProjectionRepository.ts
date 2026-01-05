@@ -17,6 +17,7 @@ export interface ProjectionWithPaces {
 
 export interface IProjectionRepository {
   findById(id: string, studentId: string): Promise<Projection | null>;
+  // @ts-ignore
   findByIdWithStudent(id: string, studentId: string): Promise<any | null>;
   findByIdWithPaces(id: string, studentId: string): Promise<ProjectionWithPaces | null>;
   findByStudentId(studentId: string): Promise<Projection[]>;

@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetReportCardUseCase } from '../../../core/app/use-cases/report-cards/GetReportCardUseCase';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
+import {
+  createMockProjectionPaceRepository,
+  createMockProjectionRepository,
+  createMockSchoolYearRepository,
+  createMockUserRepository,
+  createMockMonthlyAssignmentRepository,
+  createMockSchoolMonthlyAssignmentTemplateRepository
+} from '../../utils/mockRepositories';
 
 const { mockPrismaInstance } = vi.hoisted(() => {
   return {
@@ -38,7 +46,14 @@ describe('GetReportCardUseCase', () => {
   let mockPrisma: any;
 
   beforeEach(() => {
-    useCase = new GetReportCardUseCase();
+    useCase = new GetReportCardUseCase(
+      createMockProjectionRepository(),
+      createMockSchoolYearRepository(),
+      createMockUserRepository(),
+      createMockProjectionPaceRepository(),
+      createMockMonthlyAssignmentRepository(),
+      createMockSchoolMonthlyAssignmentTemplateRepository()
+    );
     mockPrisma = mockPrismaInstance;
     vi.clearAllMocks();
   });

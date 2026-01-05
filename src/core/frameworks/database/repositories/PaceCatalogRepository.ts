@@ -16,7 +16,7 @@ export class PaceCatalogRepository implements IPaceCatalogRepository {
     const paceCatalogs = await prisma.paceCatalog.findMany({
       where: { subSubjectId },
     });
-    return paceCatalogs.map(PaceCatalogMapper.toDomain);
+    return paceCatalogs.map((paceCatalog) => PaceCatalogMapper.toDomain(paceCatalog));
   }
 
   async createMany(paceCatalogs: PaceCatalog[]): Promise<PaceCatalog[]> {
@@ -41,7 +41,7 @@ export class PaceCatalogRepository implements IPaceCatalogRepository {
   async update(id: string, paceCatalog: Partial<PaceCatalog>): Promise<PaceCatalog> {
     const updated = await prisma.paceCatalog.update({
       where: { id },
-      data: paceCatalog,
+      data: PaceCatalogMapper.toPrismaUpdate(paceCatalog),
     });
     return PaceCatalogMapper.toDomain(updated);
   }
