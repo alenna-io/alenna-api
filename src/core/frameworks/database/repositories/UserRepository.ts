@@ -14,6 +14,12 @@ export class UserRepository implements IUserRepository {
             role: true,
           },
         },
+        userStudents: {
+          include: {
+            student: true,
+          },
+        },
+        student: true,
       },
     });
 
@@ -40,7 +46,7 @@ export class UserRepository implements IUserRepository {
 
   async findByEmail(email: string): Promise<User | null> {
     const user = await prisma.user.findFirst({
-      where: { 
+      where: {
         email,
         deletedAt: null, // Only find non-deleted users
       },
@@ -74,7 +80,7 @@ export class UserRepository implements IUserRepository {
 
   async findBySchoolId(schoolId: string): Promise<User[]> {
     const users = await prisma.user.findMany({
-      where: { 
+      where: {
         schoolId,
         deletedAt: null, // Soft delete filter
       },
@@ -93,7 +99,7 @@ export class UserRepository implements IUserRepository {
 
   async findAll(): Promise<User[]> {
     const users = await prisma.user.findMany({
-      where: { 
+      where: {
         deletedAt: null, // Soft delete filter
       },
       include: {
@@ -197,7 +203,7 @@ export class UserRepository implements IUserRepository {
   async reactivate(id: string): Promise<User> {
     const updated = await prisma.user.update({
       where: { id },
-      data: { 
+      data: {
         isActive: true,
         deletedAt: null, // Restore soft-deleted user
       },

@@ -1,11 +1,16 @@
 import { Request, Response } from 'express';
-import { container } from '../../di/container';
+import { GetSubSubjectsUseCase, CreateSubSubjectWithPacesUseCase } from '../../../app/use-cases';
 import { CreateSubSubjectDTO } from '../../../app/dtos/SubSubjectDTO';
 
 export class SubSubjectController {
-  async getSubSubjects(_req: Request, res: Response): Promise<void> {
+  constructor(
+    private getSubSubjectsUseCase: GetSubSubjectsUseCase,
+    private createSubSubjectWithPacesUseCase: CreateSubSubjectWithPacesUseCase
+  ) { }
+
+  getSubSubjects = async (_req: Request, res: Response): Promise<void> => {
     try {
-      const subSubjects = await container.getSubSubjectsUseCase.execute();
+      const subSubjects = await this.getSubSubjectsUseCase.execute();
       res.json(subSubjects);
     } catch (error: any) {
       console.error('Error getting subSubjects:', error);
@@ -13,10 +18,10 @@ export class SubSubjectController {
     }
   }
 
-  async createSubSubject(req: Request, res: Response): Promise<void> {
+  createSubSubject = async (req: Request, res: Response): Promise<void> => {
     try {
       const validatedData = CreateSubSubjectDTO.parse(req.body);
-      const subSubject = await container.createSubSubjectWithPacesUseCase.execute(validatedData);
+      const subSubject = await this.createSubSubjectWithPacesUseCase.execute(validatedData);
       res.status(201).json(subSubject);
     } catch (error: any) {
       console.error('Error creating subSubject:', error);
@@ -30,4 +35,3 @@ export class SubSubjectController {
     }
   }
 }
-

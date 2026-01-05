@@ -19,4 +19,5 @@ export * from './TuitionConfigMapper';
 export * from './TuitionTypeMapper';
 export * from './StudentScholarshipMapper';
 export * from './BillingRecordMapper';
-
+export * from './QuarterMapper';
+export * from './QuarterGradePercentageMapper';

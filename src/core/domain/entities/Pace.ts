@@ -1,3 +1,5 @@
+import { PaceCatalog } from './';
+
 // Domain Entity: ProjectionPace (Student-specific PACE tracking)
 export class ProjectionPace {
   constructor(
@@ -13,6 +15,7 @@ export class ProjectionPace {
     public readonly originalQuarter?: string,
     public readonly originalWeek?: number,
     public readonly comments?: string,
+    public readonly paceCatalog?: PaceCatalog,
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date
   ) { }
@@ -30,6 +33,7 @@ export class ProjectionPace {
     originalQuarter?: string;
     originalWeek?: number;
     comments?: string;
+    paceCatalog?: PaceCatalog;
   }): ProjectionPace {
     return new ProjectionPace(
       props.id,
@@ -44,6 +48,7 @@ export class ProjectionPace {
       props.originalQuarter,
       props.originalWeek,
       props.comments,
+      props.paceCatalog,
       new Date(),
       new Date()
     );
@@ -63,6 +68,7 @@ export class ProjectionPace {
       props.originalQuarter ?? this.originalQuarter,
       props.originalWeek ?? this.originalWeek,
       props.comments ?? this.comments,
+      this.paceCatalog,
       this.createdAt,
       new Date()
     );

@@ -30,6 +30,8 @@ router.get('/health', (_req, res) => {
   });
 });
 
+console.log('🔥 index.routes.ts LOADED');
+
 // API v1 routes
 const v1Router: ExpressRouter = Router();
 v1Router.use('/auth', authRoutes);
@@ -52,6 +54,8 @@ v1Router.use('/quarters', quartersRoutes);
 v1Router.use('/billing', billingRoutes);
 
 router.use('/v1', v1Router);
+
+console.log('🔥 index.routes.ts LOADED');
 
 export default router;
 

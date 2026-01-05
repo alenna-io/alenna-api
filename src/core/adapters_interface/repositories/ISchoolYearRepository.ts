@@ -5,6 +5,7 @@ export interface ISchoolYearRepository {
   findById(id: string): Promise<SchoolYear | null>;
   findBySchoolId(schoolId: string): Promise<SchoolYear[]>;
   findActiveBySchoolId(schoolId: string): Promise<SchoolYear | null>;
+  findByNameAndSchoolId(schoolId: string, name: string): Promise<SchoolYear | null>;
   create(data: CreateSchoolYearData): Promise<SchoolYear>;
   update(id: string, data: UpdateSchoolYearData): Promise<SchoolYear>;
   delete(id: string): Promise<void>;

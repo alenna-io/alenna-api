@@ -1,7 +1,7 @@
 import prisma from '../../../frameworks/database/prisma.client';
 import { QuarterMapper } from '../../../frameworks/database/mappers';
 import { RedistributeUnfinishedPacesUseCase } from '../projections/RedistributeUnfinishedPacesUseCase';
-import type { Quarter } from '../../../domain/entities/SchoolYear';
+import type { Quarter } from '../../../domain/entities/';
 
 export class CloseQuarterUseCase {
   private redistributeUseCase: RedistributeUnfinishedPacesUseCase;

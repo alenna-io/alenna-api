@@ -1,13 +1,39 @@
-import { User as PrismaUser, Role } from '@prisma/client';
-import { User, UserRoleInfo } from '../../../domain/entities';
+import {
+  User as PrismaUser,
+  Role as PrismaRole,
+  Student as PrismaStudent,
+  UserStudent as PrismaUserStudent
+} from '@prisma/client';
+import { User, UserRoleInfo, UserStudent } from '../../../domain/entities';
+import { StudentMapper } from './StudentMapper';
 
 export class UserMapper {
-  static toDomain(prismaUser: PrismaUser & { userRoles?: { role: Role }[] }): User {
+  static toDomain(
+    prismaUser: PrismaUser &
+    {
+      userRoles?: { role: PrismaRole }[],
+      userStudents?: (PrismaUserStudent & { student: PrismaStudent })[],
+      student?: PrismaStudent | null
+    }
+  ): User {
     const roles: UserRoleInfo[] = prismaUser.userRoles?.map(ur => ({
       id: ur.role.id,
       name: ur.role.name,
       displayName: ur.role.displayName,
     })) || [];
+
+    const userStudents = prismaUser.userStudents?.map(us =>
+      new UserStudent(
+        us.id,
+        us.userId,
+        us.studentId,
+        us.relationship ?? undefined,
+        us.createdAt,
+        us.updatedAt
+      )
+    ) ?? [];
+
+    const student = prismaUser.student ? StudentMapper.toDomain(prismaUser.student) : undefined;
 
     return new User(
       prismaUser.id,
@@ -21,6 +47,8 @@ export class UserMapper {
       prismaUser.isActive ?? true,
       prismaUser.createdPassword ?? false,
       roles,
+      userStudents,
+      student,
       prismaUser.createdAt,
       prismaUser.updatedAt
     );

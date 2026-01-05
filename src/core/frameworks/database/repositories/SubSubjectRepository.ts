@@ -47,7 +47,17 @@ export class SubSubjectRepository implements ISubSubjectRepository {
   }
 
   async findAll(): Promise<SubSubject[]> {
-    const subSubjects = await prisma.subSubject.findMany();
+    const subSubjects = await prisma.subSubject.findMany({
+      include: {
+        category: true,
+        level: true,
+      },
+      orderBy: [
+        { category: { displayOrder: 'asc' } },
+        { level: { number: 'asc' } },
+        { name: 'asc' },
+      ],
+    });
     return subSubjects.map(SubSubjectMapper.toDomain);
   }
 

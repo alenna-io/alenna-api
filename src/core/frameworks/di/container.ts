@@ -21,6 +21,9 @@ import {
   SubSubjectRepository,
   PaceCatalogRepository,
   LevelRepository,
+  ProjectionPaceRepository,
+  MonthlyAssignmentsRepository,
+  SchoolMonthlyAssignmentTemplateRepository,
 } from '../database/repositories';
 import { CharacterTraitRepository } from '../database/repositories/CharacterTraitRepository';
 import {
@@ -137,6 +140,16 @@ class Container {
   private _subSubjectRepository?: SubSubjectRepository;
   private _paceCatalogRepository?: PaceCatalogRepository;
   private _levelRepository?: LevelRepository;
+  private _tuitionConfigRepository?: TuitionConfigRepository;
+  private _studentScholarshipRepository?: StudentScholarshipRepository;
+  private _recurringExtraChargeRepository?: RecurringExtraChargeRepository;
+  private _billingRecordRepository?: BillingRecordRepository;
+  private _tuitionTypeRepository?: TuitionTypeRepository;
+  private _studentBillingConfigRepository?: StudentBillingConfigRepository;
+  private _characterTraitRepository?: CharacterTraitRepository;
+  private _projectionPaceRepository?: ProjectionPaceRepository;
+  private _monthlyAssignmentsRepository?: MonthlyAssignmentsRepository;
+  private _schoolMonthlyAssignmentTemplateRepository?: SchoolMonthlyAssignmentTemplateRepository;
 
   // Repositories getters (Lazy initialization)
   get categoryRepository(): CategoryRepository {
@@ -195,6 +208,13 @@ class Container {
     return this._projectionRepository;
   }
 
+  get projectionPaceRepository(): ProjectionPaceRepository {
+    if (!this._projectionPaceRepository) {
+      this._projectionPaceRepository = new ProjectionPaceRepository();
+    }
+    return this._projectionPaceRepository;
+  }
+
   get projectionTemplateRepository(): ProjectionTemplateRepository {
     if (!this._projectionTemplateRepository) {
       this._projectionTemplateRepository = new ProjectionTemplateRepository();
@@ -228,6 +248,20 @@ class Container {
       this._groupRepository = new GroupRepository();
     }
     return this._groupRepository;
+  }
+
+  get monthlyAssignmentsRepository(): MonthlyAssignmentsRepository {
+    if (!this._monthlyAssignmentsRepository) {
+      this._monthlyAssignmentsRepository = new MonthlyAssignmentsRepository();
+    }
+    return this._monthlyAssignmentsRepository;
+  }
+
+  get schoolMonthlyAssignmentTemplateRepository(): SchoolMonthlyAssignmentTemplateRepository {
+    if (!this._schoolMonthlyAssignmentTemplateRepository) {
+      this._schoolMonthlyAssignmentTemplateRepository = new SchoolMonthlyAssignmentTemplateRepository();
+    }
+    return this._schoolMonthlyAssignmentTemplateRepository;
   }
 
   // Auth Use Cases
@@ -382,7 +416,7 @@ class Container {
 
   // SubSubject Use Cases
   get getSubSubjectsUseCase(): GetSubSubjectsUseCase {
-    return new GetSubSubjectsUseCase();
+    return new GetSubSubjectsUseCase(this.subSubjectRepository);
   }
 
   get createSubSubjectWithPacesUseCase(): CreateSubSubjectWithPacesUseCase {
@@ -534,7 +568,14 @@ class Container {
 
   // Report Cards Use Cases
   get getReportCardUseCase(): GetReportCardUseCase {
-    return new GetReportCardUseCase();
+    return new GetReportCardUseCase(
+      this.projectionRepository,
+      this.schoolYearRepository,
+      this.userRepository,
+      this.projectionPaceRepository,
+      this.monthlyAssignmentsRepository,
+      this.schoolMonthlyAssignmentTemplateRepository
+    );
   }
 
   // Groups Use Cases
@@ -606,6 +647,11 @@ class Container {
     return new ReportCardController(this.getReportCardUseCase);
   }
 
+  get subSubjectController() {
+    const { SubSubjectController } = require('../api/controllers');
+    return new SubSubjectController(this.getSubSubjectsUseCase, this.createSubSubjectWithPacesUseCase);
+  }
+
   // Module Use Cases
   get getAllModulesUseCase(): GetAllModulesUseCase {
     return new GetAllModulesUseCase();
@@ -622,16 +668,6 @@ class Container {
   get disableSchoolModuleUseCase(): DisableSchoolModuleUseCase {
     return new DisableSchoolModuleUseCase();
   }
-
-  // Billing Repositories
-  private _tuitionConfigRepository?: TuitionConfigRepository;
-  private _studentScholarshipRepository?: StudentScholarshipRepository;
-  private _recurringExtraChargeRepository?: RecurringExtraChargeRepository;
-  private _billingRecordRepository?: BillingRecordRepository;
-  private _tuitionTypeRepository?: TuitionTypeRepository;
-  private _studentBillingConfigRepository?: StudentBillingConfigRepository;
-  // Character Trait Repository
-  private _characterTraitRepository?: CharacterTraitRepository;
 
   get tuitionConfigRepository(): TuitionConfigRepository {
     if (!this._tuitionConfigRepository) {
@@ -900,4 +936,3 @@ class Container {
 
 // Export singleton instance
 export const container = new Container();
-

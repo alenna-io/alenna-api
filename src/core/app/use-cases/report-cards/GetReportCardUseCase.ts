@@ -1,4 +1,12 @@
-import prisma from '../../../frameworks/database/prisma.client';
+import {
+  IProjectionRepository,
+  ISchoolYearRepository,
+  IUserRepository,
+  IProjectionPaceRepository,
+  IMonthlyAssignmentsRepository,
+  ISchoolMonthlyAssignmentTemplateRepository
+} from '../../../adapters_interface/repositories';
+import { RoleTypes } from '../../../domain/roles/RoleTypes';
 
 export interface ReportCardSubjectData {
   subject: string;
@@ -47,82 +55,96 @@ export interface ReportCardOutput {
 }
 
 export class GetReportCardUseCase {
+  constructor(
+    private readonly projectionRepository: IProjectionRepository,
+    private readonly schoolYearRepository: ISchoolYearRepository,
+    private readonly userRepository: IUserRepository,
+    private readonly projectionPaceRepository: IProjectionPaceRepository,
+    private readonly monthlyAssignmentsRepository: IMonthlyAssignmentsRepository,
+    private readonly schoolMonthlyAssignmentTemplateRepository: ISchoolMonthlyAssignmentTemplateRepository
+  ) { }
+
   async execute(
     projectionId: string,
     studentId: string,
     userId?: string
   ): Promise<ReportCardOutput> {
     // 1. Verify projection exists and belongs to student
-    const projection = await prisma.projection.findFirst({
-      where: {
-        id: projectionId,
-        studentId,
-        deletedAt: null,
-      },
-      include: {
-        student: {
-          include: {
-            school: true,
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-        projectionCategories: {
-          include: {
-            category: true,
-          },
-        },
-      },
-    });
+    const projection = await this.projectionRepository.findByIdWithStudent(projectionId, studentId);
+    // const projection = await prisma.projection.findFirst({
+    //   where: {
+    //     id: projectionId,
+    //     studentId,
+    //     deletedAt: null,
+    //   },
+    //   include: {
+    //     student: {
+    //       include: {
+    //         school: true,
+    //         user: {
+    //           select: {
+    //             firstName: true,
+    //             lastName: true,
+    //           },
+    //         },
+    //       },
+    //     },
+    //     projectionCategories: {
+    //       include: {
+    //         category: true,
+    //       },
+    //     },
+    //   },
+    // });
 
     if (!projection) {
-      throw new Error('Proyección no encontrada');
+      throw new Error('Projection not found');
     }
 
     // Get the SchoolYear by name and schoolId
-    const schoolYear = await prisma.schoolYear.findFirst({
-      where: {
-        schoolId: projection.student.schoolId,
-        name: projection.schoolYear,
-        deletedAt: null,
-      },
-      include: {
-        quarterGradePercentages: {
-          where: { deletedAt: null },
-        },
-      },
-    });
+    const schoolYear = await this.schoolYearRepository.findByNameAndSchoolId(projection.student.schoolId, projection.schoolYear);
+    // const schoolYear = await prisma.schoolYear.findFirst({
+    //   where: {
+    //     schoolId: projection.student.schoolId,
+    //     name: projection.schoolYear,
+    //     deletedAt: null,
+    //   },
+    //   include: {
+    //     quarterGradePercentages: {
+    //       where: { deletedAt: null },
+    //     },
+    //   },
+    // });
+
+    console.log('schoolYear', schoolYear);
 
     if (!schoolYear) {
-      throw new Error('Año escolar no encontrado');
+      throw new Error('School year not found');
     }
 
     // 2. Verify permissions (similar to GetProjectionsByStudentIdUseCase)
     if (userId) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId, deletedAt: null },
-        select: {
-          userRoles: {
-            include: { role: true },
-          },
-          userStudents: {
-            select: { studentId: true },
-          },
-          student: {
-            select: { id: true },
-          },
-        },
-      });
+      const user = await this.userRepository.findById(userId);
+      // const user = await prisma.user.findUnique({
+      //   where: { id: userId, deletedAt: null },
+      //   select: {
+      //     userRoles: {
+      //       include: { role: true },
+      //     },
+      //     userStudents: {
+      //       select: { studentId: true },
+      //     },
+      //     student: {
+      //       select: { id: true },
+      //     },
+      //   },
+      // });
 
-      const hasParentRole = user?.userRoles.some(ur => ur.role.name === 'PARENT');
-      const hasTeacherOrAdminRole = user?.userRoles.some(ur => 
-        ur.role.name === 'TEACHER' || ur.role.name === 'SCHOOL_ADMIN' || ur.role.name === 'SUPERADMIN'
+      const hasParentRole = user?.roles.some(role => role.name === RoleTypes.PARENT);
+      const hasTeacherOrAdminRole = user?.roles.some(role =>
+        role.name === RoleTypes.TEACHER || role.name === RoleTypes.SCHOOL_ADMIN || role.name === RoleTypes.SUPERADMIN
       );
-      const hasStudentRole = user?.userRoles.some(ur => ur.role.name === 'STUDENT');
+      const hasStudentRole = user?.roles.some(role => role.name === RoleTypes.STUDENT);
 
       // If user is ONLY a parent, verify they're linked to this student
       if (hasParentRole && !hasTeacherOrAdminRole) {
@@ -142,50 +164,53 @@ export class GetReportCardUseCase {
     }
 
     // 3. Get all PACEs for this projection
-    const projectionPaces = await prisma.projectionPace.findMany({
-      where: {
-        projectionId,
-        deletedAt: null,
-      },
-      include: {
-        paceCatalog: {
-          include: {
-            subSubject: {
-              include: {
-                category: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const projectionPaces = await this.projectionPaceRepository.findByProjectionId(projectionId);
+    // const projectionPaces = await prisma.projectionPace.findMany({
+    //   where: {
+    //     projectionId,
+    //     deletedAt: null,
+    //   },
+    //   include: {
+    //     paceCatalog: {
+    //       include: {
+    //         subSubject: {
+    //           include: {
+    //             category: true,
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+    // });
 
     // 4. Get all monthly assignments for this projection
-    const monthlyAssignments = await prisma.monthlyAssignment.findMany({
-      where: {
-        projectionId,
-        deletedAt: null,
-      },
-      orderBy: [
-        { quarter: 'asc' },
-        { name: 'asc' },
-      ],
-    });
+    const monthlyAssignments = await this.monthlyAssignmentsRepository.findByProjectionId(projectionId);
+    // const monthlyAssignments = await prisma.monthlyAssignment.findMany({
+    //   where: {
+    //     projectionId,
+    //     deletedAt: null,
+    //   },
+    //   orderBy: [
+    //     { quarter: 'asc' },
+    //     { name: 'asc' },
+    //   ],
+    // });
 
     // 5. Get grade percentages for each quarter
     const gradePercentages = new Map<string, number>();
-    schoolYear.quarterGradePercentages.forEach(qgp => {
+    schoolYear.quarterGradePercentages?.forEach(qgp => {
       gradePercentages.set(qgp.quarter, qgp.percentage);
     });
 
     // 6. Get school monthly assignment templates to know which assignments exist
     const schoolYearId = schoolYear.id;
-    const templates = await prisma.schoolMonthlyAssignmentTemplate.findMany({
-      where: {
-        schoolYearId,
-        deletedAt: null,
-      },
-    });
+    const templates = await this.schoolMonthlyAssignmentTemplateRepository.findBySchoolYearId(schoolYearId);
+    // const templates = await prisma.schoolMonthlyAssignmentTemplate.findMany({
+    //   where: {
+    //     schoolYearId,
+    //     deletedAt: null,
+    //   },
+    // });
 
     // 7. Extract projection categories if available
     const projectionCategoryNames = projection.projectionCategories
@@ -248,7 +273,7 @@ export class GetReportCardUseCase {
     quarterPaces.forEach(pp => {
       // Use category name instead of sub-subject name
       const categoryName = pp.paceCatalog.subSubject.category.name;
-      
+
       if (!subjectsMap.has(categoryName)) {
         subjectsMap.set(categoryName, {
           subject: categoryName,
@@ -292,34 +317,34 @@ export class GetReportCardUseCase {
     // Calculate averages and counts for each subject
     const subjects: ReportCardSubjectData[] = Array.from(subjectsMap.values())
       .map(subject => {
-      const grades = subject.paces
-        .filter(p => p.grade !== null)
-        .map(p => p.grade!);
-      
-      const average = grades.length > 0
-        ? grades.reduce((sum, grade) => sum + grade, 0) / grades.length
-        : null;
+        const grades = subject.paces
+          .filter(p => p.grade !== null)
+          .map(p => p.grade!);
 
-      const passedCount = subject.paces.filter(p => 
-        p.grade !== null && 
-        p.grade >= 80 && 
-        p.isCompleted && 
-        !p.isFailed
-      ).length;
+        const average = grades.length > 0
+          ? grades.reduce((sum, grade) => sum + grade, 0) / grades.length
+          : null;
 
-      return {
-        ...subject,
-        average: average !== null ? Math.round(average * 100) / 100 : null,
-        passedCount,
-      };
-    })
+        const passedCount = subject.paces.filter(p =>
+          p.grade !== null &&
+          p.grade >= 80 &&
+          p.isCompleted &&
+          !p.isFailed
+        ).length;
+
+        return {
+          ...subject,
+          average: average !== null ? Math.round(average * 100) / 100 : null,
+          passedCount,
+        };
+      })
       .sort((a, b) => getCategoryOrder(a.subject) - getCategoryOrder(b.subject));
 
     // Calculate monthly assignment average
     const maGrades = quarterMAs
       .filter(ma => ma.grade !== null)
       .map(ma => ma.grade!);
-    
+
     const monthlyAssignmentAverage = maGrades.length > 0
       ? maGrades.reduce((sum, grade) => sum + grade, 0) / maGrades.length
       : null;
@@ -342,7 +367,7 @@ export class GetReportCardUseCase {
     const subjectAverages = subjects
       .map(s => s.average)
       .filter((avg): avg is number => avg !== null);
-    
+
     const overallAverage = subjectAverages.length > 0
       ? subjectAverages.reduce((sum, avg) => sum + avg, 0) / subjectAverages.length
       : null;
@@ -351,7 +376,7 @@ export class GetReportCardUseCase {
     // Final = (MA% × MA Average) + (PACE% × PACE Average)
     const pacePercentage = 100 - maPercentage;
     let finalGrade: number | null = null;
-    
+
     if (monthlyAssignmentAverage !== null && overallAverage !== null) {
       finalGrade = (maPercentage / 100) * monthlyAssignmentAverage + (pacePercentage / 100) * overallAverage;
       finalGrade = Math.round(finalGrade * 100) / 100;
@@ -366,10 +391,10 @@ export class GetReportCardUseCase {
 
     // Check if academic projection is completed
     // All PACEs must be completed with non-failing grade (grade >= 80)
-    const allPacesCompleted = quarterPaces.every(pp => 
-      pp.isCompleted && 
-      pp.grade !== null && 
-      pp.grade >= 80 && 
+    const allPacesCompleted = quarterPaces.every(pp =>
+      pp.isCompleted &&
+      pp.grade !== null &&
+      pp.grade >= 80 &&
       !pp.isFailed
     );
 
@@ -377,8 +402,8 @@ export class GetReportCardUseCase {
       quarter,
       subjects,
       monthlyAssignments: monthlyAssignmentsList,
-      monthlyAssignmentAverage: monthlyAssignmentAverage !== null 
-        ? Math.round(monthlyAssignmentAverage * 100) / 100 
+      monthlyAssignmentAverage: monthlyAssignmentAverage !== null
+        ? Math.round(monthlyAssignmentAverage * 100) / 100
         : null,
       monthlyAssignmentPercentage: maPercentage,
       pacePercentage,

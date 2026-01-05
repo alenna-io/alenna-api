@@ -17,3 +17,6 @@ export * from './IPaceCatalogRepository';
 export * from './ISubSubjectRepository';
 export * from './ICategoryRepository';
 export * from './ILevelRepository';
+export * from './IProjectionPaceRepository';
+export * from './IMonthlyAssignmentsRepository';
+export * from './ISchoolMonthlyAssignmentTemplateRepository';

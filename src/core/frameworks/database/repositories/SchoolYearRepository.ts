@@ -75,6 +75,37 @@ export class SchoolYearRepository implements ISchoolYearRepository {
     return schoolYear ? SchoolYearMapper.toDomain(schoolYear) : null;
   }
 
+  async findByNameAndSchoolId(schoolId: string, name: string): Promise<SchoolYear | null> {
+    const schoolYear = await prisma.schoolYear.findFirst({
+      where: {
+        schoolId: schoolId,
+        name: name,
+        deletedAt: null,
+      },
+      include: {
+        quarterGradePercentages: {
+          where: { deletedAt: null },
+        },
+        quarters: {
+          where: { deletedAt: null },
+          orderBy: { order: 'asc' },
+          include: {
+            quarterHolidays: {
+              where: { deletedAt: null },
+              orderBy: { startDate: 'asc' },
+            },
+            schoolWeeks: {
+              where: { deletedAt: null },
+              orderBy: { weekNumber: 'asc' },
+            },
+          },
+        },
+      },
+    });
+
+    return schoolYear ? SchoolYearMapper.toDomain(schoolYear) : null;
+  }
+
   async create(data: CreateSchoolYearData): Promise<SchoolYear> {
     // Check if name conflicts with existing non-deleted school years
     const existingSchoolYear = await prisma.schoolYear.findFirst({

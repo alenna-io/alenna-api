@@ -1,3 +1,5 @@
+import { SubSubject } from './';
+
 // Domain Entity: PaceCatalog (Master PACE list)
 export class PaceCatalog {
   constructor(
@@ -6,14 +8,16 @@ export class PaceCatalog {
     public readonly name: string,
     public readonly subSubjectId: string,
     public readonly createdAt?: Date,
-    public readonly updatedAt?: Date
-  ) {}
+    public readonly updatedAt?: Date,
+    public readonly subSubject?: SubSubject
+  ) { }
 
   static create(props: {
     id: string;
     code: string;
     name: string;
     subSubjectId: string;
+    subSubject?: SubSubject;
   }): PaceCatalog {
     return new PaceCatalog(
       props.id,
@@ -21,7 +25,8 @@ export class PaceCatalog {
       props.name,
       props.subSubjectId,
       new Date(),
-      new Date()
+      new Date(),
+      props.subSubject
     );
   }
 }

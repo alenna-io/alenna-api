@@ -1,19 +1,19 @@
 import { IProjectionRepository, ProjectionWithPaces } from '../../../adapters_interface/repositories';
 import { Projection } from '../../../domain/entities';
 import prisma from '../prisma.client';
-import { 
-  ProjectionMapper, 
-  ProjectionPaceMapper, 
-  GradeHistoryMapper, 
-  PaceCatalogMapper, 
-  SubSubjectMapper, 
-  CategoryMapper 
+import {
+  ProjectionMapper,
+  ProjectionPaceMapper,
+  GradeHistoryMapper,
+  PaceCatalogMapper,
+  SubSubjectMapper,
+  CategoryMapper
 } from '../mappers';
 
 export class ProjectionRepository implements IProjectionRepository {
   async findById(id: string, studentId: string): Promise<Projection | null> {
     const projection = await prisma.projection.findFirst({
-      where: { 
+      where: {
         id,
         studentId, // Ensure student owns this projection
         deletedAt: null, // Soft delete filter
@@ -23,9 +23,39 @@ export class ProjectionRepository implements IProjectionRepository {
     return projection ? ProjectionMapper.toDomain(projection) : null;
   }
 
+  async findByIdWithStudent(id: string, studentId: string): Promise<any | null> {
+    const projection = await prisma.projection.findFirst({
+      where: {
+        id,
+        studentId, // Ensure student owns this projection
+        deletedAt: null, // Soft delete filter
+      },
+      include: {
+        student: {
+          include: {
+            school: true,
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        projectionCategories: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    });
+
+    return projection ?? null;
+  }
+
   async findByIdWithPaces(id: string, studentId: string): Promise<ProjectionWithPaces | null> {
     const projection = await prisma.projection.findFirst({
-      where: { 
+      where: {
         id,
         studentId, // Ensure student owns this projection
         deletedAt: null, // Soft delete filter
@@ -103,7 +133,7 @@ export class ProjectionRepository implements IProjectionRepository {
 
   async findByStudentId(studentId: string): Promise<Projection[]> {
     const projections = await prisma.projection.findMany({
-      where: { 
+      where: {
         studentId,
         deletedAt: null, // Soft delete filter
       },
@@ -115,7 +145,7 @@ export class ProjectionRepository implements IProjectionRepository {
 
   async findActiveByStudentId(studentId: string): Promise<Projection | null> {
     const projection = await prisma.projection.findFirst({
-      where: { 
+      where: {
         studentId,
         isActive: true,
         deletedAt: null, // Soft delete filter
@@ -127,7 +157,7 @@ export class ProjectionRepository implements IProjectionRepository {
 
   async findByStudentIdAndSchoolYear(studentId: string, schoolYear: string): Promise<Projection | null> {
     const projection = await prisma.projection.findFirst({
-      where: { 
+      where: {
         studentId,
         schoolYear,
         deletedAt: null, // Soft delete filter

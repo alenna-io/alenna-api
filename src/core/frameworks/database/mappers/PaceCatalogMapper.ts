@@ -1,15 +1,23 @@
 import { PaceCatalog } from '../../../domain/entities';
-import { PaceCatalog as PrismaPaceCatalog } from '@prisma/client';
+import {
+  PaceCatalog as PrismaPaceCatalog,
+  SubSubject as PrismaSubSubject
+} from '@prisma/client';
+import { SubSubjectMapper } from './';
 
 export class PaceCatalogMapper {
-  static toDomain(paceCatalog: PrismaPaceCatalog): PaceCatalog {
+  static toDomain(
+    paceCatalog: PrismaPaceCatalog,
+    subSubject: PrismaSubSubject | null = null
+  ): PaceCatalog {
     return new PaceCatalog(
       paceCatalog.id,
       paceCatalog.code,
       paceCatalog.name,
       paceCatalog.subSubjectId,
       paceCatalog.createdAt,
-      paceCatalog.updatedAt
+      paceCatalog.updatedAt,
+      subSubject ? SubSubjectMapper.toDomain(subSubject) : undefined
     );
   }
   static toPrisma(paceCatalog: PaceCatalog): Omit<PrismaPaceCatalog, 'createdAt' | 'updatedAt'> {

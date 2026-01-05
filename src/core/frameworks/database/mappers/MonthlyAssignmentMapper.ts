@@ -14,16 +14,23 @@ export class MonthlyAssignmentMapper {
     );
   }
 
-  static toPersistence(assignment: MonthlyAssignment): any {
+  static toPrisma(assignment: MonthlyAssignment): any {
     return {
       id: assignment.id,
       projectionId: assignment.projectionId,
       name: assignment.name,
       quarter: assignment.quarter,
       grade: assignment.grade,
-      createdAt: assignment.createdAt,
-      updatedAt: assignment.updatedAt,
-      deletedAt: assignment.deletedAt,
+      deletedAt: null,
+    };
+  }
+
+  static toPrismaUpdate(assignment: Partial<MonthlyAssignment>): any {
+    return {
+      ...(assignment.name && { name: assignment.name }),
+      ...(assignment.grade && { grade: assignment.grade }),
+      ...(assignment.deletedAt && { deletedAt: assignment.deletedAt }),
+      ...(assignment.updatedAt && { updatedAt: assignment.updatedAt }),
     };
   }
 }

@@ -17,4 +17,6 @@ export * from './CategoryRepository';
 export * from './PaceCatalogRepository';
 export * from './SubSubjectRepository';
 export * from './LevelRepository';
-
+export * from './ProjectionPaceRepository';
+export * from './MonthlyAssignmentsRepository';
+export * from './SchoolMonthlyAssignmentTemplateRepository';

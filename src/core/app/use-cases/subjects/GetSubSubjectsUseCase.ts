@@ -1,40 +1,14 @@
-import prisma from '../../../frameworks/database/prisma.client';
-
-export interface SubSubjectItem {
-  id: string;
-  name: string;
-  categoryId: string;
-  categoryName: string;
-  levelId: string;
-  levelName: string;
-  levelNumber?: number;
-  difficulty: number;
-}
+import { ISubSubjectRepository } from '../../../adapters_interface/repositories';
+import { SubSubject } from '../../../domain/entities/SubSubject';
 
 export class GetSubSubjectsUseCase {
-  async execute(): Promise<SubSubjectItem[]> {
-    const subSubjects = await prisma.subSubject.findMany({
-      include: {
-        category: true,
-        level: true,
-      },
-      orderBy: [
-        { category: { displayOrder: 'asc' } },
-        { level: { number: 'asc' } },
-        { name: 'asc' },
-      ],
-    });
+  constructor(private readonly subSubjectRepository: ISubSubjectRepository) { }
 
-    return subSubjects.map(subSubject => ({
-      id: subSubject.id,
-      name: subSubject.name,
-      categoryId: subSubject.categoryId,
-      categoryName: subSubject.category.name,
-      levelId: subSubject.levelId,
-      levelName: subSubject.level.name,
-      levelNumber: subSubject.level.number ?? undefined,
-      difficulty: subSubject.difficulty,
-    }));
+  async execute(): Promise<SubSubject[]> {
+    console.log('🔥 GetSubSubjectsUseCase LOADED');
+    const subSubjects = await this.subSubjectRepository.findAll();
+    console.log('🔥 GetSubSubjectsUseCase LOADED');
+    return subSubjects;
   }
 }
 

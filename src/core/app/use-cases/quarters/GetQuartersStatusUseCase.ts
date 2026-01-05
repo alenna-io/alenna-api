@@ -1,6 +1,6 @@
 import prisma from '../../../frameworks/database/prisma.client';
 import { QuarterMapper } from '../../../frameworks/database/mappers';
-import type { Quarter } from '../../../domain/entities/SchoolYear';
+import type { Quarter } from '../../../domain/entities/';
 
 export interface QuarterStatus extends Quarter {
   status: 'open' | 'gracePeriod' | 'closed';

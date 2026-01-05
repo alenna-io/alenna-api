@@ -28,3 +28,8 @@ export * from './BillingRecord';
 export * from './TaxableInvoice';
 export * from './StudentBillingConfig';
 export * from './StudentTuitionAssignment';
+export * from './Quarter'
+export * from './QuarterHoliday';
+export * from './SchoolWeek';
+export * from './QuarterGradePercentage';
+export * from './SchoolMonthlyAssignmentTemplate';
