@@ -116,8 +116,6 @@ export class GetReportCardUseCase {
     //   },
     // });
 
-    console.log('schoolYear', schoolYear);
-
     if (!schoolYear) {
       throw new Error('School year not found');
     }
