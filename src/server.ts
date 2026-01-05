@@ -6,6 +6,8 @@ import cron from 'node-cron';
 import { config } from './config/env';
 import { logger } from './utils/logger';
 import routes from './core/frameworks/api/routes';
+import v2Routes from './core/frameworks/api/routes/v2';
+import { errorHandler } from './core/frameworks/api/middleware';
 import { AutoCloseQuartersJob } from './core/app/jobs/AutoCloseQuartersJob';
 import { MonthlyBillingJob } from './core/app/jobs/MonthlyBillingJob';
 
@@ -16,11 +18,16 @@ const app: express.Application = express();
 app.use(helmet()); // Security headers
 app.use(cors()); // Enable CORS
 app.use(morgan('dev')); // HTTP request logging
-app.use(express.json()); // Parse JSON bodies
+app.use(express.json({ strict: true })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+
+// Error handler
+app.use(errorHandler);
 
 // API Routes
 app.use('/api', routes);
+app.use('/api', v2Routes);
+
 
 // 404 handler
 app.use((req: Request, res: Response) => {

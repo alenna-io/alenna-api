@@ -199,28 +199,37 @@ model Student {
   @@map("students")
 }
 
-model Projection {
-  id                 String              @id @default(cuid())
-  schoolYear         String
-  startDate          DateTime
-  endDate            DateTime
-  isActive           Boolean             @default(true)
-  notes              String?
-  studentId          String
-  deletedAt          DateTime?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  dailyGoals         DailyGoal[]
-  monthlyAssignments MonthlyAssignment[]
-  projectionPaces    ProjectionPace[]
-  projectionCategories ProjectionCategory[]
-  student            Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@index([studentId])
-  @@index([studentId, isActive])
-  @@map("projections")
+enum ProjectionStatus {
+  OPEN
+  CLOSED
 }
 
+  model Projection {
+    id                 String              @id @default(cuid())
+    studentId          String
+    schoolId           String
+    schoolYear         String
+    status ProjectionStatus @default(OPEN)
+    startDate          DateTime? // Delete this after v2 refactor
+    endDate            DateTime? // Delete this after v2 refactor
+    isActive           Boolean             @default(true) // Delete this after v2 refactor
+    notes              String? // Delete this after v2 refactor
+    deletedAt          DateTime?
+    createdAt          DateTime            @default(now())
+    updatedAt          DateTime            @updatedAt
+    dailyGoals         DailyGoal[]
+    monthlyAssignments MonthlyAssignment[]
+    projectionPaces    ProjectionPace[]
+    projectionCategories ProjectionCategory[]
+    student            Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+    @@index([studentId])
+    @@index([studentId, isActive]) // Delete this after v2 refactor
+    @@index([studentId, schoolYear, status])
+    @@map("projections")
+  }
+
+// Delete this after v2 refactor
 model ProjectionCategory {
   id           String     @id @default(cuid())
   projectionId String     @map("projection_id")
@@ -495,6 +504,13 @@ model PaceCatalog {
   @@map("pace_catalog")
 }
 
+enum ProjectionPaceStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  UNFINISHED
+}
+
 model ProjectionPace {
   id            String         @id @default(cuid())
   projectionId  String         @map("projection_id")
@@ -502,12 +518,13 @@ model ProjectionPace {
   quarter       String
   week          Int
   grade         Int?
-  isCompleted   Boolean        @default(false) @map("is_completed")
-  isFailed      Boolean        @default(false) @map("is_failed")
-  isUnfinished  Boolean        @default(false) @map("is_unfinished")
+  status        ProjectionPaceStatus @default(PENDING)
   originalQuarter String?       @map("original_quarter")
   originalWeek    Int?          @map("original_week")
-  comments      String?
+  isCompleted   Boolean        @default(false) @map("is_completed") // Delete this after v2 refactor
+  isFailed      Boolean        @default(false) @map("is_failed") // Delete this after v2 refactor
+  isUnfinished  Boolean        @default(false) @map("is_unfinished") // Delete this after v2 refactor
+  comments      String? // Delete this after v2 refactor
   deletedAt     DateTime?      @map("deleted_at")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
@@ -518,6 +535,7 @@ model ProjectionPace {
   @@unique([projectionId, paceCatalogId])
   @@index([projectionId])
   @@index([projectionId, quarter, week])
+  @@index([projectionId, status])
   @@map("projection_paces")
 }
 
