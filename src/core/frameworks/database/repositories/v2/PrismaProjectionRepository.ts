@@ -2,11 +2,17 @@ import { ProjectionRepository } from '../../../../adapters_interface/repositorie
 import { Projection } from '../../../../domain/entities/v2/Projection';
 import { CreateProjectionInput } from '../../../../app/dtos/v2/projections/CreateProjectionInput';
 import prisma from '../../prisma.client';
+import { PrismaTransaction } from '../../PrismaTransaction';
 
 export class PrismaProjectionRepository implements ProjectionRepository {
 
-  async findActiveByStudent(studentId: string, schoolId: string, schoolYear: string): Promise<Projection | null> {
-    const record = await prisma.projection.findFirst({
+  async findActiveByStudent(
+    studentId: string,
+    schoolId: string,
+    schoolYear: string,
+    tx: PrismaTransaction = prisma
+  ): Promise<Projection | null> {
+    const record = await tx.projection.findFirst({
       where: {
         studentId,
         schoolId,
@@ -28,8 +34,11 @@ export class PrismaProjectionRepository implements ProjectionRepository {
       : null;
   }
 
-  async create({ studentId, schoolId, schoolYear }: CreateProjectionInput): Promise<Projection> {
-    const record = await prisma.projection.create({
+  async create(
+    { studentId, schoolId, schoolYear }: CreateProjectionInput,
+    tx: PrismaTransaction = prisma
+  ): Promise<Projection> {
+    const record = await tx.projection.create({
       data: {
         studentId,
         schoolId,

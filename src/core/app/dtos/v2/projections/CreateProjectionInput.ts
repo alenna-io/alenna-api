@@ -1,4 +1,3 @@
-// frameworks/api/dtos/projections/v2/CreateProjectionDTO.ts
 import { z } from 'zod';
 
 export const CreateProjectionDTO = z.object({
@@ -7,10 +6,4 @@ export const CreateProjectionDTO = z.object({
   schoolYear: z.string().min(1),
 });
 
-export type CreateProjectionInput = {
-  studentId: string;
-  schoolId: string;
-  schoolYear: string;
-};
-
-export type CreateProjectionInputType = z.infer<typeof CreateProjectionDTO>;
+export type CreateProjectionInput = z.infer<typeof CreateProjectionDTO>;

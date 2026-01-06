@@ -9,10 +9,12 @@ import {
   validateBody,
 } from '../../middleware';
 import { CreateProjectionDTO } from '../../../../app/dtos/v2/projections/CreateProjectionInput';
+import { GenerateProjectionDTO } from '../../../../app/dtos/v2/projections/GenerateProjectionInput';
 
 const router: ExpressRouter = Router({ mergeParams: true }); // mergeParams to access studentId from parent route
 const projectionController = new ProjectionController(
-  container.useCase.createProjectionUseCase
+  container.useCase.createProjectionUseCase,
+  container.useCase.generateProjectionUseCase
 );
 
 // Apply Clerk middleware and authentication
@@ -30,6 +32,12 @@ router.post(
   // requirePermission('projections.create'),
   validateBody(CreateProjectionDTO),
   projectionController.create.bind(projectionController)
+);
+
+router.post(
+  '/generate',
+  validateBody(GenerateProjectionDTO),
+  projectionController.generate.bind(projectionController)
 );
 
 export default router;

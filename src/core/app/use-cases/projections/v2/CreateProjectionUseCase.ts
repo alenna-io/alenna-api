@@ -2,6 +2,7 @@ import { ProjectionRepository, SchoolRepository, SchoolYearRepository, StudentRe
 import { SchoolYearStatusEnum } from '../../../../domain/entities/v2/SchoolYear';
 import { ObjectAlreadyExistsError } from '../../../errors/v2/ObjectAlreadyExistsError';
 import { InvalidEntityError } from '../../../errors/v2';
+import { CreateProjectionInput } from '../../../dtos/v2/projections/CreateProjectionInput';
 
 export class CreateProjectionUseCase {
   constructor(
@@ -11,11 +12,7 @@ export class CreateProjectionUseCase {
     private readonly schoolYearRepository: SchoolYearRepository,
   ) { }
 
-  async execute(input: {
-    studentId: string;
-    schoolId: string;
-    schoolYear: string;
-  }) {
+  async execute(input: CreateProjectionInput) {
     // Validate student
     const student = await this.studentRepository.findById(input.studentId);
     if (!student) {

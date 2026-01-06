@@ -98,16 +98,22 @@ model SchoolYear {
   @@map("school_years")
 }
 
+enum QuarterStatus {
+  OPEN
+  CLOSED
+}
+
 model Quarter {
   id              String           @id @default(cuid())
   schoolYearId    String           @map("school_year_id")
   name            String
-  displayName     String           @map("display_name")
+  displayName     String           @map("display_name")  // Delete this after v2 refactor
   startDate       DateTime         @map("start_date")
   endDate         DateTime         @map("end_date")
   order           Int
   weeksCount      Int              @default(9) @map("weeks_count")
-  isClosed        Boolean          @default(false) @map("is_closed")
+  status          QuarterStatus    @default(OPEN) @map("status")
+  isClosed        Boolean          @default(false) @map("is_closed") // Delete this after v2 refactor
   closedAt        DateTime?        @map("closed_at")
   closedBy        String?          @map("closed_by")
   deletedAt       DateTime?        @map("deleted_at")

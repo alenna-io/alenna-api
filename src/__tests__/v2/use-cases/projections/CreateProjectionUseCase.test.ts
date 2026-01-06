@@ -7,9 +7,6 @@ import { createMockStudentRepository, createMockSchoolRepository, createMockScho
 import { Student, StudentStatusEnum } from '../../../../core/domain/entities/v2/Student';
 import { Projection, ProjectionStatusEnum } from '../../../../core/domain/entities/v2/Projection';
 import { School } from '../../../../core/domain/entities/v2/School';
-import * as UseCaseModule from '../../../../core/app/use-cases/projections/v2/CreateProjectionUseCase';
-
-console.log(UseCaseModule);
 
 describe('CreateProjectionUseCase', () => {
   let studentRepo: ReturnType<typeof createMockStudentRepository>;
