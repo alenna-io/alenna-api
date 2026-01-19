@@ -8,5 +8,5 @@ export interface ISubjectRepository {
     subjectId: string,
     levelsCount: number,
     tx?: PrismaTransaction
-  ): Promise<Prisma.SubjectGetPayload<{ include: { paces: true } }>[]>;
+  ): Promise<Prisma.SubjectGetPayload<{ include: { paces: true; level: true } }>[]>;
 } 

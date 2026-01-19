@@ -68,7 +68,7 @@ export function createMockSubjectRepository(): ISubjectRepository {
   return {
     findById: vi.fn() as unknown as (id: string) => Promise<Subject | null>,
     findManyByIds: vi.fn() as unknown as (ids: string[]) => Promise<Subject[]>,
-    findBySubjectAndNextLevelsWithPaces: vi.fn() as unknown as (subjectId: string, levelsCount: number) => Promise<Prisma.SubjectGetPayload<{ include: { paces: true } }>[]>,
+    findBySubjectAndNextLevelsWithPaces: vi.fn() as unknown as (subjectId: string, levelsCount: number) => Promise<Prisma.SubjectGetPayload<{ include: { paces: true; level: true } }>[]>,
   };
 }
 

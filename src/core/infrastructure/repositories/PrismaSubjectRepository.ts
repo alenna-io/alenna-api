@@ -47,17 +47,31 @@ export class PrismaSubjectRepository implements ISubjectRepository {
           number: { in: targetLevelNumbers },
         },
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        level: {
+          select: {
+            id: true,
+            number: true,
+            name: true,
+          },
+        },
         paces: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            orderIndex: true,
+          },
           orderBy: { orderIndex: 'asc' },
         },
-        level: true,
       },
       orderBy: {
         level: {
           number: 'asc',
         },
       },
-    });
+    }) as Prisma.SubjectGetPayload<{ include: { paces: true; level: true } }>[];
   }
 }
