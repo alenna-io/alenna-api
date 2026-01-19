@@ -15,7 +15,7 @@ import prisma from '../../../infrastructure/database/prisma.client';
 import { PrismaTransaction } from '../../../infrastructure/database/PrismaTransaction';
 import { Prisma, ProjectionPaceStatus } from '@prisma/client';
 import { logger } from '../../../../utils/logger';
-import { validateId, validateIds } from '../../../domain/utils/validation';
+import { validateCuid, validateCuids } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
 
 export class GenerateProjectionUseCase {
@@ -33,9 +33,9 @@ export class GenerateProjectionUseCase {
 
   async execute(input: GenerateProjectionInput): Promise<Result<Prisma.ProjectionGetPayload<{}>, DomainError>> {
     try {
-      validateId(input.studentId, 'Student');
-      validateId(input.schoolId, 'School');
-      validateId(input.schoolYear, 'SchoolYear');
+      validateCuid(input.studentId, 'Student');
+      validateCuid(input.schoolId, 'School');
+      validateCuid(input.schoolYear, 'SchoolYear');
 
       if (!input.subjects || input.subjects.length === 0) {
         return Err(new InvalidEntityError(
@@ -45,7 +45,7 @@ export class GenerateProjectionUseCase {
       }
 
       const categoryIds = [...new Set(input.subjects.map(s => s.categoryId))];
-      validateIds(categoryIds, 'Category');
+      validateCuids(categoryIds, 'Category');
 
       const projection = await prisma.$transaction(async (tx) => {
         logger.info("Validating student, school and year...");

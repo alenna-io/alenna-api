@@ -15,6 +15,7 @@ import {
   Projection,
   ProjectionStatus,
   School,
+  SchoolStatus,
 } from '@prisma/client';
 
 describe('CreateProjectionUseCase', () => {
@@ -40,15 +41,15 @@ describe('CreateProjectionUseCase', () => {
 
   it('creates a projection successfully', async () => {
     const student: Student = {
-      id: 's1',
-      userId: 'user1',
-      schoolId: 'school1',
+      id: 'clh1234567890abcdefghijkl',
+      userId: 'clh0987654321zyxwvutsrqpo',
+      schoolId: 'clh1111111111111111111111',
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     const school: School = {
-      id: 'school1',
+      id: 'clh1111111111111111111111',
       name: 'School 1',
       address: null,
       phone: null,
@@ -56,14 +57,14 @@ describe('CreateProjectionUseCase', () => {
       logoUrl: null,
       teacherLimit: null,
       userLimit: null,
-      isActive: true,
+      status: SchoolStatus.ACTIVE,
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     const schoolYear: SchoolYear = {
-      id: 'sy1',
-      schoolId: 'school1',
+      id: 'clh2222222222222222222222',
+      schoolId: 'clh1111111111111111111111',
       name: 'School Year 1',
       startDate: new Date(),
       endDate: new Date(),
@@ -73,7 +74,7 @@ describe('CreateProjectionUseCase', () => {
       updatedAt: new Date(),
     };
     const projection: Projection = {
-      id: 'p1',
+      id: 'clh3333333333333333333333',
       studentId: student.id,
       schoolId: school.id,
       schoolYear: schoolYear.id,
@@ -89,7 +90,7 @@ describe('CreateProjectionUseCase', () => {
     vi.mocked(projectionRepo.findActiveByStudent).mockResolvedValue(null);
     vi.mocked(projectionRepo.create).mockResolvedValue(projection);
 
-    const result = await useCase.execute({ studentId: 's1', schoolId: 'school1', schoolYear: 'sy1' });
+    const result = await useCase.execute({ studentId: student.id, schoolId: school.id, schoolYear: schoolYear.id });
 
     expect(result.success).toBe(true);
     if (result.success) {
@@ -98,9 +99,9 @@ describe('CreateProjectionUseCase', () => {
   });
 
   it('returns Err when student does not exist', async () => {
-    const studentId = 's1';
-    const schoolId = 'school1';
-    const schoolYear = 'sy1';
+    const studentId = 'clh1234567890abcdefghijkl';
+    const schoolId = 'clh1111111111111111111111';
+    const schoolYear = 'clh2222222222222222222222';
 
     vi.mocked(studentRepo.findById).mockResolvedValue(null);
 
@@ -115,15 +116,15 @@ describe('CreateProjectionUseCase', () => {
 
   it('returns Err when projection exists', async () => {
     const student: Student = {
-      id: 's1',
-      userId: 'user1',
-      schoolId: 'school1',
+      id: 'clh1234567890abcdefghijkl',
+      userId: 'clh0987654321zyxwvutsrqpo',
+      schoolId: 'clh1111111111111111111111',
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     const school: School = {
-      id: 'school1',
+      id: 'clh1111111111111111111111',
       name: 'School 1',
       address: null,
       phone: null,
@@ -131,14 +132,14 @@ describe('CreateProjectionUseCase', () => {
       logoUrl: null,
       teacherLimit: null,
       userLimit: null,
-      isActive: true,
+      status: SchoolStatus.ACTIVE,
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     const schoolYear: SchoolYear = {
-      id: 'sy1',
-      schoolId: 'school1',
+      id: 'clh2222222222222222222222',
+      schoolId: 'clh1111111111111111111111',
       name: 'School Year 1',
       startDate: new Date(),
       endDate: new Date(),
@@ -148,7 +149,7 @@ describe('CreateProjectionUseCase', () => {
       updatedAt: new Date(),
     };
     const projection: Projection = {
-      id: 'p1',
+      id: 'clh3333333333333333333333',
       studentId: student.id,
       schoolId: school.id,
       schoolYear: schoolYear.id,

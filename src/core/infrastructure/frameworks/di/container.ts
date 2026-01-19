@@ -16,7 +16,13 @@ import {
   GenerateProjectionUseCase
 } from '../../../application/use-cases/projections';
 // Category Use Cases
-import { GetCategoriesWithSubjectsUseCase } from '../../../application/use-cases/categories/GetCategoriesWithSubjectsUseCase';
+import { GetCategoriesWithSubjectsUseCase } from '../../../application/use-cases/categories';
+// School Use Cases
+import { GetSchoolWithCurrentYearByUserIdUseCase } from '../../../application/use-cases/schools';
+// Student Use Cases
+import { GetEnrolledWithoutOpenProjectionUseCase } from '../../../application/use-cases/students';
+// Subject Use Cases
+import { GetSubjectAndNextLevelsWithPacesUseCase } from '../../../application/use-cases/subjects';
 
 // Repositories
 const projectionRepository = new PrismaProjectionRepository();
@@ -56,6 +62,22 @@ const getCategoriesWithSubjectsUseCase = new GetCategoriesWithSubjectsUseCase(
   categoryRepository
 );
 
+// School Use Cases
+const getSchoolWithCurrentYearByUserIdUseCase = new GetSchoolWithCurrentYearByUserIdUseCase(
+  schoolRepository
+);
+
+// Student Use Cases
+const getEnrolledWithoutOpenProjectionUseCase = new GetEnrolledWithoutOpenProjectionUseCase(
+  studentRepository,
+  schoolRepository
+);
+
+// Subject Use Cases
+const getSubjectAndNextLevelsWithPacesUseCase = new GetSubjectAndNextLevelsWithPacesUseCase(
+  subjectRepository
+);
+
 // Container
 export const container = {
   repository: {
@@ -72,8 +94,16 @@ export const container = {
     projectionGenerator: alennaProjectionGenerator,
   },
   useCase: {
+    // Projection Use Cases
     createProjectionUseCase,
     generateProjectionUseCase,
+    // Category Use Cases
     getCategoriesWithSubjectsUseCase,
+    // School Use Cases
+    getSchoolWithCurrentYearByUserIdUseCase,
+    // Student Use Cases
+    getEnrolledWithoutOpenProjectionUseCase,
+    // Subject Use Cases
+    getSubjectAndNextLevelsWithPacesUseCase,
   },
 };

@@ -23,7 +23,17 @@ import {
 
 import { createMockProjectionGenerator } from '../../utils/mockProjectionGenerator';
 
-import { Student, School, SchoolYear, Projection, PaceCatalog, SchoolYearStatus, ProjectionStatus, Prisma } from '@prisma/client';
+import {
+  Student,
+  School,
+  SchoolYear,
+  Projection,
+  PaceCatalog,
+  SchoolYearStatus,
+  ProjectionStatus,
+  Prisma,
+  SchoolStatus,
+} from '@prisma/client';
 
 describe('GenerateProjectionUseCase', () => {
   let studentRepo: ReturnType<typeof createMockStudentRepository>;
@@ -63,16 +73,16 @@ describe('GenerateProjectionUseCase', () => {
   });
 
   const student: Student = {
-    id: 'student-1',
-    userId: 'user-1',
-    schoolId: 'school-1',
+    id: 'clh1234567890abcdefghijkl',
+    userId: 'clh0987654321zyxwvutsrqpo',
+    schoolId: 'clh1111111111111111111111',
     deletedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
   const school: School = {
-    id: 'school-1',
+    id: 'clh1111111111111111111111',
     name: 'School 1',
     address: null,
     phone: null,
@@ -80,15 +90,15 @@ describe('GenerateProjectionUseCase', () => {
     logoUrl: null,
     teacherLimit: null,
     userLimit: null,
-    isActive: true,
+    status: SchoolStatus.ACTIVE,
     deletedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
   const schoolYear: SchoolYear = {
-    id: 'sy-1',
-    schoolId: 'school-1',
+    id: 'clh2222222222222222222222',
+    schoolId: 'clh1111111111111111111111',
     name: '2025',
     startDate: new Date(),
     endDate: new Date(),
@@ -99,7 +109,7 @@ describe('GenerateProjectionUseCase', () => {
   };
 
   const projection: Projection = {
-    id: 'proj-1',
+    id: 'clh3333333333333333333333',
     studentId: student.id,
     schoolId: school.id,
     schoolYear: schoolYear.id,
@@ -111,8 +121,8 @@ describe('GenerateProjectionUseCase', () => {
 
   const subjectsInput = [
     {
-      categoryId: 'cat-1',
-      subjectId: 'sub-1',
+      categoryId: 'clh4444444444444444444444',
+      subjectId: 'clh5555555555555555555555',
       startPace: 1,
       endPace: 3,
       skipPaces: [],
@@ -122,44 +132,44 @@ describe('GenerateProjectionUseCase', () => {
 
   const subSubjectsDB = [
     {
-      id: 'sub-1',
+      id: 'clh5555555555555555555555',
       name: 'Math',
       difficulty: 3,
-      categoryId: 'cat-1',
-      levelId: 'lvl-1',
+      categoryId: 'clh4444444444444444444444',
+      levelId: 'clh6666666666666666666666',
       createdAt: new Date(),
       updatedAt: new Date(),
     },
   ];
 
   const paceCatalogMap: Map<string, PaceCatalog> = new Map([
-    ['cat-1:1', {
-      id: 'pc-1',
+    ['clh4444444444444444444444:1', {
+      id: 'clh7777777777777777777777',
       code: '1',
       name: 'Pace 1',
       orderIndex: 1,
-      subjectId: 'sub-1',
-      categoryId: 'cat-1',
+      subjectId: 'clh5555555555555555555555',
+      categoryId: 'clh4444444444444444444444',
       createdAt: new Date(),
       updatedAt: new Date(),
     }],
-    ['cat-1:2', {
-      id: 'pc-2',
+    ['clh4444444444444444444444:2', {
+      id: 'clh8888888888888888888888',
       code: '2',
       name: 'Pace 2',
       orderIndex: 2,
-      subjectId: 'sub-1',
-      categoryId: 'cat-1',
+      subjectId: 'clh5555555555555555555555',
+      categoryId: 'clh4444444444444444444444',
       createdAt: new Date(),
       updatedAt: new Date(),
     }],
-    ['cat-1:3', {
-      id: 'pc-3',
+    ['clh4444444444444444444444:3', {
+      id: 'clh9999999999999999999999',
       code: '3',
       name: 'Pace 3',
       orderIndex: 3,
-      subjectId: 'sub-1',
-      categoryId: 'cat-1',
+      subjectId: 'clh5555555555555555555555',
+      categoryId: 'clh4444444444444444444444',
       createdAt: new Date(),
       updatedAt: new Date(),
     }],
@@ -171,19 +181,19 @@ describe('GenerateProjectionUseCase', () => {
     vi.mocked(schoolYearRepo.findById).mockResolvedValue(schoolYear);
     vi.mocked(projectionRepo.findActiveByStudent).mockResolvedValue(null);
     vi.mocked(projectionRepo.create).mockResolvedValue(projection);
-    vi.mocked(categoryRepo.findManyByIds).mockResolvedValue([{ id: 'cat-1', name: 'Category 1', description: null, displayOrder: 0, createdAt: new Date(), updatedAt: new Date() }]);
+    vi.mocked(categoryRepo.findManyByIds).mockResolvedValue([{ id: 'clh4444444444444444444444', name: 'Category 1', description: null, displayOrder: 0, createdAt: new Date(), updatedAt: new Date() }]);
     vi.mocked(categoryRepo.assertContiguousPaceRange).mockResolvedValue(undefined);
     const paceCatalogsWithSubject: Prisma.PaceCatalogGetPayload<{ include: { subject: true } }>[] = [
       {
-        ...paceCatalogMap.get('cat-1:1')!,
+        ...paceCatalogMap.get('clh4444444444444444444444:1')!,
         subject: subSubjectsDB[0],
       },
       {
-        ...paceCatalogMap.get('cat-1:2')!,
+        ...paceCatalogMap.get('clh4444444444444444444444:2')!,
         subject: subSubjectsDB[0],
       },
       {
-        ...paceCatalogMap.get('cat-1:3')!,
+        ...paceCatalogMap.get('clh4444444444444444444444:3')!,
         subject: subSubjectsDB[0],
       },
     ] as any;
@@ -193,8 +203,8 @@ describe('GenerateProjectionUseCase', () => {
 
     vi.mocked(projectionGenerator.generate).mockReturnValue([
       {
-        categoryId: 'cat-1',
-        subjectId: 'sub-1',
+        categoryId: 'clh4444444444444444444444',
+        subjectId: 'clh5555555555555555555555',
         paceCode: '1',
         quarter: 1,
         week: 1,

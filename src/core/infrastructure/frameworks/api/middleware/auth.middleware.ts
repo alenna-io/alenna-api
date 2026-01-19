@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../../../database/prisma.client';
 import { logger } from '../../../../../utils/logger';
+import { SchoolStatus, UserStatus } from '@prisma/client';
 
 // Extend Express Request to include user and school context
 declare global {
@@ -16,7 +17,9 @@ declare global {
 
 /**
  * Middleware to attach user and school info to request
- * Must be used after Clerk authentication middleware
+ * 
+ * MVP: Hardcoded user for development (bypasses Clerk authentication)
+ * TODO: Replace with proper Clerk authentication after MVP
  */
 export const attachUserContext = async (
   req: Request,
@@ -24,66 +27,44 @@ export const attachUserContext = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId: clerkId } = (req as any).auth?.() || {};
-
-    if (!clerkId) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-
-    // Find user in database
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
+    // MVP: Hardcoded user - get first active user from database
+    // TODO: Replace with Clerk authentication after MVP
+    const user = await prisma.user.findFirst({
+      where: {
+        status: UserStatus.ACTIVE,
+        deletedAt: null,
+      },
       include: {
         school: true,
-        userRoles: {
-          include: {
-            role: true,
-          },
-        },
+      },
+      orderBy: {
+        createdAt: 'asc',
       },
     });
 
     if (!user) {
+      logger.warn('No active user found in database for MVP mode');
       res.status(404).json({
-        error: 'User not found in system. Please complete registration.'
+        error: 'No active user found. Please create a user in the database.'
       });
       return;
     }
 
-    // Check if user is active (deactivated users cannot access the app)
-    if (!user.isActive) {
+    // Check if school is active
+    if (user.school && user.school.status !== SchoolStatus.ACTIVE) {
       res.status(403).json({
-        error: 'Your account has been deactivated. Please contact your administrator.'
+        error: 'Your school account has been deactivated. Please contact your administrator.'
       });
       return;
-    }
-
-    // Check if user is soft deleted
-    if (user.deletedAt) {
-      res.status(403).json({
-        error: 'Your account has been deleted. Please contact support.'
-      });
-      return;
-    }
-
-    // Check if school is active (only for non-super-admin users)
-    if (user.school && !user.school.isActive) {
-      const isSuperAdmin = user.userRoles.some(ur => ur.role.name === 'SUPERADMIN');
-      if (!isSuperAdmin) {
-        res.status(403).json({
-          error: 'Your school account has been deactivated. Please contact your administrator.'
-        });
-        return;
-      }
     }
 
     // Attach user context to request
     req.userId = user.id;
     req.userEmail = user.email;
     req.schoolId = user.schoolId;
-    req.userRoles = user.userRoles.map(ur => ur.role.name);
+    req.userRoles = []; // MVP: Empty roles array (will be populated after auth implementation)
 
+    logger.debug(`MVP: Attached user context - userId: ${user.id}, schoolId: ${user.schoolId}`);
     next();
   } catch (error) {
     logger.error('Error in attachUserContext middleware:', error);
@@ -102,33 +83,9 @@ export const requireRole = (...roles: string[]) => {
       return;
     }
 
-    // Fetch user's roles from database
-    const userRoles = await prisma.user.findUnique({
-      where: { id: req.userId },
-      select: {
-        userRoles: {
-          include: {
-            role: true,
-          },
-        },
-      },
-    });
-
-    if (!userRoles || userRoles.userRoles.length === 0) {
-      res.status(403).json({
-        error: 'Forbidden: No roles assigned'
-      });
-      return;
-    }
-
-    const roleNames = userRoles.userRoles.map(ur => ur.role.name);
-    if (!roles.some(r => roleNames.includes(r))) {
-      res.status(403).json({
-        error: 'Forbidden: Insufficient permissions'
-      });
-      return;
-    }
-
+    // MVP: Skip role checking (roles not implemented yet)
+    // TODO: Implement role checking after auth is added
+    logger.debug(`MVP: Skipping role check for roles: ${roles.join(', ')}`);
     next();
   };
 };

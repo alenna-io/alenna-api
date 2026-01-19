@@ -3,7 +3,7 @@ import { container } from '../../di/container';
 import { ProjectionController } from '../../../../presentation/controllers';
 // import { clerkMiddleware, requireAuth } from '@clerk/express';
 import {
-  // attachUserContext,
+  attachUserContext,
   // ensureTenantIsolation,
   // requirePermission,
   validateBody,
@@ -26,8 +26,10 @@ const projectionController = new ProjectionController(
 //   secretKey: process.env.CLERK_SECRET_KEY!,
 // }));
 // router.use(requireAuth());
-// router.use(attachUserContext);
 // router.use(ensureTenantIsolation);
+
+// Apply authentication middleware (MVP: hardcoded user)
+router.use(attachUserContext);
 
 // Routes
 router.post(

@@ -1,12 +1,12 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { container } from '../../di/container';
-import { CategoryController } from '../../../../presentation/controllers';
+import { SubjectController } from '../../../../presentation/controllers';
 import { asyncHandler } from '../../../../../utils';
 import { attachUserContext } from '../middleware/auth.middleware';
 
 const router: ExpressRouter = Router();
-const categoryController = new CategoryController(
-  container.useCase.getCategoriesWithSubjectsUseCase
+const subjectController = new SubjectController(
+  container.useCase.getSubjectAndNextLevelsWithPacesUseCase
 );
 
 // Apply authentication middleware (MVP: hardcoded user)
@@ -14,8 +14,8 @@ router.use(attachUserContext);
 
 // Routes
 router.get(
-  '/',
-  asyncHandler(categoryController.getCategoriesWithSubjects.bind(categoryController))
+  '/:subjectId/paces',
+  asyncHandler(subjectController.getSubjectAndNextLevelsWithPaces.bind(subjectController))
 );
 
 export default router;

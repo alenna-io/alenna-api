@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { container } from '../../infrastructure/frameworks/di/container';
-import { GetCategoriesWithSubjectsUseCase } from '../../application/use-cases/categories/GetCategoriesWithSubjectsUseCase';
+import { GetCategoriesWithSubjectsUseCase } from '../../application/use-cases/categories';
+import { InvalidEntityError } from '../../domain/errors';
 
 export class CategoryController {
   constructor(
@@ -10,7 +11,7 @@ export class CategoryController {
   async getCategoriesWithSubjects(_: Request, res: Response): Promise<Response> {
     const result = await this.getCategoriesWithSubjectsUseCase.execute();
     if (!result.success) {
-      throw result.error;
+      throw new InvalidEntityError('Categories with subjects', result.error.message);
     }
     return res.status(200).json(result.data);
   }

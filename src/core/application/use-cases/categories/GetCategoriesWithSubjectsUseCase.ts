@@ -1,7 +1,12 @@
 import { ICategoryRepository } from '../../../domain/interfaces/repositories';
 import { Prisma } from '@prisma/client';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
-import { DomainError, InvalidEntityError, ObjectAlreadyExistsError, ObjectNotFoundError } from '../../../domain/errors';
+import {
+  DomainError,
+  InvalidEntityError,
+  ObjectAlreadyExistsError,
+  ObjectNotFoundError
+} from '../../../domain/errors';
 
 export class GetCategoriesWithSubjectsUseCase {
   constructor(

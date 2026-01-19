@@ -6,7 +6,7 @@ import {
 } from '../../../domain/interfaces/repositories';
 import { InvalidEntityError, ObjectAlreadyExistsError, ObjectNotFoundError, DomainError } from '../../../domain/errors';
 import { CreateProjectionInput } from '../../../application/dtos/projections/CreateProjectionInput';
-import { validateId } from '../../../domain/utils/validation';
+import { validateCuid } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
 import { Prisma } from '@prisma/client';
 
@@ -20,9 +20,9 @@ export class CreateProjectionUseCase {
 
   async execute(input: CreateProjectionInput): Promise<Result<Prisma.ProjectionGetPayload<{}>, DomainError>> {
     try {
-      validateId(input.studentId, 'Student');
-      validateId(input.schoolId, 'School');
-      validateId(input.schoolYear, 'SchoolYear');
+      validateCuid(input.studentId, 'Student');
+      validateCuid(input.schoolId, 'School');
+      validateCuid(input.schoolYear, 'SchoolYear');
 
       // Validate student
       const student = await this.studentRepository.findById(input.studentId);
