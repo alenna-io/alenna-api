@@ -6,6 +6,7 @@ import {
   SchoolYearRepository,
   StudentRepository,
   SubSubjectRepository,
+  CategoryRepository,
 } from '../../../../adapters_interface/repositories/v2';
 import { SchoolYearStatusEnum } from '../../../../domain/entities/v2/SchoolYear';
 import { ObjectAlreadyExistsError } from '../../../errors/v2/ObjectAlreadyExistsError';
@@ -26,6 +27,7 @@ export class GenerateProjectionUseCase {
     private readonly projectionPaceRepository: ProjectionPaceRepository,
     private readonly paceCatalogRepository: PaceCatalogRepository,
     private readonly subSubjectRepository: SubSubjectRepository,
+    private readonly categoryRepository: CategoryRepository,
     private readonly projectionGenerator: ProjectionGenerator,
   ) { }
 
@@ -67,27 +69,30 @@ export class GenerateProjectionUseCase {
       console.log("Generating projection pace distribution. No pace data persistence...");
 
       for (const subject of input.subjects) {
-        subject.difficulty = subjectDifficulties[subject.subSubjectId];
+        subject.difficulty = subjectDifficulties[subject.categoryId];
       }
 
-      console.log("Input with difficulties");
-      console.log(input);
+      // console.log("Input with difficulties");
+      // console.log(input);
 
       const generated = this.projectionGenerator.generate(input);
 
-      console.log("Generated");
+      // console.log("Generated");
       // console.log(generated);
+
+      // console.log("Pace Catalog Map");
+      // console.log(Array.from(paceCatalogMap.keys()));
 
       // 6. Create ProjectionPace entities
       console.log("Creating projection paces objects...");
       const projectionPaces = generated.map(g => {
         const paceCatalog =
-          paceCatalogMap.get(`${g.subSubjectId}:${g.paceCode}`);
+          paceCatalogMap.get(`${g.categoryId}:${g.paceCode}`);
 
         if (!paceCatalog) {
           throw new InvalidEntityError(
             'PaceCatalog',
-            `Pace ${g.paceCode} not found for sub-subject ${g.subSubjectId}`
+            `Pace ${g.paceCode} not found for category ${g.categoryId}`
           );
         }
 
@@ -137,21 +142,13 @@ export class GenerateProjectionUseCase {
     }
   }
 
-  private async getPaceCatalogAndSubjectDifficulties(input: GenerateProjectionInput, tx: PrismaTransaction): Promise<{ paceCatalogMap: Map<string, PaceCatalog>, subjectDifficulties: Record<string, number> }> {
-    const requestedCodesSet = new Set<string>();
-
-    for (const subject of input.subjects) {
-      const startPace = subject.startPace;
-      const endPace = subject.endPace;
-      for (let pace = startPace; pace <= endPace; pace++) {
-        requestedCodesSet.add(pace.toString());
-      }
-    }
-
-    const requestedSubSubjectIdsSet = new Set<string>();
-    for (const subject of input.subjects) {
-      requestedSubSubjectIdsSet.add(subject.subSubjectId);
-    }
+  private async getPaceCatalogAndSubjectDifficulties(
+    input: GenerateProjectionInput,
+    tx: PrismaTransaction
+  ): Promise<{
+    paceCatalogMap: Map<string, PaceCatalog>,
+    subjectDifficulties: Record<string, number>
+  }> {
 
     if (!input.subjects.length) {
       throw new InvalidEntityError(
@@ -160,44 +157,107 @@ export class GenerateProjectionUseCase {
       );
     }
 
-    const requestedSubSubjects = await this.subSubjectRepository.findManyByIds(Array.from(requestedSubSubjectIdsSet), tx as PrismaTransaction);
+    // ─────────────────────────────────────────────
+    // 1. Validate categories
+    // ─────────────────────────────────────────────
+    const requestedCategoryIds = [
+      ...new Set(input.subjects.map(s => s.categoryId)),
+    ];
 
-    if (!requestedSubSubjects || requestedSubSubjects.length !== requestedSubSubjectIdsSet.size) {
-      throw new InvalidEntityError('SubSubject', 'One or more sub-subjects not found');
-    }
+    const categories =
+      await this.categoryRepository.findManyByIds(requestedCategoryIds, tx);
 
-    console.log("Requested Codes Set");
-    console.log(requestedCodesSet);
-
-    console.log("Requested Sub Subject IDs Set");
-    console.log(requestedSubSubjectIdsSet);
-
-    const paceCatalogMap =
-      await this.paceCatalogRepository.findByCodesAndSubSubjects(
-        Array.from(requestedCodesSet),
-        Array.from(requestedSubSubjectIdsSet),
-        tx as PrismaTransaction
+    if (categories.length !== requestedCategoryIds.length) {
+      throw new InvalidEntityError(
+        'Category',
+        'One or more categories not found'
       );
-
-    console.log("Pace Catalog Map");
-    console.log(paceCatalogMap);
-
-    if (!paceCatalogMap.size) {
-      throw new InvalidEntityError('PaceCatalog', 'No pace catalogs found for these subjects');
     }
+
+    // ─────────────────────────────────────────────
+    // 2. Validate contiguous pace ranges (orderIndex-based)
+    // ─────────────────────────────────────────────
+    for (const subject of input.subjects) {
+      await this.categoryRepository.assertContiguousPaceRange(
+        subject.categoryId,
+        subject.startPace,
+        subject.endPace,
+        tx
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // 3. Fetch all pace catalogs per subject range
+    //    (orderIndex-driven, NOT numeric loops)
+    // ─────────────────────────────────────────────
+    const paceCatalogMap = new Map<string, PaceCatalog>();
+    const requestedSubSubjectIds = new Set<string>();
 
     for (const subject of input.subjects) {
-      if (!paceCatalogMap.has(`${subject.subSubjectId}:${subject.startPace}`)) {
-        throw new InvalidEntityError('PaceCatalog', 'Invalid start pace');
+      const paces =
+        await this.paceCatalogRepository.findByCategoryAndOrderRange(
+          subject.categoryId,
+          subject.startPace,
+          subject.endPace,
+          tx
+        );
+
+      if (!paces.length) {
+        throw new InvalidEntityError(
+          'PaceCatalog',
+          `No paces found for subject ${subject.subSubjectId}`
+        );
       }
-      if (!paceCatalogMap.has(`${subject.subSubjectId}:${subject.endPace}`)) {
-        throw new InvalidEntityError('PaceCatalog', 'Invalid end pace');
+
+      for (const pace of paces) {
+        requestedSubSubjectIds.add(pace.subSubjectId);
+        paceCatalogMap.set(
+          `${pace.categoryId}:${pace.code}`,
+          pace
+        );
       }
     }
+
+    if (!paceCatalogMap.size) {
+      throw new InvalidEntityError(
+        'PaceCatalog',
+        'No pace catalogs found for requested ranges'
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // 4. Validate sub-subjects and extract difficulties
+    // ─────────────────────────────────────────────
+    const subSubjectCategoryMap = new Map<string, Set<string>>();
+    const subSubjects =
+      await this.subSubjectRepository.findManyByIds(
+        Array.from(requestedSubSubjectIds),
+        tx
+      );
+
+    if (subSubjects.length !== requestedSubSubjectIds.size) {
+      throw new InvalidEntityError(
+        'SubSubject',
+        'One or more sub-subjects not found'
+      );
+    }
+
+    for (const subSubject of subSubjects) {
+      if (!subSubjectCategoryMap.has(subSubject.id)) {
+        subSubjectCategoryMap.set(subSubject.id, new Set());
+      }
+      subSubjectCategoryMap.get(subSubject.id)!.add(subSubject.categoryId);
+    }
+
+    const subjectDifficulties: Record<string, number> =
+      Object.fromEntries(
+        subSubjects.map(s => [subSubjectCategoryMap.get(s.id)!.values().next().value, s.difficulty]) as [string, number][]
+      );
 
     return {
       paceCatalogMap,
-      subjectDifficulties: Object.fromEntries(requestedSubSubjects.map(s => [s.id, s.difficulty]) as [string, number][]),
+      subjectDifficulties,
     };
   }
+
 }

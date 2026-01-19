@@ -5,3 +5,4 @@ export * from './PrismaSchoolYearRepository';
 export * from './PrismaPaceCatalogRepository';
 export * from './PrismaProjectionPaceRepository';
 export * from './PrismaSubSubjectRepository';
+export * from './PrismaCategoryRepository';

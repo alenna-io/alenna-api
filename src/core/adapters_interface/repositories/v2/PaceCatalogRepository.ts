@@ -12,4 +12,10 @@ export interface PaceCatalogRepository {
     subSubjectIds: string[],
     tx?: PrismaTransaction
   ): Promise<Map<string, PaceCatalog>>;
+  findByCategoryAndOrderRange(
+    categoryId: string,
+    startPace: number,
+    endPace: number,
+    tx?: PrismaTransaction
+  ): Promise<PaceCatalog[]>;
 }

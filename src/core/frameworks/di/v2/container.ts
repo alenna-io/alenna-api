@@ -6,6 +6,7 @@ import {
   PrismaPaceCatalogRepository,
   PrismaProjectionPaceRepository,
   PrismaSubSubjectRepository,
+  PrismaCategoryRepository,
 } from '../../database/repositories/v2';
 // Domain Services
 import { AlennaProjectionAlgorithm } from '../../../domain/services/implementations/AlennaProjectionAlgorithm';
@@ -22,6 +23,7 @@ const schoolYearRepository = new PrismaSchoolYearRepository();
 const paceCatalogRepository = new PrismaPaceCatalogRepository();
 const projectionPaceRepository = new PrismaProjectionPaceRepository();
 const subSubjectRepository = new PrismaSubSubjectRepository();
+const categoryRepository = new PrismaCategoryRepository();
 
 // Domain Services
 const alennaProjectionGenerator = new AlennaProjectionAlgorithm();
@@ -43,6 +45,7 @@ const generateProjectionUseCase = new GenerateProjectionUseCase(
   projectionPaceRepository,
   paceCatalogRepository,
   subSubjectRepository,
+  categoryRepository,
   alennaProjectionGenerator
 );
 
@@ -56,6 +59,7 @@ export const container = {
     paceCatalogRepository,
     projectionPaceRepository,
     subSubjectRepository,
+    categoryRepository,
   },
   service: {
     projectionGenerator: alennaProjectionGenerator,

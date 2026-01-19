@@ -7,6 +7,7 @@ export class PaceCatalogMapper {
       raw.code,
       raw.name,
       raw.subSubjectId,
+      raw.categoryId,
     );
   }
 }

@@ -36,4 +36,31 @@ export class PrismaPaceCatalogRepository implements PaceCatalogRepository {
     }
     return paceCatalogMap;
   }
+
+  async findByCategoryAndOrderRange(
+    categoryId: string,
+    startPace: number,
+    endPace: number,
+    tx: PrismaTransaction = prisma
+  ): Promise<PaceCatalog[]> {
+
+    const boundaries = await tx.paceCatalog.findMany({
+      where: {
+        code: { in: [String(startPace), String(endPace)] },
+        subSubject: { categoryId },
+      },
+      select: { orderIndex: true },
+    });
+
+    const start = Math.min(...boundaries.map(b => b.orderIndex));
+    const end = Math.max(...boundaries.map(b => b.orderIndex));
+
+    return tx.paceCatalog.findMany({
+      where: {
+        subSubject: { categoryId },
+        orderIndex: { gte: start, lte: end },
+      },
+      include: { subSubject: true },
+    });
+  }
 }

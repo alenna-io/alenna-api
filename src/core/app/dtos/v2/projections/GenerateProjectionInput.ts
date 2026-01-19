@@ -7,7 +7,8 @@ export const GenerateProjectionDTO = z.object({
 
   subjects: z.array(
     z.object({
-      subSubjectId: z.string().min(1),
+      categoryId: z.string().min(1),
+      subSubjectId: z.string().min(1).optional().nullable(),
 
       startPace: z.number().int().min(1),
       endPace: z.number().int().min(1),

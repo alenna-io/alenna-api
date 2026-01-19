@@ -476,6 +476,7 @@ model Category {
   updatedAt          DateTime            @updatedAt @map("updated_at")
   subSubjects        SubSubject[]
   projectionCategories ProjectionCategory[]
+  paceCatalogs        PaceCatalog[]
 
   @@map("categories")
 }
@@ -514,14 +515,20 @@ model PaceCatalog {
   id              String           @id @default(cuid())
   code            String
   name            String
+  orderIndex      Int              @map("order_index")
   subSubjectId    String           @map("sub_subject_id")
+  categoryId      String?           @map("category_id")
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
   subSubject      SubSubject       @relation(fields: [subSubjectId], references: [id], onDelete: Cascade)
+  category        Category?        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   projectionPaces ProjectionPace[]
 
   @@unique([subSubjectId, code])
+  @@unique([subSubjectId, orderIndex])
   @@index([subSubjectId])
+  @@index([categoryId])
+  @@index([orderIndex])
   @@map("pace_catalog")
 }
 

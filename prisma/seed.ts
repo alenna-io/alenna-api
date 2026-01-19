@@ -1007,6 +1007,7 @@ async function main() {
           endDate: new Date('2025-06-30'),
           isActive: true,
           notes: 'Initial projection for 2025-2026 school year',
+          schoolId: school.id,
         },
       });
       console.log(`   ✅ Created projection: ${projection.schoolYear}`);
