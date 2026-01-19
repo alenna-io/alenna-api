@@ -41,8 +41,8 @@ describe('AlennaProjectionAlgorithm', () => {
           {
             categoryId: 'cat-1',
             subjectId: 'sub-1',
-            startPace: 1,
-            endPace: 72,
+            startPace: 1001,
+            endPace: 1072,
             skipPaces: [],
             notPairWith: [],
           },
@@ -62,8 +62,8 @@ describe('AlennaProjectionAlgorithm', () => {
           {
             categoryId: 'cat-1',
             subjectId: 'sub-1',
-            startPace: 1,
-            endPace: 80,
+            startPace: 1001,
+            endPace: 1080,
             skipPaces: [],
             notPairWith: [],
           },
@@ -84,9 +84,9 @@ describe('AlennaProjectionAlgorithm', () => {
           {
             categoryId: 'cat-1',
             subjectId: 'sub-1',
-            startPace: 1,
-            endPace: 80,
-            skipPaces: [5, 10, 15],
+            startPace: 1001,
+            endPace: 1080,
+            skipPaces: [1005, 1010, 1015],
             notPairWith: [],
           },
         ],
@@ -94,9 +94,9 @@ describe('AlennaProjectionAlgorithm', () => {
 
       const result = algorithm.generate(input);
       const paceCodes = result.map(p => p.paceCode);
-      expect(paceCodes).not.toContain('5');
-      expect(paceCodes).not.toContain('10');
-      expect(paceCodes).not.toContain('15');
+      expect(paceCodes).not.toContain('1005');
+      expect(paceCodes).not.toContain('1010');
+      expect(paceCodes).not.toContain('1015');
       expect(result.length).toBe(77);
     });
   });
@@ -269,6 +269,40 @@ describe('AlennaProjectionAlgorithm', () => {
   });
 
   describe('MODE B - Non-uniform Curriculum (72+ paces or different counts)', () => {
+    it('should place all paces when total > 72 and relax constraints', () => {
+      const input: GenerateProjectionInput = {
+        studentId: 'student-1',
+        schoolId: 'school-1',
+        schoolYear: 'sy-1',
+        subjects: [
+          {
+            categoryId: 'cat-1',
+            subjectId: 'sub-1',
+            startPace: 1001,
+            endPace: 1080,
+            skipPaces: [],
+            notPairWith: ['cat-2'],
+          },
+          {
+            categoryId: 'cat-2',
+            subjectId: 'sub-2',
+            startPace: 1081,
+            endPace: 1144,
+            skipPaces: [],
+            notPairWith: ['cat-1'],
+          },
+        ],
+      };
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(144);
+
+      const cat1Paces = result.filter(p => p.categoryId === 'cat-1');
+      const cat2Paces = result.filter(p => p.categoryId === 'cat-2');
+      expect(cat1Paces.length).toBe(80);
+      expect(cat2Paces.length).toBe(64);
+    });
+
     it('should handle 72 paces with different subject counts', () => {
       const input: GenerateProjectionInput = {
         studentId: 'student-1',

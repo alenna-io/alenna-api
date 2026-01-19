@@ -121,6 +121,15 @@ model SchoolWeek {
   @@map("school_weeks")
 }
 
+enum StudentStatus {
+  ENROLLED
+  ON_TRACK
+  BEHIND_SCHEDULE
+  AHEAD_OF_SCHEDULE
+  GRADUATED
+  INACTIVE
+}
+
 model Student {
   id                  String            @id @default(cuid())
   userId              String            @unique @map("user_id")
@@ -198,7 +207,7 @@ model Subject {
   @@unique([categoryId, name])
   @@index([categoryId])
   @@index([levelId])
-  @@map("sub_subjects")
+  @@map("subjects")
 }
 
 model PaceCatalog {
@@ -206,11 +215,11 @@ model PaceCatalog {
   code            String
   name            String
   orderIndex      Int              @map("order_index")
-  subjectId    String           @map("sub_subject_id")
-  categoryId      String?           @map("category_id")
+  subjectId       String           @map("subject_id")
+  categoryId      String?          @map("category_id")
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
-  subject      Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subject         Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   category        Category?        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   projectionPaces ProjectionPace[]
 

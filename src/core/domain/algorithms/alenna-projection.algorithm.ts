@@ -27,6 +27,17 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
   generate(input: GenerateProjectionInput): GeneratedProjectionPace[] {
     logger.debug("Normalizing subjects...");
     const subjects = this.normalizeSubjects(input);
+
+    // Validate max 36 paces per subject
+    for (const subject of subjects) {
+      if (subject.paces.length > 36) {
+        throw new InvalidEntityError(
+          'Projection',
+          `Subject ${subject.categoryId} has ${subject.paces.length} paces, but maximum is 36`
+        );
+      }
+    }
+
     logger.debug("Getting total paces...");
     const totalPaces = subjects.reduce((s, x) => s + x.paces.length, 0);
     logger.debug("Total paces:", totalPaces);
@@ -207,6 +218,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
     weeks: WeekSlot[],
     _totalPaces: number
   ) {
+    logger.debug("Generating by frequency...");
     const cursorsMap = new Map(subjects.map(s => [s.categoryId, { subject: s, index: 0 }]));
 
     // Calculate paces by quarter for each subject
@@ -217,6 +229,15 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
         Math.floor(totalPacesBySubject / 4) + (i < totalPacesBySubject % 4 ? 1 : 0)
       );
       pacesByQuarterBySubjectMap.set(subject.categoryId, pacesByQuarter);
+    }
+
+    // Identify subjects with 28-36 paces (special case: use freq 1, offset 0)
+    const highPaceSubjects = new Set<string>();
+    for (const subject of subjects) {
+      if (subject.paces.length >= 28 && subject.paces.length <= 36) {
+        highPaceSubjects.add(subject.categoryId);
+        logger.debug(`Subject ${subject.categoryId} has ${subject.paces.length} paces, using special handling (freq 1, offset 0)`);
+      }
     }
 
     // Calculate week frequencies by quarter for each subject
@@ -231,7 +252,12 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       for (let q = 0; q < 4; q++) {
         const pacesInQuarter = pacesByQuarterBySubject[q];
         if (pacesInQuarter > 0) {
-          weekFrequenciesByQuarterBySubject[q] = Math.round(WEEKS_PER_QUARTER / pacesInQuarter);
+          // Special case: subjects with 28-36 paces use frequency 1
+          if (highPaceSubjects.has(subject.categoryId)) {
+            weekFrequenciesByQuarterBySubject[q] = 1;
+          } else {
+            weekFrequenciesByQuarterBySubject[q] = Math.round(WEEKS_PER_QUARTER / pacesInQuarter);
+          }
         }
       }
       weeklyQuarterFrequencyBySubjectMap.set(subject.categoryId, weekFrequenciesByQuarterBySubject);
@@ -259,10 +285,16 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       });
 
       // Place paces for each subject in this quarter
-      for (let offset = 0; offset < subjectsToPlace.length; offset++) {
-        const subject = subjectsToPlace[offset];
+      for (let index = 0; index < subjectsToPlace.length; index++) {
+        const subject = subjectsToPlace[index];
+        let offset = index % 3; // Cycles: 0, 1, 2, 0, 1, 2...
         const pacesInQuarter = pacesByQuarterBySubjectMap.get(subject.categoryId)?.[quarter] ?? 0;
-        const frequency = weeklyQuarterFrequencyBySubjectMap.get(subject.categoryId)?.[quarter] ?? 0;
+        let frequency = weeklyQuarterFrequencyBySubjectMap.get(subject.categoryId)?.[quarter] ?? 0;
+
+        // Special case: subjects with 28-36 paces use offset 0
+        if (highPaceSubjects.has(subject.categoryId)) {
+          offset = 0;
+        }
 
         if (pacesInQuarter === 0 || frequency === 0) continue;
 
@@ -271,32 +303,61 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
         // Place each pace in this quarter
         for (let paceIndex = 0; paceIndex < pacesInQuarter; paceIndex++) {
-          const weekIndexWithinQuarter = offset + (paceIndex * frequency);
+          const currentPaceCode = cursor.subject.paces[cursor.index];
+          let weekIndexWithinQuarter = offset + (paceIndex * frequency);
+          const isFirstPaceInQuarter = paceIndex === 0;
 
-          // If calculated week exceeds quarter bounds, find alternative placement
+          logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} pace ${currentPaceCode} (paceIndex=${paceIndex}, offset=${offset}, frequency=${frequency}, weekIndexWithinQuarter=${weekIndexWithinQuarter})`);
+
+          // For the first pace, prioritize weeks 1 and 2 to ensure they have 2 paces each
+          if (isFirstPaceInQuarter) {
+            const week1Index = quarterBaseWeek;
+            const week2Index = quarterBaseWeek + 1;
+            const week1 = weeks[week1Index];
+            const week2 = weeks[week2Index];
+
+            // Try week 1 first if it has less than 2 paces
+            if (week1 && week1.paces.length < 2 && !week1.subjects.has(subject.categoryId) && !this.violatesNotPair(subject, week1.subjects)) {
+              logger.debug(`[Q${quarter + 1}] Prioritizing week 1 for first pace (has ${week1.paces.length} paces)`);
+              weekIndexWithinQuarter = 0;
+            }
+            // Try week 2 if week 1 is full and week 2 has less than 2 paces
+            else if (week2 && week2.paces.length < 2 && !week2.subjects.has(subject.categoryId) && !this.violatesNotPair(subject, week2.subjects)) {
+              logger.debug(`[Q${quarter + 1}] Prioritizing week 2 for first pace (has ${week2.paces.length} paces)`);
+              weekIndexWithinQuarter = 1;
+            }
+            // Otherwise use calculated offset
+          }
+
+          // If calculated week exceeds quarter bounds, use fallback strategy
           if (weekIndexWithinQuarter >= WEEKS_PER_QUARTER) {
-            // Try to find any available week in this quarter
-            let found = false;
-            for (let attempt = 0; attempt < WEEKS_PER_QUARTER; attempt++) {
-              const tryWeekIndex = quarterBaseWeek + attempt;
-              if (tryWeekIndex >= TOTAL_WEEKS) break;
+            logger.debug(`[Q${quarter + 1}] Week index ${weekIndexWithinQuarter} exceeds quarter bounds, applying fallback strategy...`);
 
-              const tryWeek = weeks[tryWeekIndex];
-              if (
-                tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
-                !tryWeek.subjects.has(subject.categoryId) &&
-                !this.violatesNotPair(subject, tryWeek.subjects)
-              ) {
-                this.placePace(tryWeek, subject, cursor.subject.paces[cursor.index]);
-                cursor.index++;
-                found = true;
-                break;
+            // Attempt 1: Reduce frequency
+            let newFrequency = Math.max(1, frequency - 1);
+            let newWeekIndex = offset + (paceIndex * newFrequency);
+
+            if (newWeekIndex < WEEKS_PER_QUARTER) {
+              logger.debug(`[Q${quarter + 1}] Fallback 1: Reduced frequency from ${frequency} to ${newFrequency}`);
+              weekIndexWithinQuarter = newWeekIndex;
+              frequency = newFrequency;
+            } else {
+              // Attempt 2: Reduce offset
+              let newOffset = Math.max(0, offset - 1);
+              newWeekIndex = newOffset + (paceIndex * frequency);
+
+              if (newWeekIndex < WEEKS_PER_QUARTER) {
+                logger.debug(`[Q${quarter + 1}] Fallback 2: Reduced offset from ${offset} to ${newOffset}`);
+                weekIndexWithinQuarter = newWeekIndex;
+                offset = newOffset;
+              } else {
+                // Last resort: offset 0, frequency 1
+                logger.debug(`[Q${quarter + 1}] Fallback 3: Using offset 0, frequency 1`);
+                weekIndexWithinQuarter = paceIndex; // paceIndex * 1
+                offset = 0;
+                frequency = 1;
               }
             }
-            if (!found) {
-              cursor.index++;
-            }
-            continue;
           }
 
           const globalWeekIndex = quarterBaseWeek + weekIndexWithinQuarter;
@@ -307,12 +368,9 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
           const week = weeks[globalWeekIndex];
 
-          // Check constraints
-          if (
-            week.subjects.size >= MAX_SUBJECTS_PER_WEEK ||
-            week.subjects.has(subject.categoryId) ||
-            this.violatesNotPair(subject, week.subjects)
-          ) {
+          // Check if we can place here maintaining sequential order
+          if (!this.canPlacePaceSequentially(week, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)) {
+            logger.debug(`[Q${quarter + 1}] Cannot place ${subject.categoryId} ${currentPaceCode} in week ${globalWeekIndex + 1} (would violate sequential order), searching alternative...`);
             // Try to find any available week in this quarter (search entire quarter)
             let found = false;
             for (let attempt = 0; attempt < WEEKS_PER_QUARTER; attempt++) {
@@ -323,9 +381,11 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
               if (
                 tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
                 !tryWeek.subjects.has(subject.categoryId) &&
-                !this.violatesNotPair(subject, tryWeek.subjects)
+                !this.violatesNotPair(subject, tryWeek.subjects) &&
+                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
               ) {
-                this.placePace(tryWeek, subject, cursor.subject.paces[cursor.index]);
+                logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (alternative placement)`);
+                this.placePace(tryWeek, subject, currentPaceCode);
                 cursor.index++;
                 found = true;
                 break;
@@ -340,21 +400,76 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 const tryWeek = weeks[tryWeekIndex];
                 if (
                   tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
-                  !tryWeek.subjects.has(subject.categoryId)
+                  !tryWeek.subjects.has(subject.categoryId) &&
+                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
                 ) {
                   // Skip notPairWith check as last resort
-                  this.placePace(tryWeek, subject, cursor.subject.paces[cursor.index]);
+                  logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (last resort, ignoring notPairWith)`);
+                  this.placePace(tryWeek, subject, currentPaceCode);
                   cursor.index++;
                   found = true;
                   break;
                 }
               }
               if (!found) {
+                logger.debug(`[Q${quarter + 1}] Could not place ${subject.categoryId} ${currentPaceCode}, skipping...`);
+                cursor.index++;
+              }
+            }
+          } else if (
+            week.subjects.size >= MAX_SUBJECTS_PER_WEEK ||
+            week.subjects.has(subject.categoryId) ||
+            this.violatesNotPair(subject, week.subjects)
+          ) {
+            logger.debug(`[Q${quarter + 1}] Cannot place ${subject.categoryId} ${currentPaceCode} in week ${globalWeekIndex + 1} (constraints violated), searching alternative...`);
+            // Try to find any available week in this quarter (search entire quarter)
+            let found = false;
+            for (let attempt = 0; attempt < WEEKS_PER_QUARTER; attempt++) {
+              const tryWeekIndex = quarterBaseWeek + attempt;
+              if (tryWeekIndex >= TOTAL_WEEKS) break;
+
+              const tryWeek = weeks[tryWeekIndex];
+              if (
+                tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
+                !tryWeek.subjects.has(subject.categoryId) &&
+                !this.violatesNotPair(subject, tryWeek.subjects) &&
+                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+              ) {
+                logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (alternative placement)`);
+                this.placePace(tryWeek, subject, currentPaceCode);
+                cursor.index++;
+                found = true;
+                break;
+              }
+            }
+            if (!found) {
+              // If still not found, try any week in the quarter ignoring some constraints (last resort)
+              for (let attempt = 0; attempt < WEEKS_PER_QUARTER; attempt++) {
+                const tryWeekIndex = quarterBaseWeek + attempt;
+                if (tryWeekIndex >= TOTAL_WEEKS) break;
+
+                const tryWeek = weeks[tryWeekIndex];
+                if (
+                  tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
+                  !tryWeek.subjects.has(subject.categoryId) &&
+                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+                ) {
+                  // Skip notPairWith check as last resort
+                  logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (last resort, ignoring notPairWith)`);
+                  this.placePace(tryWeek, subject, currentPaceCode);
+                  cursor.index++;
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                logger.debug(`[Q${quarter + 1}] Could not place ${subject.categoryId} ${currentPaceCode}, skipping...`);
                 cursor.index++;
               }
             }
           } else {
-            this.placePace(week, subject, cursor.subject.paces[cursor.index]);
+            logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${globalWeekIndex + 1} (calculated position)`);
+            this.placePace(week, subject, currentPaceCode);
             cursor.index++;
           }
         }
@@ -367,13 +482,19 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
         return pacesInQuarter > 0 && pacesInQuarter <= 3;
       });
 
-      // Calculate starting offset for remaining subjects (after subjects with >3 paces)
-      const startingOffset = subjectsToPlace.length;
+      // Calculate starting offset for remaining subjects (continues the cycle from subjects with >3 paces)
+      const startingOffset = subjectsToPlace.length % 3;
 
-      for (let offset = 0; offset < remainingSubjects.length; offset++) {
-        const subject = remainingSubjects[offset];
+      for (let index = 0; index < remainingSubjects.length; index++) {
+        const subject = remainingSubjects[index];
+        let offset = (startingOffset + index) % 3; // Continues the cycle: 0, 1, 2, 0, 1, 2...
         const pacesInQuarter = pacesByQuarterBySubjectMap.get(subject.categoryId)?.[quarter] ?? 0;
-        const frequency = weeklyQuarterFrequencyBySubjectMap.get(subject.categoryId)?.[quarter] ?? 0;
+        let frequency = weeklyQuarterFrequencyBySubjectMap.get(subject.categoryId)?.[quarter] ?? 0;
+
+        // Special case: subjects with 28-36 paces use offset 0
+        if (highPaceSubjects.has(subject.categoryId)) {
+          offset = 0;
+        }
 
         if (pacesInQuarter === 0 || frequency === 0) continue;
 
@@ -382,33 +503,62 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
         // Use frequency-based placement with offset
         for (let paceIndex = 0; paceIndex < pacesInQuarter; paceIndex++) {
+          const currentPaceCode = cursor.subject.paces[cursor.index];
           const subjectOffset = startingOffset + offset;
           let weekIndexWithinQuarter = subjectOffset + (paceIndex * frequency);
+          const isFirstPaceInQuarter = paceIndex === 0;
 
-          // If calculated week exceeds quarter bounds, find alternative placement
+          logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} pace ${currentPaceCode} (remaining subject, paceIndex=${paceIndex}, offset=${offset}, frequency=${frequency}, weekIndexWithinQuarter=${weekIndexWithinQuarter})`);
+
+          // For the first pace, prioritize weeks 1 and 2 to ensure they have 2 paces each
+          if (isFirstPaceInQuarter) {
+            const week1Index = quarterBaseWeek;
+            const week2Index = quarterBaseWeek + 1;
+            const week1 = weeks[week1Index];
+            const week2 = weeks[week2Index];
+
+            // Try week 1 first if it has less than 2 paces
+            if (week1 && week1.paces.length < 2 && !week1.subjects.has(subject.categoryId) && !this.violatesNotPair(subject, week1.subjects)) {
+              logger.debug(`[Q${quarter + 1}] Prioritizing week 1 for first pace (has ${week1.paces.length} paces)`);
+              weekIndexWithinQuarter = 0;
+            }
+            // Try week 2 if week 1 is full and week 2 has less than 2 paces
+            else if (week2 && week2.paces.length < 2 && !week2.subjects.has(subject.categoryId) && !this.violatesNotPair(subject, week2.subjects)) {
+              logger.debug(`[Q${quarter + 1}] Prioritizing week 2 for first pace (has ${week2.paces.length} paces)`);
+              weekIndexWithinQuarter = 1;
+            }
+            // Otherwise use calculated offset
+          }
+
+          // If calculated week exceeds quarter bounds, use fallback strategy
           if (weekIndexWithinQuarter >= WEEKS_PER_QUARTER) {
-            // Try to find any available week in this quarter
-            let found = false;
-            for (let attempt = 0; attempt < WEEKS_PER_QUARTER; attempt++) {
-              const tryWeekIndex = quarterBaseWeek + attempt;
-              if (tryWeekIndex >= TOTAL_WEEKS) break;
+            logger.debug(`[Q${quarter + 1}] Week index ${weekIndexWithinQuarter} exceeds quarter bounds, applying fallback strategy...`);
 
-              const tryWeek = weeks[tryWeekIndex];
-              if (
-                tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
-                !tryWeek.subjects.has(subject.categoryId) &&
-                !this.violatesNotPair(subject, tryWeek.subjects)
-              ) {
-                this.placePace(tryWeek, subject, cursor.subject.paces[cursor.index]);
-                cursor.index++;
-                found = true;
-                break;
+            // Attempt 1: Reduce frequency
+            let newFrequency = Math.max(1, frequency - 1);
+            let newWeekIndex = subjectOffset + (paceIndex * newFrequency);
+
+            if (newWeekIndex < WEEKS_PER_QUARTER) {
+              logger.debug(`[Q${quarter + 1}] Fallback 1: Reduced frequency from ${frequency} to ${newFrequency}`);
+              weekIndexWithinQuarter = newWeekIndex;
+              frequency = newFrequency;
+            } else {
+              // Attempt 2: Reduce offset
+              let newOffset = Math.max(0, offset - 1);
+              newWeekIndex = startingOffset + newOffset + (paceIndex * frequency);
+
+              if (newWeekIndex < WEEKS_PER_QUARTER) {
+                logger.debug(`[Q${quarter + 1}] Fallback 2: Reduced offset from ${offset} to ${newOffset}`);
+                weekIndexWithinQuarter = newWeekIndex;
+                offset = newOffset;
+              } else {
+                // Last resort: offset 0, frequency 1
+                logger.debug(`[Q${quarter + 1}] Fallback 3: Using offset 0, frequency 1`);
+                weekIndexWithinQuarter = paceIndex; // paceIndex * 1
+                offset = 0;
+                frequency = 1;
               }
             }
-            if (!found) {
-              cursor.index++;
-            }
-            continue;
           }
 
           const globalWeekIndex = quarterBaseWeek + weekIndexWithinQuarter;
@@ -419,12 +569,9 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
           const week = weeks[globalWeekIndex];
 
-          // Check constraints
-          if (
-            week.subjects.size >= MAX_SUBJECTS_PER_WEEK ||
-            week.subjects.has(subject.categoryId) ||
-            this.violatesNotPair(subject, week.subjects)
-          ) {
+          // Check if we can place here maintaining sequential order
+          if (!this.canPlacePaceSequentially(week, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)) {
+            logger.debug(`[Q${quarter + 1}] Cannot place ${subject.categoryId} ${currentPaceCode} in week ${globalWeekIndex + 1} (would violate sequential order), searching alternative...`);
             // Try to find next available week in this quarter
             let found = false;
             for (let attempt = weekIndexWithinQuarter + 1; attempt < WEEKS_PER_QUARTER; attempt++) {
@@ -435,9 +582,11 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
               if (
                 tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
                 !tryWeek.subjects.has(subject.categoryId) &&
-                !this.violatesNotPair(subject, tryWeek.subjects)
+                !this.violatesNotPair(subject, tryWeek.subjects) &&
+                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
               ) {
-                this.placePace(tryWeek, subject, cursor.subject.paces[cursor.index]);
+                logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (alternative placement)`);
+                this.placePace(tryWeek, subject, currentPaceCode);
                 cursor.index++;
                 found = true;
                 break;
@@ -452,20 +601,74 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 const tryWeek = weeks[tryWeekIndex];
                 if (
                   tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
-                  !tryWeek.subjects.has(subject.categoryId)
+                  !tryWeek.subjects.has(subject.categoryId) &&
+                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
                 ) {
-                  this.placePace(tryWeek, subject, cursor.subject.paces[cursor.index]);
+                  logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (last resort, ignoring notPairWith)`);
+                  this.placePace(tryWeek, subject, currentPaceCode);
                   cursor.index++;
                   found = true;
                   break;
                 }
               }
               if (!found) {
+                logger.debug(`[Q${quarter + 1}] Could not place ${subject.categoryId} ${currentPaceCode}, skipping...`);
+                cursor.index++;
+              }
+            }
+          } else if (
+            week.subjects.size >= MAX_SUBJECTS_PER_WEEK ||
+            week.subjects.has(subject.categoryId) ||
+            this.violatesNotPair(subject, week.subjects)
+          ) {
+            logger.debug(`[Q${quarter + 1}] Cannot place ${subject.categoryId} ${currentPaceCode} in week ${globalWeekIndex + 1} (constraints violated), searching alternative...`);
+            // Try to find next available week in this quarter
+            let found = false;
+            for (let attempt = weekIndexWithinQuarter + 1; attempt < WEEKS_PER_QUARTER; attempt++) {
+              const tryWeekIndex = quarterBaseWeek + attempt;
+              if (tryWeekIndex >= TOTAL_WEEKS) break;
+
+              const tryWeek = weeks[tryWeekIndex];
+              if (
+                tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
+                !tryWeek.subjects.has(subject.categoryId) &&
+                !this.violatesNotPair(subject, tryWeek.subjects) &&
+                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+              ) {
+                logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (alternative placement)`);
+                this.placePace(tryWeek, subject, currentPaceCode);
+                cursor.index++;
+                found = true;
+                break;
+              }
+            }
+            if (!found) {
+              // Last resort: try any week in quarter ignoring notPairWith
+              for (let attempt = 0; attempt < WEEKS_PER_QUARTER; attempt++) {
+                const tryWeekIndex = quarterBaseWeek + attempt;
+                if (tryWeekIndex >= TOTAL_WEEKS) break;
+
+                const tryWeek = weeks[tryWeekIndex];
+                if (
+                  tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
+                  !tryWeek.subjects.has(subject.categoryId) &&
+                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+                ) {
+                  logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (last resort, ignoring notPairWith)`);
+                  this.placePace(tryWeek, subject, currentPaceCode);
+                  cursor.index++;
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                logger.debug(`[Q${quarter + 1}] Could not place ${subject.categoryId} ${currentPaceCode}, skipping...`);
                 cursor.index++;
               }
             }
           } else {
-            this.placePace(week, subject, cursor.subject.paces[cursor.index]);
+            logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${globalWeekIndex + 1} (calculated position)`);
+            this.placePace(week, subject, currentPaceCode);
             cursor.index++;
           }
         }
@@ -631,5 +834,59 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       if (subject.notPairWith.has(other)) return true;
     }
     return false;
+  }
+
+  /**
+   * Checks if placing a pace in a week would maintain sequential order.
+   * A pace can only be placed if:
+   * 1. No later paces from the same subject are already in this week
+   * 2. This week comes AFTER all weeks where earlier paces from this subject are already placed
+   */
+  private canPlacePaceSequentially(
+    week: WeekSlot,
+    subject: SubjectPlan,
+    paceCode: string,
+    quarterBaseWeek: number,
+    weeks?: WeekSlot[],
+    isFirstPaceInQuarter: boolean = false
+  ): boolean {
+    const currentPaceNum = parseInt(paceCode);
+
+    // Check if this week already has a later pace from the same subject
+    const existingPacesInWeek = week.paces.filter(p => p.categoryId === subject.categoryId);
+    for (const existingPace of existingPacesInWeek) {
+      const existingPaceNum = parseInt(existingPace.paceCode);
+      if (existingPaceNum > currentPaceNum) {
+        logger.debug(`Cannot place ${paceCode}: week ${week.index + 1} already has later pace ${existingPace.paceCode} from ${subject.categoryId}`);
+        return false;
+      }
+    }
+
+    // Find the latest week in this quarter where an earlier pace from this subject is already placed
+    if (weeks) {
+      const quarterEnd = quarterBaseWeek + WEEKS_PER_QUARTER;
+      let latestWeekWithEarlierPace = -1;
+
+      for (let w = quarterBaseWeek; w < quarterEnd && w < TOTAL_WEEKS; w++) {
+        const checkWeek = weeks[w];
+        if (!checkWeek) continue;
+
+        const checkWeekPaces = checkWeek.paces.filter(p => p.categoryId === subject.categoryId);
+        for (const checkPace of checkWeekPaces) {
+          const checkPaceNum = parseInt(checkPace.paceCode);
+          if (checkPaceNum < currentPaceNum) {
+            latestWeekWithEarlierPace = Math.max(latestWeekWithEarlierPace, w);
+          }
+        }
+      }
+
+      // If there's an earlier pace placed, this pace must be placed AFTER that week
+      if (latestWeekWithEarlierPace >= 0 && week.index <= latestWeekWithEarlierPace) {
+        logger.debug(`Cannot place ${paceCode}: must be placed after week ${latestWeekWithEarlierPace + 1} (where earlier pace is placed), but trying to place in week ${week.index + 1}`);
+        return false;
+      }
+    }
+
+    return true;
   }
 }

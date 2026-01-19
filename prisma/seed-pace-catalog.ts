@@ -71,64 +71,64 @@ export async function seedPaceCatalog() {
 
   console.log('✅ Created 12 levels + Electives level');
 
-  // 3. Create SubSubjects and PACEs
-  console.log('📖 Creating SubSubjects and PACEs...');
+  // 3. Create Subjects and PACEs
+  console.log('📖 Creating Subjects and PACEs...');
 
-  let totalSubSubjects = 0;
+  let totalSubjects = 0;
   let totalPaces = 0;
 
-  // Helper function to create subsubject with paces
+  // Helper function to create subject with paces
   async function createSubSubjectWithPaces(
     categoryName: string,
-    subSubjectName: string,
+    subjectName: string,
     levelId: string,
     difficulty: number,
     paceCodes: string[],
     orderIndex: number,
     paceNamePrefix?: string // Optional: Use for PACE display name (defaults to categoryName),
   ): Promise<number> {
-    const subSubject = await prisma.subSubject.upsert({
+    const subject = await prisma.subject.upsert({
       where: {
         categoryId_name: {
           categoryId: categories[categoryName].id,
-          name: subSubjectName,
+          name: subjectName,
         },
       },
       update: {},
       create: {
         id: randomUUID(),
-        name: subSubjectName,
+        name: subjectName,
         categoryId: categories[categoryName].id,
         levelId: levelId,
         difficulty: difficulty,
       },
     });
-    totalSubSubjects++;
+    totalSubjects++;
 
-    console.log("Creating sub-subject: ", subSubject.name, " with category: ", categories[categoryName].name, " id: ", categories[categoryName].id);
+    console.log("Creating subject: ", subject.name, " with category: ", categories[categoryName].name, " id: ", categories[categoryName].id);
 
     // Upsert PACEs for this subsubject
     // For electives, use sub-subject name; otherwise use paceNamePrefix or categoryName
     const displayName = categoryName === 'Electives'
-      ? subSubjectName
+      ? subjectName
       : (paceNamePrefix || categoryName);
     for (const code of paceCodes) {
       await prisma.paceCatalog.upsert({
         where: {
-          subSubjectId_code: {
-            subSubjectId: subSubject.id,
+          subjectId_code: {
+            subjectId: subject.id,
             code: code,
           },
         },
         update: {
           // Update name if it's an elective to ensure consistency
-          name: categoryName === 'Electives' ? `${subSubjectName} ${code}` : undefined,
+          name: categoryName === 'Electives' ? `${subjectName} ${code}` : undefined,
         },
         create: {
           id: randomUUID(),
           code: code,
           name: `${displayName} ${code}`,
-          subSubjectId: subSubject.id,
+          subjectId: subject.id,
           categoryId: categories[categoryName].id,
           orderIndex: orderIndex,
         },
@@ -550,7 +550,7 @@ export async function seedPaceCatalog() {
     );
   }
 
-  console.log(`✅ Created ${totalSubSubjects} SubSubjects with ${totalPaces} PACEs`);
+  console.log(`✅ Created ${totalSubjects} Subjects with ${totalPaces} PACEs`);
   console.log('🎯 PACE Catalog seeding completed!');
 }
 
