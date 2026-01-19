@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { GenerateProjectionUseCase } from '../../../../core/app/use-cases/projections/v2/GenerateProjectionUseCase';
-import { ObjectAlreadyExistsError } from '../../../../core/app/errors/ObjectAlreadyExistsError';
-import { InvalidEntityError } from '../../../../core/app/errors';
+import { GenerateProjectionUseCase } from '../../../../core/application/use-cases/projections/GenerateProjectionUseCase';
+import { ObjectAlreadyExistsError, InvalidEntityError } from '../../../../core/domain/errors';
 
 import {
   createMockStudentRepository,
@@ -10,16 +9,13 @@ import {
   createMockProjectionRepository,
   createMockPaceCatalogRepository,
   createMockProjectionPaceRepository,
-  createMockSubSubjectRepository,
+  createMockSubjectRepository,
+  createMockCategoryRepository,
 } from '../../utils/mockRepositories';
 
 import { createMockProjectionGenerator } from '../../utils/mockProjectionGenerator';
 
-import { Student, StudentStatusEnum } from '../../../../core/domain/entities/Student';
-import { School } from '../../../../core/domain/entities/School';
-import { SchoolYear, SchoolYearStatusEnum } from '../../../../core/domain/entities/SchoolYear';
-import { Projection, ProjectionStatusEnum } from '../../../../core/domain/entities/Projection';
-import { PaceCatalog } from '../../../../core/domain/entities/PaceCatalog';
+import { Student, School, SchoolYear, Projection, PaceCatalog, SchoolYearStatus, ProjectionStatus, Prisma } from '@prisma/client';
 
 describe('GenerateProjectionUseCase', () => {
   let studentRepo: ReturnType<typeof createMockStudentRepository>;
@@ -28,7 +24,8 @@ describe('GenerateProjectionUseCase', () => {
   let projectionRepo: ReturnType<typeof createMockProjectionRepository>;
   let projectionPaceRepo: ReturnType<typeof createMockProjectionPaceRepository>;
   let paceCatalogRepo: ReturnType<typeof createMockPaceCatalogRepository>;
-  let subSubjectRepo: ReturnType<typeof createMockSubSubjectRepository>;
+  let subjectRepo: ReturnType<typeof createMockSubjectRepository>;
+  let categoryRepo: ReturnType<typeof createMockCategoryRepository>;
   let projectionGenerator: ReturnType<typeof createMockProjectionGenerator>;
   let useCase: GenerateProjectionUseCase;
 
@@ -39,7 +36,8 @@ describe('GenerateProjectionUseCase', () => {
     projectionRepo = createMockProjectionRepository();
     projectionPaceRepo = createMockProjectionPaceRepository();
     paceCatalogRepo = createMockPaceCatalogRepository();
-    subSubjectRepo = createMockSubSubjectRepository();
+    subjectRepo = createMockSubjectRepository();
+    categoryRepo = createMockCategoryRepository();
     projectionGenerator = createMockProjectionGenerator();
 
     useCase = new GenerateProjectionUseCase(
@@ -48,47 +46,64 @@ describe('GenerateProjectionUseCase', () => {
       schoolRepo,
       schoolYearRepo,
       projectionPaceRepo,
-      paceCatalogRepo,
-      subSubjectRepo,
+      paceCatalogRepo as any,
+      subjectRepo,
+      categoryRepo as any,
       projectionGenerator
     );
   });
 
-  const student = new Student(
-    'student-1',
-    'user-1',
-    'school-1',
-    new Date(),
-    new Date(),
-    StudentStatusEnum.ENROLLED,
-    'cert-1'
-  );
+  const student: Student = {
+    id: 'student-1',
+    userId: 'user-1',
+    schoolId: 'school-1',
+    deletedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
-  const school = new School('school-1', true, 'School 1');
+  const school: School = {
+    id: 'school-1',
+    name: 'School 1',
+    address: null,
+    phone: null,
+    email: null,
+    logoUrl: null,
+    teacherLimit: null,
+    userLimit: null,
+    isActive: true,
+    deletedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
-  const schoolYear = new SchoolYear(
-    'sy-1',
-    'school-1',
-    '2025',
-    new Date(),
-    new Date(),
-    SchoolYearStatusEnum.CURRENT_YEAR
-  );
+  const schoolYear: SchoolYear = {
+    id: 'sy-1',
+    schoolId: 'school-1',
+    name: '2025',
+    startDate: new Date(),
+    endDate: new Date(),
+    status: SchoolYearStatus.CURRENT_YEAR,
+    deletedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
-  const projection = new Projection(
-    'proj-1',
-    student.id,
-    school.id,
-    schoolYear.id,
-    ProjectionStatusEnum.OPEN,
-    new Date(),
-    new Date()
-  );
+  const projection: Projection = {
+    id: 'proj-1',
+    studentId: student.id,
+    schoolId: school.id,
+    schoolYear: schoolYear.id,
+    status: ProjectionStatus.OPEN,
+    deletedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
   const subjectsInput = [
     {
-      subSubjectId: 'sub-1',
-      subSubjectName: 'Math',
+      categoryId: 'cat-1',
+      subjectId: 'sub-1',
       startPace: 1,
       endPace: 3,
       skipPaces: [],
@@ -103,13 +118,42 @@ describe('GenerateProjectionUseCase', () => {
       difficulty: 3,
       categoryId: 'cat-1',
       levelId: 'lvl-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   ];
 
   const paceCatalogMap: Map<string, PaceCatalog> = new Map([
-    ['sub-1:1', { id: 'pc-1' }],
-    ['sub-1:2', { id: 'pc-2' }],
-    ['sub-1:3', { id: 'pc-3' }],
+    ['cat-1:1', {
+      id: 'pc-1',
+      code: '1',
+      name: 'Pace 1',
+      orderIndex: 1,
+      subjectId: 'sub-1',
+      categoryId: 'cat-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }],
+    ['cat-1:2', {
+      id: 'pc-2',
+      code: '2',
+      name: 'Pace 2',
+      orderIndex: 2,
+      subjectId: 'sub-1',
+      categoryId: 'cat-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }],
+    ['cat-1:3', {
+      id: 'pc-3',
+      code: '3',
+      name: 'Pace 3',
+      orderIndex: 3,
+      subjectId: 'sub-1',
+      categoryId: 'cat-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }],
   ] as any);
 
   it('creates projection successfully and persists generated paces', async () => {
@@ -118,12 +162,29 @@ describe('GenerateProjectionUseCase', () => {
     vi.mocked(schoolYearRepo.findById).mockResolvedValue(schoolYear);
     vi.mocked(projectionRepo.findActiveByStudent).mockResolvedValue(null);
     vi.mocked(projectionRepo.create).mockResolvedValue(projection);
-    vi.mocked(subSubjectRepo.findManyByIds).mockResolvedValue(subSubjectsDB);
-    vi.mocked(paceCatalogRepo.findByCodesAndSubSubjects).mockResolvedValue(paceCatalogMap);
+    vi.mocked(categoryRepo.findManyByIds).mockResolvedValue([{ id: 'cat-1', name: 'Category 1', description: null, displayOrder: 0, createdAt: new Date(), updatedAt: new Date() }]);
+    vi.mocked(categoryRepo.assertContiguousPaceRange).mockResolvedValue(undefined);
+    const paceCatalogsWithSubject: Prisma.PaceCatalogGetPayload<{ include: { subject: true } }>[] = [
+      {
+        ...paceCatalogMap.get('cat-1:1')!,
+        subject: subSubjectsDB[0],
+      },
+      {
+        ...paceCatalogMap.get('cat-1:2')!,
+        subject: subSubjectsDB[0],
+      },
+      {
+        ...paceCatalogMap.get('cat-1:3')!,
+        subject: subSubjectsDB[0],
+      },
+    ] as any;
+    vi.mocked(paceCatalogRepo.findByCategoryAndOrderRange).mockResolvedValue(paceCatalogsWithSubject);
+    vi.mocked(subjectRepo.findManyByIds).mockResolvedValue(subSubjectsDB);
 
     vi.mocked(projectionGenerator.generate).mockReturnValue([
       {
-        subSubjectId: 'sub-1',
+        categoryId: 'cat-1',
+        subjectId: 'sub-1',
         paceCode: '1',
         quarter: 1,
         week: 1,

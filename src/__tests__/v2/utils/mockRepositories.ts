@@ -1,62 +1,78 @@
 import { vi } from 'vitest';
 import {
-  StudentRepository,
-  SchoolRepository,
-  SchoolYearRepository,
-  ProjectionRepository,
-  ProjectionPaceRepository,
-  PaceCatalogRepository,
-  SubSubjectRepository,
-} from '../../../core/adapters_interface/repositories/v2';
-import { Student } from '../../../core/domain/entities/Student';
-import { School } from '../../../core/domain/entities/School';
-import { SchoolYear } from '../../../core/domain/entities/SchoolYear';
-import { Projection } from '../../../core/domain/entities/Projection';
-import { ProjectionPace } from '../../../core/domain/entities/ProjectionPace';
-import { PaceCatalog } from '../../../core/domain/entities/PaceCatalog';
-import { SubSubject } from '../../../core/domain/entities/SubSubject';
+  IStudentRepository,
+  ISchoolRepository,
+  ISchoolYearRepository,
+  IProjectionRepository,
+  IProjectionPaceRepository,
+  IPaceCatalogRepository,
+  ISubjectRepository,
+  ICategoryRepository,
+} from '../../../core/domain/interfaces/repositories';
+import {
+  Prisma,
+  Student,
+  School,
+  SchoolYear,
+  Projection,
+  PaceCatalog,
+  Subject,
+  Category,
+} from '@prisma/client';
+import { PrismaTransaction } from '../../../core/infrastructure/database/PrismaTransaction';
+import { CreateProjectionInput } from '../../../core/application/dtos/projections/CreateProjectionInput';
 
-export function createMockStudentRepository(): StudentRepository {
+
+export function createMockStudentRepository(): IStudentRepository {
   return {
     findById: vi.fn() as unknown as (id: string) => Promise<Student | null>,
   };
 }
 
-export function createMockSchoolRepository(): SchoolRepository {
+export function createMockSchoolRepository(): ISchoolRepository {
   return {
     findById: vi.fn() as unknown as (id: string) => Promise<School | null>,
   };
 }
 
-export function createMockSchoolYearRepository(): SchoolYearRepository {
+export function createMockSchoolYearRepository(): ISchoolYearRepository {
   return {
     findById: vi.fn() as unknown as (id: string) => Promise<SchoolYear | null>,
   };
 }
 
-export function createMockProjectionRepository(): ProjectionRepository {
+export function createMockProjectionRepository(): IProjectionRepository {
   return {
     findActiveByStudent: vi.fn() as unknown as (studentId: string, schoolId: string, schoolYear: string) => Promise<Projection | null>,
-    create: vi.fn() as unknown as (projection: Projection) => Promise<Projection>,
+    create: vi.fn() as unknown as (data: CreateProjectionInput, tx?: PrismaTransaction) => Promise<Projection>,
   };
 }
 
-export function createMockProjectionPaceRepository(): ProjectionPaceRepository {
+export function createMockProjectionPaceRepository(): IProjectionPaceRepository {
   return {
-    createMany: vi.fn() as unknown as (projectionPaces: ProjectionPace[]) => Promise<ProjectionPace[]>,
+    createMany: vi.fn() as unknown as (data: Prisma.ProjectionPaceCreateManyInput[], tx?: PrismaTransaction) => Promise<void>,
   };
 }
 
-export function createMockPaceCatalogRepository(): PaceCatalogRepository {
+export function createMockPaceCatalogRepository(): IPaceCatalogRepository {
   return {
-    findByCodeAndSubSubjectId: vi.fn() as unknown as (code: string, subSubjectId: string) => Promise<PaceCatalog | null>,
-    findByCodesAndSubSubjects: vi.fn() as unknown as (codes: string[], subSubjectIds: string[]) => Promise<Map<string, PaceCatalog>>,
+    findByCodeAndSubjectId: vi.fn() as unknown as (code: string, subjectId: string) => Promise<PaceCatalog | null>,
+    findByCodesAndSubjects: vi.fn() as unknown as (codes: string[], subjectIds: string[]) => Promise<Map<string, PaceCatalog>>,
+    findByCategoryAndOrderRange: vi.fn() as unknown as (categoryId: string, startPace: number, endPace: number) => Promise<Prisma.PaceCatalogGetPayload<{ include: { subject: true } }>[]>,
   };
 }
 
-export function createMockSubSubjectRepository(): SubSubjectRepository {
+export function createMockSubjectRepository(): ISubjectRepository {
   return {
-    findById: vi.fn() as unknown as (id: string) => Promise<SubSubject | null>,
-    findManyByIds: vi.fn() as unknown as (ids: string[]) => Promise<SubSubject[]>,
+    findById: vi.fn() as unknown as (id: string) => Promise<Subject | null>,
+    findManyByIds: vi.fn() as unknown as (ids: string[]) => Promise<Subject[]>,
+  };
+}
+
+export function createMockCategoryRepository(): ICategoryRepository {
+  return {
+    findManyByIds: vi.fn() as unknown as (ids: string[]) => Promise<Category[]>,
+    findAllWithSubjects: vi.fn() as unknown as () => Promise<Category[]>,
+    assertContiguousPaceRange: vi.fn() as unknown as (categoryId: string, startPace: number, endPace: number) => Promise<void>,
   };
 }

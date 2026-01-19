@@ -13,7 +13,7 @@ import { GenerateProjectionInput } from '../../dtos/projections/GenerateProjecti
 import { ProjectionGenerator } from '../../../domain/algorithms/projection-generator';
 import prisma from '../../../infrastructure/database/prisma.client';
 import { PrismaTransaction } from '../../../infrastructure/database/PrismaTransaction';
-import { Prisma } from '@prisma/client';
+import { Prisma, ProjectionPaceStatus } from '@prisma/client';
 
 export class GenerateProjectionUseCase {
   constructor(
@@ -99,7 +99,7 @@ export class GenerateProjectionUseCase {
           paceCatalogId: paceCatalog.id,
           quarter: g.quarter.toString(),
           week: g.week,
-          status: 'PENDING',
+          status: ProjectionPaceStatus.PENDING,
           createdAt: new Date(),
           updatedAt: new Date(),
         };

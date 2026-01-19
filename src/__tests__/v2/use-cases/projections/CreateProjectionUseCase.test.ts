@@ -1,12 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CreateProjectionUseCase } from '../../../../core/app/use-cases/projections/v2/CreateProjectionUseCase';
-import { ObjectAlreadyExistsError } from '../../../../core/app/errors/ObjectAlreadyExistsError';
-import { InvalidEntityError } from '../../../../core/app/errors';
-import { SchoolYear, SchoolYearStatusEnum } from '../../../../core/domain/entities/SchoolYear';
-import { createMockStudentRepository, createMockSchoolRepository, createMockSchoolYearRepository, createMockProjectionRepository } from '../../utils/mockRepositories';
-import { Student, StudentStatusEnum } from '../../../../core/domain/entities/Student';
-import { Projection, ProjectionStatusEnum } from '../../../../core/domain/entities/Projection';
-import { School } from '../../../../core/domain/entities/School';
+import { CreateProjectionUseCase } from '../../../../core/application/use-cases/projections/CreateProjectionUseCase';
+import { ObjectAlreadyExistsError } from '../../../../core/domain/errors';
+import { InvalidEntityError } from '../../../../core/domain/errors';
+import {
+  createMockStudentRepository,
+  createMockSchoolRepository,
+  createMockSchoolYearRepository,
+  createMockProjectionRepository,
+} from '../../utils/mockRepositories';
+import {
+  SchoolYear,
+  SchoolYearStatus,
+  Student,
+  Projection,
+  ProjectionStatus,
+  School,
+} from '@prisma/client';
 
 describe('CreateProjectionUseCase', () => {
   let studentRepo: ReturnType<typeof createMockStudentRepository>;
@@ -31,10 +40,49 @@ describe('CreateProjectionUseCase', () => {
   });
 
   it('creates a projection successfully', async () => {
-    const student = new Student('s1', 'user1', 'school1', new Date(), new Date(), StudentStatusEnum.ENROLLED, 'certification1');
-    const school = new School('school1', true, 'School 1');
-    const schoolYear = new SchoolYear('sy1', 'school1', 'School Year 1', new Date(), new Date(), SchoolYearStatusEnum.CURRENT_YEAR);
-    const projection = new Projection('p1', student.id, school.id, schoolYear.id, ProjectionStatusEnum.OPEN, new Date(), new Date());
+    const student: Student = {
+      id: 's1',
+      userId: 'user1',
+      schoolId: 'school1',
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const school: School = {
+      id: 'school1',
+      name: 'School 1',
+      address: null,
+      phone: null,
+      email: null,
+      logoUrl: null,
+      teacherLimit: null,
+      userLimit: null,
+      isActive: true,
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const schoolYear: SchoolYear = {
+      id: 'sy1',
+      schoolId: 'school1',
+      name: 'School Year 1',
+      startDate: new Date(),
+      endDate: new Date(),
+      status: SchoolYearStatus.CURRENT_YEAR,
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const projection: Projection = {
+      id: 'p1',
+      studentId: student.id,
+      schoolId: school.id,
+      schoolYear: schoolYear.id,
+      status: ProjectionStatus.OPEN,
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
 
     vi.mocked(studentRepo.findById).mockResolvedValue(student);
@@ -61,10 +109,49 @@ describe('CreateProjectionUseCase', () => {
   });
 
   it('throws ObjectAlreadyExistsError if projection exists', async () => {
-    const student = new Student('s1', 'user1', 'school1', new Date(), new Date(), StudentStatusEnum.ENROLLED, 'certification1');
-    const school = new School('school1', true, 'School 1');
-    const schoolYear = new SchoolYear('sy1', 'school1', 'School Year 1', new Date(), new Date(), SchoolYearStatusEnum.CURRENT_YEAR);
-    const projection = new Projection('p1', student.id, school.id, schoolYear.id, ProjectionStatusEnum.OPEN, new Date(), new Date());
+    const student: Student = {
+      id: 's1',
+      userId: 'user1',
+      schoolId: 'school1',
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const school: School = {
+      id: 'school1',
+      name: 'School 1',
+      address: null,
+      phone: null,
+      email: null,
+      logoUrl: null,
+      teacherLimit: null,
+      userLimit: null,
+      isActive: true,
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const schoolYear: SchoolYear = {
+      id: 'sy1',
+      schoolId: 'school1',
+      name: 'School Year 1',
+      startDate: new Date(),
+      endDate: new Date(),
+      status: SchoolYearStatus.CURRENT_YEAR,
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const projection: Projection = {
+      id: 'p1',
+      studentId: student.id,
+      schoolId: school.id,
+      schoolYear: schoolYear.id,
+      status: ProjectionStatus.OPEN,
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
     vi.mocked(studentRepo.findById).mockResolvedValue(student);
     vi.mocked(schoolRepo.findById).mockResolvedValue(school);
