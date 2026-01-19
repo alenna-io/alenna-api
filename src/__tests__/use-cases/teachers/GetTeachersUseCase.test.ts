@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GetUsersUseCase } from '../../../core/app/use-cases/users/GetUsersUseCase';
+import { GetUsersUseCase } from '../../../core/app/use-cases/deprecated/users/GetUsersUseCase';
 import { createMockUserRepository } from '../../utils/mockRepositories';
-import { User } from '../../../core/domain/entities';
+import { User } from '../../../core/domain/entities/deprecated';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 import { RoleTypes } from '../../../core/domain/roles/RoleTypes';
 

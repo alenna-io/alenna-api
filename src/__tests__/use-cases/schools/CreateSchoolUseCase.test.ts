@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CreateSchoolUseCase } from '../../../core/app/use-cases/schools/CreateSchoolUseCase';
 import { createMockSchoolRepository } from '../../utils/mockRepositories';
-import { School } from '../../../core/domain/entities';
+import { School } from '../../../core/domain/entities/deprecated';
 
 // Mock Prisma Client
 const { mockPrismaInstance } = vi.hoisted(() => {
@@ -47,7 +47,7 @@ vi.mock('../../../core/app/use-cases/projection-templates/CreateDefaultTemplates
 // Mock ProjectionTemplateRepository
 vi.mock('../../../core/frameworks/database/repositories/ProjectionTemplateRepository', () => {
   return {
-    ProjectionTemplateRepository: class {},
+    ProjectionTemplateRepository: class { },
   };
 });
 
@@ -64,8 +64,8 @@ describe('CreateSchoolUseCase', () => {
     mockEnableModule.mockResolvedValue(undefined);
     mockCreateTemplates.mockResolvedValue(undefined);
     // Suppress console.error and console.log for cleaner test output
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => { });
+    vi.spyOn(console, 'log').mockImplementation(() => { });
   });
 
   describe('execute', () => {

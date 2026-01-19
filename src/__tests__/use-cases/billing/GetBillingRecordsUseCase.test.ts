@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GetBillingRecordsUseCase } from '../../../core/app/use-cases/billing/GetBillingRecordsUseCase';
+import { GetBillingRecordsUseCase } from '../../../core/app/use-cases/deprecated/billing/GetBillingRecordsUseCase';
 import { createMockBillingRecordRepository } from '../../utils/mockRepositories';
-import { BillingRecord } from '../../../core/domain/entities';
+import { BillingRecord } from '../../../core/domain/entities/deprecated';
 
 const TEST_CONSTANTS = {
   SCHOOL_ID: 'school-1',

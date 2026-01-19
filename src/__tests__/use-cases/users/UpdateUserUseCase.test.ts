@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UpdateUserUseCase } from '../../../core/app/use-cases/users/UpdateUserUseCase';
+import { UpdateUserUseCase } from '../../../core/app/use-cases/deprecated/users/UpdateUserUseCase';
 import { createMockUserRepository } from '../../utils/mockRepositories';
 import { createTestUser } from '../../utils/testHelpers';
 

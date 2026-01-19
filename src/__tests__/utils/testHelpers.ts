@@ -1,4 +1,4 @@
-import { Student, CertificationType, User, Group, GroupStudent, MonthlyAssignment, DailyGoal } from '../../core/domain/entities';
+import { Student, CertificationType, User, Group, GroupStudent, MonthlyAssignment, DailyGoal } from '../../core/domain/entities/deprecated';
 import { CreateStudentInput } from '../../core/app/dtos';
 
 /**

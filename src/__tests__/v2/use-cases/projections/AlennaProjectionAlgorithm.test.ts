@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { AlennaProjectionAlgorithm } from '../../../../core/domain/services/implementations/AlennaProjectionAlgorithm';
-import { GenerateProjectionInput } from '../../../../core/app/dtos/v2/projections/GenerateProjectionInput';
+import { GenerateProjectionInput } from '../../../../core/app/dtos/projections/GenerateProjectionInput';
 
 const makeSubject = (
   id: string,

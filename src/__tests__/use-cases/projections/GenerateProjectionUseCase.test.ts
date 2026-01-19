@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GenerateProjectionUseCase } from '../../../core/app/use-cases/projections/GenerateProjectionUseCase';
 import { createMockProjectionRepository } from '../../utils/mockRepositories';
-import { Projection } from '../../../core/domain/entities';
+import { Projection } from '../../../core/domain/entities/deprecated';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
 const { mockPrismaInstance } = vi.hoisted(() => {
@@ -41,8 +41,8 @@ describe('GenerateProjectionUseCase', () => {
     useCase = new GenerateProjectionUseCase(mockRepository);
     mockPrisma = mockPrismaInstance;
     vi.clearAllMocks();
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => { });
+    vi.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   describe('execute', () => {

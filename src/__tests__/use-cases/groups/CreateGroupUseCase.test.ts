@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CreateGroupUseCase } from '../../../core/app/use-cases/groups/CreateGroupUseCase';
+import { CreateGroupUseCase } from '../../../core/app/use-cases/deprecated/groups/CreateGroupUseCase';
 import { createMockGroupRepository } from '../../utils/mockRepositories';
 import { createTestGroup, createTestGroupStudent, TEST_CONSTANTS } from '../../utils/testHelpers';
 
@@ -16,7 +16,7 @@ describe('CreateGroupUseCase', () => {
   describe('execute', () => {
     it('should create a group successfully without students', async () => {
       const group = createTestGroup();
-      
+
       vi.mocked(mockRepository.create).mockResolvedValue(group);
 
       const result = await useCase.execute({
@@ -39,7 +39,7 @@ describe('CreateGroupUseCase', () => {
 
     it('should create a group with null name', async () => {
       const group = createTestGroup({ name: null });
-      
+
       vi.mocked(mockRepository.create).mockResolvedValue(group);
 
       const result = await useCase.execute({
@@ -94,7 +94,7 @@ describe('CreateGroupUseCase', () => {
 
     it('should create a group with empty studentIds array', async () => {
       const group = createTestGroup();
-      
+
       vi.mocked(mockRepository.create).mockResolvedValue(group);
 
       const result = await useCase.execute({
@@ -112,7 +112,7 @@ describe('CreateGroupUseCase', () => {
 
     it('should create a group without name parameter', async () => {
       const group = createTestGroup({ name: null });
-      
+
       vi.mocked(mockRepository.create).mockResolvedValue(group);
 
       const result = await useCase.execute({

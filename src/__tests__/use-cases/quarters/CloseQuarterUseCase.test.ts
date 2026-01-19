@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CloseQuarterUseCase } from '../../../core/app/use-cases/quarters/CloseQuarterUseCase';
-import prisma from '../../../core/frameworks/database/prisma.client';
+import prisma from '../../../core/infrastructure/frameworks/database/prisma.client';
 import { RedistributeUnfinishedPacesUseCase } from '../../../core/app/use-cases/projections/RedistributeUnfinishedPacesUseCase';
 
 vi.mock('../../../core/frameworks/database/prisma.client', () => ({

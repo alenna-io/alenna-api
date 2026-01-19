@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetQuartersStatusUseCase } from '../../../core/app/use-cases/quarters/GetQuartersStatusUseCase';
-import prisma from '../../../core/frameworks/database/prisma.client';
+import prisma from '../../../core/infrastructure/frameworks/database/prisma.client';
 
 vi.mock('../../../core/frameworks/database/prisma.client', () => ({
   default: {

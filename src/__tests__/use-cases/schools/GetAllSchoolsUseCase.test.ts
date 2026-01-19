@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetAllSchoolsUseCase } from '../../../core/app/use-cases/schools/GetAllSchoolsUseCase';
 import { createMockSchoolRepository } from '../../utils/mockRepositories';
-import { School } from '../../../core/domain/entities';
+import { School } from '../../../core/domain/entities/deprecated';
 
 describe('GetAllSchoolsUseCase', () => {
   let useCase: GetAllSchoolsUseCase;

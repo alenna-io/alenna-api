@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CreateUserUseCase } from '../../../core/app/use-cases/users/CreateUserUseCase';
+import { CreateUserUseCase } from '../../../core/app/use-cases/deprecated/users/CreateUserUseCase';
 import { createMockUserRepository } from '../../utils/mockRepositories';
-import { User } from '../../../core/domain/entities';
+import { User } from '../../../core/domain/entities/deprecated';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
 const { mockPrismaInstance } = vi.hoisted(() => {
@@ -61,7 +61,7 @@ describe('CreateUserUseCase', () => {
     mockPrisma = mockPrismaInstance;
     vi.clearAllMocks();
     mockCreateUser.mockResolvedValue('clerk-user-123');
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   describe('execute', () => {

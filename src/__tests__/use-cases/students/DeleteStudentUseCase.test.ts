@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { DeleteStudentUseCase } from '../../../core/app/use-cases/students/DeleteStudentUseCase';
+import { DeleteStudentUseCase } from '../../../core/app/use-cases/deprecated/students/DeleteStudentUseCase';
 import { createMockStudentRepository } from '../../utils/mockRepositories';
 import { createTestStudent, TEST_CONSTANTS } from '../../utils/testHelpers';
-import { clerkService } from '../../../core/frameworks/services/ClerkService';
+import { clerkService } from '../../../core/infrastructure/services/ClerkService';
 
 // Mock Prisma Client
 const { mockPrismaInstance } = vi.hoisted(() => {
@@ -52,7 +52,7 @@ describe('DeleteStudentUseCase', () => {
     useCase = new DeleteStudentUseCase(mockRepository);
     mockPrisma = mockPrismaInstance;
     // Suppress console.error for cleaner test output (Clerk is mocked, no real connections)
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
     vi.clearAllMocks();
   });
 

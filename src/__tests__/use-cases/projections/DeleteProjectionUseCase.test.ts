@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DeleteProjectionUseCase } from '../../../core/app/use-cases/projections/DeleteProjectionUseCase';
 import { createMockProjectionRepository } from '../../utils/mockRepositories';
-import { Projection } from '../../../core/domain/entities';
+import { Projection } from '../../../core/domain/entities/deprecated';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
 describe('DeleteProjectionUseCase', () => {

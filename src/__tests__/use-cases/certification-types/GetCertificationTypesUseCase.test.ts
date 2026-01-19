@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GetCertificationTypesUseCase } from '../../../core/app/use-cases/certification-types/GetCertificationTypesUseCase';
-import { CertificationType } from '../../../core/domain/entities';
+import { CertificationType } from '../../../core/domain/entities/deprecated';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
 // Mock Prisma Client

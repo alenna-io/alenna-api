@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetProjectionDetailUseCase } from '../../../core/app/use-cases/projections/GetProjectionDetailUseCase';
 import { createMockProjectionRepository, createMockStudentRepository } from '../../utils/mockRepositories';
-import { Projection, ProjectionPace, PaceCatalog, SubSubject, Category, GradeHistory } from '../../../core/domain/entities';
+import { Projection, ProjectionPace, PaceCatalog, SubSubject, Category, GradeHistory } from '../../../core/domain/entities/deprecated';
 import { TEST_CONSTANTS, createTestStudent } from '../../utils/testHelpers';
 
 describe('GetProjectionDetailUseCase', () => {

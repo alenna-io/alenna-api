@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DeleteMonthlyAssignmentUseCase } from '../../../core/app/use-cases/monthly-assignments/DeleteMonthlyAssignmentUseCase';
+import { DeleteMonthlyAssignmentUseCase } from '../../../core/app/use-cases/deprecated/monthly-assignments/DeleteMonthlyAssignmentUseCase';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
 const { mockPrismaInstance } = vi.hoisted(() => {

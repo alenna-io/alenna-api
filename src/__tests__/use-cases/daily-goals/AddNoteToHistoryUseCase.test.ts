@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AddNoteToHistoryUseCase } from '../../../core/app/use-cases/daily-goals/AddNoteToHistoryUseCase';
+import { AddNoteToHistoryUseCase } from '../../../core/app/use-cases/deprecated/daily-goals/AddNoteToHistoryUseCase';
 import { createMockDailyGoalRepository } from '../../utils/mockRepositories';
 import { createTestDailyGoal, TEST_CONSTANTS } from '../../utils/testHelpers';
-import { NoteHistory } from '../../../core/domain/entities';
+import { NoteHistory } from '../../../core/domain/entities/deprecated';
 
 describe('AddNoteToHistoryUseCase', () => {
   let useCase: AddNoteToHistoryUseCase;

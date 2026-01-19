@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GetUserModulesUseCase } from '../../../core/app/use-cases/modules/GetUserModulesUseCase';
+import { GetUserModulesUseCase } from '../../../core/app/use-cases/deprecated/modules/GetUserModulesUseCase';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
 // Mock CheckPermissionUseCase

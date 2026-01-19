@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetProjectionsByStudentIdUseCase } from '../../../core/app/use-cases/projections/GetProjectionsByStudentIdUseCase';
 import { createMockProjectionRepository } from '../../utils/mockRepositories';
-import { Projection } from '../../../core/domain/entities';
+import { Projection } from '../../../core/domain/entities/deprecated';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
 const { mockPrismaInstance } = vi.hoisted(() => {

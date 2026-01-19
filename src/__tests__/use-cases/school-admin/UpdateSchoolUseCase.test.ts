@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UpdateSchoolUseCase } from '../../../core/app/use-cases/schools/UpdateSchoolUseCase';
 import { createMockSchoolRepository } from '../../utils/mockRepositories';
-import { School } from '../../../core/domain/entities';
+import { School } from '../../../core/domain/entities/deprecated';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
 describe('UpdateSchoolUseCase', () => {

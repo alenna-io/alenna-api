@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DeleteGroupUseCase } from '../../../core/app/use-cases/groups/DeleteGroupUseCase';
+import { DeleteGroupUseCase } from '../../../core/app/use-cases/deprecated/groups/DeleteGroupUseCase';
 import { createMockGroupRepository } from '../../utils/mockRepositories';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 

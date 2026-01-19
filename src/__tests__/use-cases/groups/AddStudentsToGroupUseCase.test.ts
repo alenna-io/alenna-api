@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AddStudentsToGroupUseCase } from '../../../core/app/use-cases/groups/AddStudentsToGroupUseCase';
+import { AddStudentsToGroupUseCase } from '../../../core/app/use-cases/deprecated/groups/AddStudentsToGroupUseCase';
 import { createMockGroupRepository } from '../../utils/mockRepositories';
 import { createTestGroupStudent, TEST_CONSTANTS } from '../../utils/testHelpers';
 

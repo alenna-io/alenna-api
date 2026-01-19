@@ -2,14 +2,11 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import cron from 'node-cron';
 import { config } from './config/env';
 import { logger } from './utils/logger';
-import routes from './core/frameworks/api/routes';
-import v2Routes from './core/frameworks/api/routes/v2';
-import { errorHandler } from './core/frameworks/api/middleware';
-import { AutoCloseQuartersJob } from './core/app/jobs/AutoCloseQuartersJob';
-import { MonthlyBillingJob } from './core/app/jobs/MonthlyBillingJob';
+import routes from './core/infrastructure/frameworks/api/routes';
+import v2Routes from './core/infrastructure/frameworks/api/routes';
+import { errorHandler } from './core/infrastructure/frameworks/api/middleware';
 
 // Initialize Express app
 const app: express.Application = express();
@@ -49,40 +46,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     ...(config.isDevelopment && { stack: err.stack }),
   });
 });
-
-// Initialize scheduled jobs
-const autoCloseQuartersJob = new AutoCloseQuartersJob();
-const monthlyBillingJob = new MonthlyBillingJob();
-
-// Schedule auto-close quarters job to run daily at 2 AM
-// Cron format: minute hour day month day-of-week
-// '0 2 * * *' means: at 2:00 AM every day
-cron.schedule('0 2 * * *', async () => {
-  logger.info('Running scheduled job: AutoCloseQuartersJob');
-  try {
-    await autoCloseQuartersJob.execute();
-    logger.info('AutoCloseQuartersJob completed successfully');
-  } catch (error) {
-    logger.error('Error in AutoCloseQuartersJob:', error);
-  }
-});
-
-// Schedule monthly billing job to run on the 1st of each month at 12:00 AM
-// Cron format: minute hour day month day-of-week
-// '0 0 1 * *' means: at 12:00 AM on the 1st day of every month
-cron.schedule('0 0 1 * *', async () => {
-  logger.info('Running scheduled job: MonthlyBillingJob');
-  try {
-    await monthlyBillingJob.execute();
-    logger.info('MonthlyBillingJob completed successfully');
-  } catch (error) {
-    logger.error('Error in MonthlyBillingJob:', error);
-  }
-});
-
-logger.info('📅 Scheduled jobs initialized:');
-logger.info('  - AutoCloseQuartersJob (daily at 2 AM)');
-logger.info('  - MonthlyBillingJob (1st of each month at 12 AM)');
 
 // Start server - listening on all interfaces for Docker/Fly.io
 app.listen(config.port, '0.0.0.0', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UpdateDailyGoalUseCase } from '../../../core/app/use-cases/daily-goals/UpdateDailyGoalUseCase';
+import { UpdateDailyGoalUseCase } from '../../../core/app/use-cases/deprecated/daily-goals/UpdateDailyGoalUseCase';
 import { createMockDailyGoalRepository } from '../../utils/mockRepositories';
 import { createTestDailyGoal, TEST_CONSTANTS } from '../../utils/testHelpers';
 

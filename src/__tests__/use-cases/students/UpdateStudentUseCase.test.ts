@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UpdateStudentUseCase } from '../../../core/app/use-cases/students/UpdateStudentUseCase';
+import { UpdateStudentUseCase } from '../../../core/app/use-cases/deprecated/students/UpdateStudentUseCase';
 import { createMockStudentRepository } from '../../utils/mockRepositories';
 import { createTestStudent, TEST_CONSTANTS } from '../../utils/testHelpers';
 import { UpdateStudentInput } from '../../../core/app/dtos';
@@ -38,7 +38,7 @@ describe('UpdateStudentUseCase', () => {
   beforeEach(() => {
     mockRepository = createMockStudentRepository();
     useCase = new UpdateStudentUseCase(mockRepository);
-    
+
     // Get the mocked Prisma instance (same instance is returned)
     mockPrisma = mockPrismaInstance;
   });

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DeleteSchoolUseCase } from '../../../core/app/use-cases/schools/DeleteSchoolUseCase';
 import { createMockSchoolRepository } from '../../utils/mockRepositories';
-import { School } from '../../../core/domain/entities';
+import { School } from '../../../core/domain/entities/deprecated';
 
 describe('DeleteSchoolUseCase', () => {
   let useCase: DeleteSchoolUseCase;

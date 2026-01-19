@@ -8,13 +8,13 @@ import {
   PaceCatalogRepository,
   SubSubjectRepository,
 } from '../../../core/adapters_interface/repositories/v2';
-import { Student } from '../../../core/domain/entities/v2/Student';
-import { School } from '../../../core/domain/entities/v2/School';
-import { SchoolYear } from '../../../core/domain/entities/v2/SchoolYear';
-import { Projection } from '../../../core/domain/entities/v2/Projection';
-import { ProjectionPace } from '../../../core/domain/entities/v2/ProjectionPace';
-import { PaceCatalog } from '../../../core/domain/entities/v2/PaceCatalog';
-import { SubSubject } from '../../../core/domain/entities/v2/SubSubject';
+import { Student } from '../../../core/domain/entities/Student';
+import { School } from '../../../core/domain/entities/School';
+import { SchoolYear } from '../../../core/domain/entities/SchoolYear';
+import { Projection } from '../../../core/domain/entities/Projection';
+import { ProjectionPace } from '../../../core/domain/entities/ProjectionPace';
+import { PaceCatalog } from '../../../core/domain/entities/PaceCatalog';
+import { SubSubject } from '../../../core/domain/entities/SubSubject';
 
 export function createMockStudentRepository(): StudentRepository {
   return {

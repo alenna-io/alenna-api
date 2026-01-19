@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GetRolesUseCase } from '../../../core/app/use-cases/users/GetRolesUseCase';
+import { GetRolesUseCase } from '../../../core/app/use-cases/deprecated/users/GetRolesUseCase';
 import { createMockRoleRepository } from '../../utils/mockRepositories';
-import { Role } from '../../../core/domain/entities';
+import { Role } from '../../../core/domain/entities/deprecated';
 
 describe('GetRolesUseCase', () => {
   let useCase: GetRolesUseCase;

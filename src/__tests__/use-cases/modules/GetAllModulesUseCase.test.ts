@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GetAllModulesUseCase } from '../../../core/app/use-cases/modules/GetAllModulesUseCase';
+import { GetAllModulesUseCase } from '../../../core/app/use-cases/deprecated/modules/GetAllModulesUseCase';
 
 // Mock Prisma Client
 const { mockPrismaInstance } = vi.hoisted(() => {

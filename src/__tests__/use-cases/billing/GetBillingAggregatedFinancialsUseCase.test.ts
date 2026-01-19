@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GetBillingAggregatedFinancialsUseCase } from '../../../core/app/use-cases/billing/GetBillingAggregatedFinancialsUseCase';
+import { GetBillingAggregatedFinancialsUseCase } from '../../../core/app/use-cases/deprecated/billing/GetBillingAggregatedFinancialsUseCase';
 import { createMockBillingRecordRepository } from '../../utils/mockRepositories';
 
 const TEST_CONSTANTS = {

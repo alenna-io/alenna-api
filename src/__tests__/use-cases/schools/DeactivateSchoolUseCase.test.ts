@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DeactivateSchoolUseCase } from '../../../core/app/use-cases/schools/DeactivateSchoolUseCase';
 import { createMockSchoolRepository, createMockUserRepository } from '../../utils/mockRepositories';
-import { School, User } from '../../../core/domain/entities';
+import { School, User } from '../../../core/domain/entities/deprecated';
 
 // Mock Prisma Client
 const { mockPrismaInstance } = vi.hoisted(() => {

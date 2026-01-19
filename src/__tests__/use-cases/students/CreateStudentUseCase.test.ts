@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { CreateStudentUseCase } from '../../../core/app/use-cases/students/CreateStudentUseCase';
+import { CreateStudentUseCase } from '../../../core/app/use-cases/deprecated/students/CreateStudentUseCase';
 import { createMockStudentBillingConfigRepository, createMockStudentRepository, createMockStudentScholarshipRepository } from '../../utils/mockRepositories';
 import {
   createTestStudent,
   createTestCreateStudentInput,
   TEST_CONSTANTS,
 } from '../../utils/testHelpers';
-import { clerkService } from '../../../core/frameworks/services/ClerkService';
+import { clerkService } from '../../../core/infrastructure/services/ClerkService';
 
 // Mock Prisma Client - must be a class constructor
 // Use vi.hoisted() to ensure the mock instance is available when the mock factory runs

@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CreateProjectionUseCase } from '../../../../core/app/use-cases/projections/v2/CreateProjectionUseCase';
-import { ObjectAlreadyExistsError } from '../../../../core/app/errors/v2/ObjectAlreadyExistsError';
-import { InvalidEntityError } from '../../../../core/app/errors/v2';
-import { SchoolYear, SchoolYearStatusEnum } from '../../../../core/domain/entities/v2/SchoolYear';
+import { ObjectAlreadyExistsError } from '../../../../core/app/errors/ObjectAlreadyExistsError';
+import { InvalidEntityError } from '../../../../core/app/errors';
+import { SchoolYear, SchoolYearStatusEnum } from '../../../../core/domain/entities/SchoolYear';
 import { createMockStudentRepository, createMockSchoolRepository, createMockSchoolYearRepository, createMockProjectionRepository } from '../../utils/mockRepositories';
-import { Student, StudentStatusEnum } from '../../../../core/domain/entities/v2/Student';
-import { Projection, ProjectionStatusEnum } from '../../../../core/domain/entities/v2/Projection';
-import { School } from '../../../../core/domain/entities/v2/School';
+import { Student, StudentStatusEnum } from '../../../../core/domain/entities/Student';
+import { Projection, ProjectionStatusEnum } from '../../../../core/domain/entities/Projection';
+import { School } from '../../../../core/domain/entities/School';
 
 describe('CreateProjectionUseCase', () => {
   let studentRepo: ReturnType<typeof createMockStudentRepository>;

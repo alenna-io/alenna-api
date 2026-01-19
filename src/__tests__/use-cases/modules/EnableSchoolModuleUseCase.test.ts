@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EnableSchoolModuleUseCase } from '../../../core/app/use-cases/modules/EnableSchoolModuleUseCase';
+import { EnableSchoolModuleUseCase } from '../../../core/app/use-cases/deprecated/modules/EnableSchoolModuleUseCase';
 import { TEST_CONSTANTS } from '../../utils/testHelpers';
 
 // Mock Prisma Client
