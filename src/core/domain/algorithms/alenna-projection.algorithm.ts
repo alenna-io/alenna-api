@@ -1,6 +1,7 @@
 import { ProjectionGenerator, GeneratedProjectionPace } from './projection-generator';
 import { GenerateProjectionInput } from '../../application/dtos/projections/GenerateProjectionInput';
 import { InvalidEntityError } from '../errors';
+import { logger } from '../../../utils/logger';
 
 const TOTAL_WEEKS = 36;
 const WEEKS_PER_QUARTER = 9;
@@ -24,11 +25,11 @@ interface WeekSlot {
 export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
   generate(input: GenerateProjectionInput): GeneratedProjectionPace[] {
-    console.log("Normalizing subjects...");
+    logger.debug("Normalizing subjects...");
     const subjects = this.normalizeSubjects(input);
-    console.log("Getting total paces...");
+    logger.debug("Getting total paces...");
     const totalPaces = subjects.reduce((s, x) => s + x.paces.length, 0);
-    console.log("Total paces: ", totalPaces);
+    logger.debug("Total paces:", totalPaces);
 
     if (totalPaces < MIN_TOTAL_PACES) {
       throw new InvalidEntityError(
@@ -38,10 +39,9 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
     }
 
     const pacesByQuarter = Array.from({ length: 4 }, (_, i) => Math.floor(totalPaces / 4) + (i < totalPaces % 4 ? 1 : 0));
-    console.log("Paces by quarter");
-    console.log(pacesByQuarter);
+    logger.debug("Paces by quarter", pacesByQuarter);
 
-    console.log("Building weeks...");
+    logger.debug("Building weeks...");
     const weeks = this.buildWeeks();
 
     const isUniform =
@@ -49,16 +49,14 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       subjects.every(s => s.paces.length === subjects[0].paces.length);
 
     if (isUniform) {
-      console.log("Generating uniform by difficulty...");
+      logger.debug("Generating uniform by difficulty...");
       this.generateUniformByDifficulty(subjects, weeks);
     } else {
-      console.log("Generating by frequency...");
+      logger.debug("Generating by frequency...");
       this.generateByFrequency2(subjects, weeks, totalPaces);
-      // this.generateByFrequency(subjects, weeks);
     }
 
-    console.log("Returning generated projection...");
-    // console.log(weeks);
+    logger.debug("Returning generated projection...");
     return weeks.flatMap(w => w.paces);
   }
 

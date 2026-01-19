@@ -1,117 +1,125 @@
 import {
-  PrismaPaceCatalogRepository,
-  PrismaProjectionPaceRepository,
-  PrismaProjectionRepository,
-  PrismaSchoolRepository,
-  PrismaSchoolYearRepository,
-  PrismaStudentRepository,
-  PrismaSubjectRepository,
-  PrismaCategoryRepository,
-} from '../../../infrastructure/repositories';
-import { ObjectAlreadyExistsError, InvalidEntityError } from '../../../domain/errors';
+  IProjectionRepository,
+  IStudentRepository,
+  ISchoolRepository,
+  ISchoolYearRepository,
+  IProjectionPaceRepository,
+  IPaceCatalogRepository,
+  ISubjectRepository,
+  ICategoryRepository,
+} from '../../../domain/interfaces/repositories';
+import { ObjectAlreadyExistsError, InvalidEntityError, ObjectNotFoundError, DomainError } from '../../../domain/errors';
 import { GenerateProjectionInput } from '../../dtos/projections/GenerateProjectionInput';
 import { ProjectionGenerator } from '../../../domain/algorithms/projection-generator';
 import prisma from '../../../infrastructure/database/prisma.client';
 import { PrismaTransaction } from '../../../infrastructure/database/PrismaTransaction';
 import { Prisma, ProjectionPaceStatus } from '@prisma/client';
+import { logger } from '../../../../utils/logger';
+import { validateId, validateIds } from '../../../domain/utils/validation';
+import { Result, Ok, Err } from '../../../domain/utils/Result';
 
 export class GenerateProjectionUseCase {
   constructor(
-    private readonly projectionRepository: PrismaProjectionRepository,
-    private readonly studentRepository: PrismaStudentRepository,
-    private readonly schoolRepository: PrismaSchoolRepository,
-    private readonly schoolYearRepository: PrismaSchoolYearRepository,
-    private readonly projectionPaceRepository: PrismaProjectionPaceRepository,
-    private readonly paceCatalogRepository: PrismaPaceCatalogRepository,
-    private readonly subjectRepository: PrismaSubjectRepository,
-    private readonly categoryRepository: PrismaCategoryRepository,
+    private readonly projectionRepository: IProjectionRepository,
+    private readonly studentRepository: IStudentRepository,
+    private readonly schoolRepository: ISchoolRepository,
+    private readonly schoolYearRepository: ISchoolYearRepository,
+    private readonly projectionPaceRepository: IProjectionPaceRepository,
+    private readonly paceCatalogRepository: IPaceCatalogRepository,
+    private readonly subjectRepository: ISubjectRepository,
+    private readonly categoryRepository: ICategoryRepository,
     private readonly projectionGenerator: ProjectionGenerator,
   ) { }
 
-  async execute(input: GenerateProjectionInput) {
-    return prisma.$transaction(async (tx) => {
-      // 1. Validate student / school / year
-      console.log("Validating student, school and year...");
-      await this.validateStudentSchoolYear(input, tx as PrismaTransaction);
+  async execute(input: GenerateProjectionInput): Promise<Result<Prisma.ProjectionGetPayload<{}>, DomainError>> {
+    try {
+      validateId(input.studentId, 'Student');
+      validateId(input.schoolId, 'School');
+      validateId(input.schoolYear, 'SchoolYear');
 
-      // 2. Ensure projection does not exist
-      console.log("Checking if projection already exists...");
-      const existing =
-        await this.projectionRepository.findActiveByStudent(
-          input.studentId,
-          input.schoolId,
-          input.schoolYear,
-          tx as PrismaTransaction
-        );
-
-      if (existing) {
-        throw new ObjectAlreadyExistsError('Projection', 'A projection already exists for this student in this school year.');
+      if (!input.subjects || input.subjects.length === 0) {
+        return Err(new InvalidEntityError(
+          'Projection',
+          'At least one subject is required to generate a projection'
+        ));
       }
 
-      // 3. Validate pace boundaries exist (DB validation)
-      console.log("Validating pace boundaries...");
-      const { paceCatalogMap, subjectDifficulties } = await this.getPaceCatalogAndSubjectDifficulties(input, tx as PrismaTransaction);
-      console.log("Subject Difficulties");
-      console.log(subjectDifficulties);
+      const categoryIds = [...new Set(input.subjects.map(s => s.categoryId))];
+      validateIds(categoryIds, 'Category');
 
-      // 4. Create projection
-      console.log("Creating empty projection...");
-      const projection = await this.projectionRepository.create({
-        studentId: input.studentId,
-        schoolId: input.schoolId,
-        schoolYear: input.schoolYear,
-      }, tx as PrismaTransaction);
+      const projection = await prisma.$transaction(async (tx) => {
+        logger.info("Validating student, school and year...");
+        await this.validateStudentSchoolYear(input, tx as PrismaTransaction);
 
-      // 5. Generate logical paces (PURE DOMAIN)
-      console.log("Generating projection pace distribution. No pace data persistence...");
-
-      for (const subject of input.subjects) {
-        subject.difficulty = subjectDifficulties[subject.categoryId];
-      }
-
-      // console.log("Input with difficulties");
-      // console.log(input);
-
-      const generated = this.projectionGenerator.generate(input);
-
-      // console.log("Generated");
-      // console.log(generated);
-
-      // console.log("Pace Catalog Map");
-      // console.log(Array.from(paceCatalogMap.keys()));
-
-      // 6. Create ProjectionPace data for Prisma
-      console.log("Creating projection paces objects...");
-      const projectionPacesData = generated.map(g => {
-        const paceCatalog =
-          paceCatalogMap.get(`${g.categoryId}:${g.paceCode}`);
-
-        if (!paceCatalog) {
-          throw new InvalidEntityError(
-            'PaceCatalog',
-            `Pace ${g.paceCode} not found for category ${g.categoryId}`
+        logger.info("Checking if projection already exists...");
+        const existing =
+          await this.projectionRepository.findActiveByStudent(
+            input.studentId,
+            input.schoolId,
+            input.schoolYear,
+            tx as PrismaTransaction
           );
+
+        if (existing) {
+          throw new ObjectAlreadyExistsError('Projection', 'A projection already exists for this student in this school year.');
         }
 
-        return {
-          id: crypto.randomUUID(),
-          projectionId: projection.id,
-          paceCatalogId: paceCatalog.id,
-          quarter: g.quarter.toString(),
-          week: g.week,
-          status: ProjectionPaceStatus.PENDING,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
+        logger.info("Validating pace boundaries...");
+        const { paceCatalogMap, subjectDifficulties } = await this.getPaceCatalogAndSubjectDifficulties(input, tx as PrismaTransaction);
+        logger.debug("Subject Difficulties", subjectDifficulties);
+
+        logger.info("Creating empty projection...");
+        const projection = await this.projectionRepository.create({
+          studentId: input.studentId,
+          schoolId: input.schoolId,
+          schoolYear: input.schoolYear,
+        }, tx as PrismaTransaction);
+
+        logger.info("Generating projection pace distribution...");
+
+        for (const subject of input.subjects) {
+          subject.difficulty = subjectDifficulties[subject.categoryId];
+        }
+
+        const generated = this.projectionGenerator.generate(input);
+
+        logger.info("Creating projection paces objects...");
+        const projectionPacesData = generated.map(g => {
+          const paceCatalog =
+            paceCatalogMap.get(`${g.categoryId}:${g.paceCode}`);
+
+          if (!paceCatalog) {
+            throw new InvalidEntityError(
+              'PaceCatalog',
+              `Pace ${g.paceCode} not found for category ${g.categoryId}`
+            );
+          }
+
+          return {
+            id: crypto.randomUUID(),
+            projectionId: projection.id,
+            paceCatalogId: paceCatalog.id,
+            quarter: g.quarter.toString(),
+            week: g.week,
+            status: ProjectionPaceStatus.PENDING,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+        });
+
+        logger.info("Persisting projection paces...");
+        await this.projectionPaceRepository.createMany(projectionPacesData, tx as PrismaTransaction);
+
+        return projection;
       });
 
-
-      // 7. Persist in bulk
-      console.log("Persisting projection paces...");
-      await this.projectionPaceRepository.createMany(projectionPacesData, tx as PrismaTransaction);
-
-      return projection;
-    });
+      return Ok(projection);
+    } catch (error) {
+      if (error instanceof InvalidEntityError || error instanceof ObjectAlreadyExistsError || error instanceof ObjectNotFoundError) {
+        return Err(error as DomainError);
+      }
+      throw error;
+    }
   }
 
   private async validateStudentSchoolYear(input: GenerateProjectionInput, tx: PrismaTransaction) {

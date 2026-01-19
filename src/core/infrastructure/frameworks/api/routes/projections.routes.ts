@@ -1,15 +1,18 @@
 import { Router, type Router as ExpressRouter } from 'express';
-import { ProjectionController } from '../../../../presentation/controllers';
 import { container } from '../../di/container';
-import { clerkMiddleware, requireAuth } from '@clerk/express';
+import { ProjectionController } from '../../../../presentation/controllers';
+// import { clerkMiddleware, requireAuth } from '@clerk/express';
 import {
-  attachUserContext,
-  ensureTenantIsolation,
-  requirePermission,
+  // attachUserContext,
+  // ensureTenantIsolation,
+  // requirePermission,
   validateBody,
 } from '../middleware';
-import { CreateProjectionDTO } from '../../../../application/dtos/projections/CreateProjectionInput';
-import { GenerateProjectionDTO } from '../../../../application/dtos/projections/GenerateProjectionInput';
+import {
+  CreateProjectionDTO,
+  GenerateProjectionDTO
+} from '../../../../application/dtos/projections';
+import { asyncHandler } from '../../../../../utils';
 
 const router: ExpressRouter = Router({ mergeParams: true }); // mergeParams to access studentId from parent route
 const projectionController = new ProjectionController(
@@ -31,13 +34,13 @@ router.post(
   '/',
   // requirePermission('projections.create'),
   validateBody(CreateProjectionDTO),
-  projectionController.create.bind(projectionController)
+  asyncHandler(projectionController.create.bind(projectionController))
 );
 
 router.post(
   '/generate',
   validateBody(GenerateProjectionDTO),
-  projectionController.generate.bind(projectionController)
+  asyncHandler(projectionController.generate.bind(projectionController))
 );
 
 export default router;

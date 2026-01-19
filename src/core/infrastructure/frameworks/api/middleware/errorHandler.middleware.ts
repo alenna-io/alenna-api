@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { ObjectAlreadyExistsError, InvalidEntityError, ObjectNotFoundError } from '../../../../domain/errors';
 import { ZodError } from 'zod';
+import { logger } from '../../../../../utils/logger';
 
 export function errorHandler(err: any, _: Request, res: Response, _next: NextFunction): Response {
-  console.error(err); // keep full stack in server logs
+  logger.error('Error occurred:', err);
 
   // JSON parse errors
   if (err instanceof SyntaxError && 'body' in err) {
@@ -25,10 +26,23 @@ export function errorHandler(err: any, _: Request, res: Response, _next: NextFun
   }
 
   // Domain / business errors
+  if (err instanceof InvalidEntityError) {
+    return res.status(err.statusCode).json({
+      error: err.message,
+      stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined
+    });
+  }
+
   if (err instanceof ObjectAlreadyExistsError) {
     return res.status(err.statusCode).json({
-      error: err.message, // only message
-      // remove stack for API responses
+      error: err.message,
+      stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined
+    });
+  }
+
+  if (err instanceof ObjectNotFoundError) {
+    return res.status(err.statusCode).json({
+      error: err.message,
       stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined
     });
   }

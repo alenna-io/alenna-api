@@ -1,4 +1,5 @@
 import { createClerkClient } from '@clerk/backend';
+import { logger } from '../../../utils/logger';
 
 export interface CreateClerkUserInput {
   email: string;
@@ -58,12 +59,12 @@ export class ClerkService {
         .trim()
         .replace(/\s+/g, '_') // Replace spaces with underscores
         .substring(0, 50); // Clerk typically limits usernames to 50 chars
-      
+
       if (fullName) {
         return fullName;
       }
     }
-    
+
     // Fallback to email-based username if names are not available
     if (email) {
       const username = email.split('@')[0]
@@ -72,7 +73,7 @@ export class ClerkService {
         .substring(0, 50);
       return username || `user_${Math.random().toString(36).substring(2, 9)}`;
     }
-    
+
     // Final fallback
     return `user_${Math.random().toString(36).substring(2, 9)}`;
   }
@@ -124,20 +125,20 @@ export class ClerkService {
         } catch (inviteError: any) {
           // Log the error but don't fail user creation if invitation fails
           // User can request password reset later if needed
-          console.warn('Failed to send invitation email, but user was created:', inviteError.message);
+          logger.warn('Failed to send invitation email, but user was created:', inviteError.message);
         }
       }
 
       return clerkUser.id;
     } catch (error: any) {
-      console.error('Error creating Clerk user:', error);
-      
+      logger.error('Error creating Clerk user:', error);
+
       // Provide more detailed error information
       if (error.errors && error.errors.length > 0) {
         const errorMessages = error.errors.map((e: any) => e.longMessage || e.message).join('; ');
         throw new Error(`Failed to create Clerk user: ${errorMessages}`);
       }
-      
+
       throw new Error(`Failed to create Clerk user: ${error.message || 'Unknown error'}`);
     }
   }
@@ -158,17 +159,17 @@ export class ClerkService {
         // Optional: specify a redirect URL after they accept the invitation
         // If not specified, Clerk will use the default redirect URL from your Clerk Dashboard
       });
-      
-      console.log(`✅ Invitation created and email sent to ${email}. Invitation ID: ${invitation.id}`);
+
+      logger.info(`Invitation created and email sent to ${email}. Invitation ID: ${invitation.id}`);
     } catch (error: unknown) {
-      console.error('❌ Error sending invitation email:', error);
-      
+      logger.error('Error sending invitation email:', error);
+
       // Log detailed error information for debugging
       if (error && typeof error === 'object' && 'errors' in error) {
         const clerkErrors = (error as any).errors;
-        console.error('Clerk API errors:', JSON.stringify(clerkErrors, null, 2));
+        logger.error('Clerk API errors:', JSON.stringify(clerkErrors, null, 2));
       }
-      
+
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to send invitation email: ${errorMessage}`);
     }
@@ -182,7 +183,7 @@ export class ClerkService {
     try {
       await this.client.users.deleteUser(clerkId);
     } catch (error: any) {
-      console.error('Error deleting Clerk user:', error);
+      logger.error('Error deleting Clerk user:', error);
       throw new Error(`Failed to delete Clerk user: ${error.message || 'Unknown error'}`);
     }
   }
@@ -212,7 +213,7 @@ export class ClerkService {
         throw new Error((errorData as { message?: string }).message || 'Failed to lock user in Clerk');
       }
     } catch (error: unknown) {
-      console.error('Error locking Clerk user:', error);
+      logger.error('Error locking Clerk user:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to lock Clerk user: ${errorMessage}`);
     }
@@ -238,7 +239,7 @@ export class ClerkService {
         throw new Error((errorData as { message?: string }).message || 'Failed to unlock user in Clerk');
       }
     } catch (error: unknown) {
-      console.error('Error unlocking Clerk user:', error);
+      logger.error('Error unlocking Clerk user:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to unlock Clerk user: ${errorMessage}`);
     }
@@ -252,7 +253,7 @@ export class ClerkService {
     try {
       return await this.client.users.getUser(clerkId);
     } catch (error: any) {
-      console.error('Error getting Clerk user:', error);
+      logger.error('Error getting Clerk user:', error);
       throw new Error(`Failed to get Clerk user: ${error.message || 'Unknown error'}`);
     }
   }
@@ -268,29 +269,29 @@ export class ClerkService {
       await this.client.users.updateUser(clerkId, {
         password: password,
       });
-      console.log(`✅ Password updated for Clerk user ${clerkId}`);
+      logger.info(`Password updated for Clerk user ${clerkId}`);
     } catch (error: unknown) {
-      console.error('Error updating password in Clerk:', error);
-      
+      logger.error('Error updating password in Clerk:', error);
+
       // Extract detailed error message from Clerk API error
       let errorMessage = 'Failed to update password';
       let statusCode = 500;
-      
+
       // Check if it's a Clerk API response error
       if (error && typeof error === 'object') {
         // Get status code first (Clerk errors have status property)
         if ('status' in error && typeof (error as any).status === 'number') {
           statusCode = (error as any).status;
         }
-        
+
         // Extract error message from errors array (Clerk's error structure)
         if ('errors' in error && Array.isArray((error as any).errors) && (error as any).errors.length > 0) {
           const clerkErrors = (error as any).errors;
           const firstError = clerkErrors[0];
-          
+
           // Get the most descriptive error message (longMessage is more detailed)
           errorMessage = firstError.longMessage || firstError.message || errorMessage;
-          
+
           // For known error codes, use the longMessage or a specific message
           // The longMessage from Clerk is already user-friendly
         } else if ('message' in error && typeof (error as any).message === 'string') {
@@ -304,7 +305,7 @@ export class ClerkService {
           statusCode = (error as any).status;
         }
       }
-      
+
       // Create error with status code info
       const customError = new Error(errorMessage);
       (customError as any).statusCode = statusCode;

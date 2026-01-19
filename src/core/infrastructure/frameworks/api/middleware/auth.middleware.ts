@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../../../database/prisma.client';
+import { logger } from '../../../../../utils/logger';
 
 // Extend Express Request to include user and school context
 declare global {
@@ -85,7 +86,7 @@ export const attachUserContext = async (
 
     next();
   } catch (error) {
-    console.error('Error in attachUserContext middleware:', error);
+    logger.error('Error in attachUserContext middleware:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

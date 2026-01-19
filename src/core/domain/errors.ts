@@ -27,3 +27,5 @@ export class ObjectNotFoundError extends Error {
     this.statusCode = 404; // HTTP Not Found
   }
 }
+
+export type DomainError = InvalidEntityError | ObjectAlreadyExistsError | ObjectNotFoundError;
