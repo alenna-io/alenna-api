@@ -46,7 +46,8 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
     const isUniform =
       totalPaces === 72 &&
-      subjects.every(s => s.paces.length === subjects[0].paces.length);
+      subjects.length > 1 &&
+      subjects.every(s => s.paces.length === subjects[0]!.paces.length);
 
     if (isUniform) {
       logger.debug("Generating uniform by difficulty...");
@@ -133,8 +134,9 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
   ): void {
     const sorted = [...subjects].sort((a, b) => b.difficulty - a.difficulty);
     const pairs: [SubjectPlan, SubjectPlan][] = [];
+    const unpaired: SubjectPlan[] = [];
 
-    while (sorted.length) {
+    while (sorted.length > 1) {
       const high = sorted.shift()!;
       const low = sorted.pop()!;
 
@@ -148,7 +150,11 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       pairs.push([high, low]);
     }
 
-    const paceCount = pairs[0][0].paces.length;
+    if (sorted.length === 1) {
+      unpaired.push(sorted[0]!);
+    }
+
+    const paceCount = subjects[0]!.paces.length;
     let weekIndex = 0;
 
     for (let p = 0; p < paceCount; p++) {
@@ -157,6 +163,11 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
         this.placePace(week, a, a.paces[p]);
         this.placePace(week, b, b.paces[p]);
+      }
+
+      for (const subject of unpaired) {
+        const week = weeks[weekIndex++ % TOTAL_WEEKS];
+        this.placePace(week, subject, subject.paces[p]);
       }
     }
   }
@@ -167,11 +178,29 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
   /**
    * Generates projections for non-uniform pace distributions.
    *
-   * Strategy:
-   * - Round-robin placement by subject frequency
-   * - Enforces weekly limits and notPairWith
+   * Applies when:
+   * - Total paces >= 72 AND
+   * - Either totalPaces > 72 OR subjects have different pace counts
    *
-   * Difficulty is intentionally ignored in this mode.
+   * Strategy:
+   * 1. Calculate per-subject pace distribution across 4 quarters
+   * 2. Compute weekly frequency for each subject per quarter
+   * 3. Place subjects with >3 paces/quarter first (offset-based)
+   * 4. Place subjects with <=3 paces/quarter second (offset-based)
+   * 5. Redistribute paces to balance sparse (0-1) and dense (3+) weeks
+   *
+   * Constraints enforced:
+   * - Max 3 subjects per week (MAX_SUBJECTS_PER_WEEK)
+   * - No duplicate subject in same week
+   * - Respects notPairWith exclusions (with fallback)
+   * - Maintains sequential pace order within quarters
+   *
+   * Guarantees:
+   * - All paces are placed across 36 weeks
+   * - Quarter balance optimized per subject
+   * - Deterministic output for same input
+   *
+   * Note: Difficulty is intentionally ignored in this mode.
    */
   private generateByFrequency(
     subjects: SubjectPlan[],
