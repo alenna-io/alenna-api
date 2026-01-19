@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('../../../../core/infrastructure/database/prisma.client', () => ({
+  default: {
+    $transaction: vi.fn(),
+  },
+}));
+
 import { GenerateProjectionUseCase } from '../../../../core/application/use-cases/projections/GenerateProjectionUseCase';
 import { ObjectAlreadyExistsError, InvalidEntityError } from '../../../../core/domain/errors';
+import prisma from '../../../../core/infrastructure/database/prisma.client';
 
 import {
   createMockStudentRepository,
@@ -30,6 +38,7 @@ describe('GenerateProjectionUseCase', () => {
   let useCase: GenerateProjectionUseCase;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     studentRepo = createMockStudentRepository();
     schoolRepo = createMockSchoolRepository();
     schoolYearRepo = createMockSchoolYearRepository();
@@ -180,6 +189,7 @@ describe('GenerateProjectionUseCase', () => {
     ] as any;
     vi.mocked(paceCatalogRepo.findByCategoryAndOrderRange).mockResolvedValue(paceCatalogsWithSubject);
     vi.mocked(subjectRepo.findManyByIds).mockResolvedValue(subSubjectsDB);
+    vi.mocked(projectionPaceRepo.createMany).mockResolvedValue(undefined);
 
     vi.mocked(projectionGenerator.generate).mockReturnValue([
       {
@@ -191,6 +201,10 @@ describe('GenerateProjectionUseCase', () => {
       },
     ]);
 
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      return await callback({} as any);
+    });
+
     const result = await useCase.execute({
       studentId: student.id,
       schoolId: school.id,
@@ -198,40 +212,51 @@ describe('GenerateProjectionUseCase', () => {
       subjects: subjectsInput,
     });
 
-    expect(result).toBe(projection);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual(projection);
+    }
     expect(projectionGenerator.generate).toHaveBeenCalledOnce();
     expect(projectionPaceRepo.createMany).toHaveBeenCalledOnce();
   });
 
-  it('throws ObjectAlreadyExistsError if projection already exists', async () => {
+  it('returns Err when projection already exists', async () => {
     vi.mocked(studentRepo.findById).mockResolvedValue(student);
     vi.mocked(schoolRepo.findById).mockResolvedValue(school);
     vi.mocked(schoolYearRepo.findById).mockResolvedValue(schoolYear);
     vi.mocked(projectionRepo.findActiveByStudent).mockResolvedValue(projection);
 
-    await expect(
-      useCase.execute({
-        studentId: student.id,
-        schoolId: school.id,
-        schoolYear: schoolYear.id,
-        subjects: subjectsInput,
-      })
-    ).rejects.toThrow(ObjectAlreadyExistsError);
+    const result = await useCase.execute({
+      studentId: student.id,
+      schoolId: school.id,
+      schoolYear: schoolYear.id,
+      subjects: subjectsInput,
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(ObjectAlreadyExistsError);
+      expect(result.error.message).toBe('A projection already exists for this student in this school year.');
+    }
   });
 
-  it('throws InvalidEntityError when no subjects are provided', async () => {
+  it('returns Err when no subjects are provided', async () => {
     vi.mocked(studentRepo.findById).mockResolvedValue(student);
     vi.mocked(schoolRepo.findById).mockResolvedValue(school);
     vi.mocked(schoolYearRepo.findById).mockResolvedValue(schoolYear);
     vi.mocked(projectionRepo.findActiveByStudent).mockResolvedValue(null);
 
-    await expect(
-      useCase.execute({
-        studentId: student.id,
-        schoolId: school.id,
-        schoolYear: schoolYear.id,
-        subjects: [],
-      })
-    ).rejects.toThrow(InvalidEntityError);
+    const result = await useCase.execute({
+      studentId: student.id,
+      schoolId: school.id,
+      schoolYear: schoolYear.id,
+      subjects: [],
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(InvalidEntityError);
+      expect(result.error.message).toBe('At least one subject is required to generate a projection');
+    }
   });
 });

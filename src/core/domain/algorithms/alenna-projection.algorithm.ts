@@ -53,7 +53,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       this.generateUniformByDifficulty(subjects, weeks);
     } else {
       logger.debug("Generating by frequency...");
-      this.generateByFrequency2(subjects, weeks, totalPaces);
+      this.generateByFrequency(subjects, weeks, totalPaces);
     }
 
     logger.debug("Returning generated projection...");
@@ -174,43 +174,6 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
    * Difficulty is intentionally ignored in this mode.
    */
   private generateByFrequency(
-    subjects: SubjectPlan[],
-    weeks: WeekSlot[]
-  ): void {
-    const cursors = subjects.map(s => ({ subject: s, index: 0 }));
-    // console.log("Cursors");
-    // console.log(cursors);
-    let weekIndex = 0;
-
-    while (cursors.some(c => c.index < c.subject.paces.length)) {
-      for (const cursor of cursors) {
-        if (cursor.index >= cursor.subject.paces.length) continue;
-
-        for (let tries = 0; tries < TOTAL_WEEKS; tries++) {
-          const week = weeks[weekIndex % TOTAL_WEEKS];
-
-          if (
-            week.subjects.size < MAX_SUBJECTS_PER_WEEK &&
-            !week.subjects.has(cursor.subject.categoryId) &&
-            !this.violatesNotPair(cursor.subject, week.subjects)
-          ) {
-            this.placePace(
-              week,
-              cursor.subject,
-              cursor.subject.paces[cursor.index++]
-            );
-            break;
-          }
-
-          weekIndex++;
-        }
-      }
-
-      weekIndex++;
-    }
-  }
-
-  private generateByFrequency2(
     subjects: SubjectPlan[],
     weeks: WeekSlot[],
     _totalPaces: number

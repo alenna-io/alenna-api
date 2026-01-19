@@ -1,9 +1,13 @@
-import { CreateProjectionDTO } from '../../application/dtos/projections/CreateProjectionInput';
-import { CreateProjectionUseCase } from '../../application/use-cases/projections/CreateProjectionUseCase';
 import { Request, Response } from 'express';
 import { container } from '../../infrastructure/frameworks/di/container';
-import { GenerateProjectionDTO } from '../../application/dtos/projections/GenerateProjectionInput';
-import { GenerateProjectionUseCase } from '../../application/use-cases/projections/GenerateProjectionUseCase';
+import {
+  CreateProjectionDTO,
+  GenerateProjectionDTO
+} from '../../application/dtos/projections';
+import {
+  CreateProjectionUseCase,
+  GenerateProjectionUseCase
+} from '../../application/use-cases/projections';
 
 export class ProjectionController {
   constructor(

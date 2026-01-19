@@ -1,5 +1,6 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import projectionRoutes from './projections.routes';
+import categoryRoutes from './categories.routes';
 
 const router: ExpressRouter = Router();
 
@@ -15,7 +16,7 @@ router.get('/v2/health', (_req, res) => {
 
 // API v1 routes
 const v1Router: ExpressRouter = Router();
-
+v1Router.use('/categories', categoryRoutes);
 v1Router.use('/projections', projectionRoutes);
 
 router.use('/v1', v1Router);

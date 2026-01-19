@@ -11,8 +11,12 @@ import {
 // Domain Services
 import { AlennaProjectionAlgorithm } from '../../../domain/algorithms/alenna-projection.algorithm';
 // Projection Use Cases
-import { CreateProjectionUseCase } from '../../../application/use-cases/projections/CreateProjectionUseCase';
-import { GenerateProjectionUseCase } from '../../../application/use-cases/projections/GenerateProjectionUseCase';
+import {
+  CreateProjectionUseCase,
+  GenerateProjectionUseCase
+} from '../../../application/use-cases/projections';
+// Category Use Cases
+import { GetCategoriesWithSubjectsUseCase } from '../../../application/use-cases/categories/GetCategoriesWithSubjectsUseCase';
 
 // Repositories
 const projectionRepository = new PrismaProjectionRepository();
@@ -47,6 +51,11 @@ const generateProjectionUseCase = new GenerateProjectionUseCase(
   alennaProjectionGenerator
 );
 
+// Category Use Cases
+const getCategoriesWithSubjectsUseCase = new GetCategoriesWithSubjectsUseCase(
+  categoryRepository
+);
+
 // Container
 export const container = {
   repository: {
@@ -65,5 +74,6 @@ export const container = {
   useCase: {
     createProjectionUseCase,
     generateProjectionUseCase,
+    getCategoriesWithSubjectsUseCase,
   },
 };
