@@ -27,12 +27,46 @@ export class PrismaSubjectRepository implements ISubjectRepository {
       include: { level: true },
     });
 
-    if (!currentSubject || !currentSubject.level.number) {
+    if (!currentSubject) {
       return [];
     }
 
-    const currentLevelNumber = currentSubject.level.number;
     const categoryId = currentSubject.categoryId;
+    const currentLevelNumber = currentSubject.level?.number;
+
+    // If the subject doesn't have a level number (e.g., electives that can be at any level),
+    // just return the current subject with its paces
+    if (currentLevelNumber === null || currentLevelNumber === undefined) {
+      const subjectWithPaces = await tx.subject.findUnique({
+        where: { id: subjectId },
+        select: {
+          id: true,
+          name: true,
+          level: {
+            select: {
+              id: true,
+              number: true,
+              name: true,
+            },
+          },
+          paces: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              orderIndex: true,
+            },
+            orderBy: { orderIndex: 'asc' },
+          },
+        },
+      }) as Prisma.SubjectGetPayload<{ include: { paces: true; level: true } }> | null;
+
+      if (!subjectWithPaces) {
+        return [];
+      }
+
+      return [subjectWithPaces];
+    }
 
     // 2. Find subjects in the same category with levels: current, current+1, ..., current+levelsCount
     const targetLevelNumbers = Array.from(
@@ -40,7 +74,7 @@ export class PrismaSubjectRepository implements ISubjectRepository {
       (_, i) => currentLevelNumber + i
     );
 
-    return await tx.subject.findMany({
+    const subjects = await tx.subject.findMany({
       where: {
         categoryId,
         level: {
@@ -73,5 +107,7 @@ export class PrismaSubjectRepository implements ISubjectRepository {
         },
       },
     }) as Prisma.SubjectGetPayload<{ include: { paces: true; level: true } }>[];
+
+    return subjects;
   }
 }

@@ -64,7 +64,6 @@ export const attachUserContext = async (
     req.schoolId = user.schoolId;
     req.userRoles = []; // MVP: Empty roles array (will be populated after auth implementation)
 
-    logger.debug(`MVP: Attached user context - userId: ${user.id}, schoolId: ${user.schoolId}`);
     next();
   } catch (error) {
     logger.error('Error in attachUserContext middleware:', error);

@@ -41,10 +41,14 @@ export function validateIds(ids: string[], entityName: string): void {
 export function validateCuid(id: string, entityName: string): void {
   validateId(id, entityName);
 
-  if (!CUID_REGEX.test(id)) {
+  // Accept both CUID and UUID formats for backward compatibility
+  // Also accept demo/test IDs (e.g., "demo-school", "school-year-2025-2026") for development
+  const isDemoId = id.startsWith('demo-') || id.startsWith('school-year-') || id.startsWith('test-');
+
+  if (!CUID_REGEX.test(id) && !UUID_REGEX.test(id) && !isDemoId) {
     throw new InvalidEntityError(
       entityName,
-      `${entityName} ID must be a valid CUID format`
+      `${entityName} ID must be a valid CUID or UUID format`
     );
   }
 }
@@ -53,10 +57,14 @@ export function validateCuids(ids: string[], entityName: string): void {
   validateIds(ids, entityName);
 
   ids.forEach((id, index) => {
-    if (!CUID_REGEX.test(id)) {
+    // Accept both CUID and UUID formats for backward compatibility
+    // Also accept demo/test IDs (e.g., "demo-school", "school-year-2025-2026") for development
+    const isDemoId = id.startsWith('demo-') || id.startsWith('school-year-') || id.startsWith('test-');
+
+    if (!CUID_REGEX.test(id) && !UUID_REGEX.test(id) && !isDemoId) {
       throw new InvalidEntityError(
         entityName,
-        `${entityName} ID at index ${index} must be a valid CUID format`
+        `${entityName} ID at index ${index} must be a valid CUID or UUID format`
       );
     }
   });
