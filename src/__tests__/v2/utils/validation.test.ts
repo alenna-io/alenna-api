@@ -75,7 +75,7 @@ describe('Validation Utilities', () => {
 
     it('should throw for invalid CUID format', () => {
       expect(() => validateCuid('invalid-cuid', 'Entity')).toThrow(InvalidEntityError);
-      expect(() => validateCuid('invalid-cuid', 'Entity')).toThrow('Entity ID must be a valid CUID format');
+      expect(() => validateCuid('invalid-cuid', 'Entity')).toThrow('Entity ID must be a valid CUID or UUID format');
     });
 
     it('should throw for CUID that is too short', () => {
@@ -106,7 +106,7 @@ describe('Validation Utilities', () => {
 
     it('should throw for array with invalid CUID', () => {
       expect(() => validateCuids(['clh1234567890abcdefghijkl', 'invalid'], 'Entity')).toThrow(InvalidEntityError);
-      expect(() => validateCuids(['clh1234567890abcdefghijkl', 'invalid'], 'Entity')).toThrow('Entity ID at index 1 must be a valid CUID format');
+      expect(() => validateCuids(['clh1234567890abcdefghijkl', 'invalid'], 'Entity')).toThrow('Entity ID at index 1 must be a valid CUID or UUID format');
     });
 
     it('should throw for empty array (inherited from validateIds)', () => {

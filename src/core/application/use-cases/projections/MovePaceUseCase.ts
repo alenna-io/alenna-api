@@ -51,17 +51,41 @@ export class MovePaceUseCase {
         }
       }
 
-      const pacesBeforeTarget = allPacesInSubject.filter(p => {
-        if (p.id === paceId) return false;
-        const normalizedPaceQuarter = normalizeQuarter(p.quarter);
-        const isBefore = normalizedPaceQuarter < normalizedTargetQuarter ||
-          (normalizedPaceQuarter === normalizedTargetQuarter && p.week < input.week);
-        return isBefore;
-      });
+      const immediatePaceBefore = allPacesInSubject
+        .filter(p => {
+          if (p.id === paceId) return false;
+          const normalizedPaceQuarter = normalizeQuarter(p.quarter);
+          const isBefore = normalizedPaceQuarter < normalizedTargetQuarter ||
+            (normalizedPaceQuarter === normalizedTargetQuarter && p.week < input.week);
+          return isBefore;
+        })
+        .sort((a, b) => {
+          const aQuarter = normalizeQuarter(a.quarter);
+          const bQuarter = normalizeQuarter(b.quarter);
+          if (aQuarter !== bQuarter) return bQuarter.localeCompare(aQuarter);
+          return b.week - a.week;
+        })
+        .shift();
 
-      for (const paceBefore of pacesBeforeTarget) {
-        if (paceBefore.paceCatalog.orderIndex > movingPaceOrderIndex) {
-          return Err(new InvalidEntityError('ProjectionPace', `Cannot move pace: cannot place pace with orderIndex ${movingPaceOrderIndex} after pace with orderIndex ${paceBefore.paceCatalog.orderIndex} (at ${paceBefore.quarter} week ${paceBefore.week})`));
+      if (immediatePaceBefore && immediatePaceBefore.paceCatalog.orderIndex > movingPaceOrderIndex) {
+        const orderIndexDiff = immediatePaceBefore.paceCatalog.orderIndex - movingPaceOrderIndex;
+        const weekDiff = input.week - immediatePaceBefore.week;
+        const isImmediatelyAfter = normalizedTargetQuarter === normalizeQuarter(immediatePaceBefore.quarter) && weekDiff === 1;
+
+        if (orderIndexDiff >= 2 && isImmediatelyAfter) {
+          // Check if there's a soft-deleted pace with orderIndex between movingPaceOrderIndex and immediatePaceBefore's orderIndex
+          const allPacesIncludingDeleted = projection.projectionPaces.filter(
+            p => p.paceCatalog.subject.id === subjectId && p.id !== paceId
+          );
+          const hasSoftDeletedPaceInBetween = allPacesIncludingDeleted.some(p => {
+            if (!p.deletedAt) return false;
+            const paceOrderIndex = p.paceCatalog.orderIndex;
+            return paceOrderIndex > movingPaceOrderIndex && paceOrderIndex < immediatePaceBefore.paceCatalog.orderIndex;
+          });
+
+          if (!hasSoftDeletedPaceInBetween) {
+            return Err(new InvalidEntityError('ProjectionPace', `Cannot move pace: cannot place pace with orderIndex ${movingPaceOrderIndex} after pace with orderIndex ${immediatePaceBefore.paceCatalog.orderIndex} (at ${immediatePaceBefore.quarter} week ${immediatePaceBefore.week})`));
+          }
         }
       }
 

@@ -8,6 +8,7 @@ import {
   IPaceCatalogRepository,
   ISubjectRepository,
   ICategoryRepository,
+  IDailyGoalRepository,
 } from '../../../core/domain/interfaces/repositories';
 import {
   Prisma,
@@ -53,6 +54,14 @@ export function createMockProjectionRepository(): IProjectionRepository {
     addPace: vi.fn() as unknown as (projectionId: string, paceCatalogId: string, quarter: string, week: number, tx?: PrismaTransaction) => Promise<any>,
     restorePace: vi.fn() as unknown as (paceId: string, quarter: string, week: number, tx?: PrismaTransaction) => Promise<any>,
     deletePace: vi.fn() as unknown as (projectionId: string, paceId: string, tx?: PrismaTransaction) => Promise<void>,
+    updateGrade: vi.fn() as unknown as (projectionId: string, paceId: string, grade: number, tx?: PrismaTransaction) => Promise<any>,
+    markUngraded: vi.fn() as unknown as (projectionId: string, paceId: string, tx?: PrismaTransaction) => Promise<any>,
+  };
+}
+
+export function createMockDailyGoalRepository(): IDailyGoalRepository {
+  return {
+    findDailyGoalsByWeek: vi.fn() as unknown as (projectionId: string, quarter: string, week: number, tx?: PrismaTransaction) => Promise<any[]>,
   };
 }
 

@@ -58,16 +58,28 @@ export class AddPaceUseCase {
         }
       }
 
-      const pacesBeforeTarget = allPacesInSubject.filter(p => {
-        const normalizedPaceQuarter = normalizeQuarter(p.quarter);
-        if (normalizedPaceQuarter < normalizedTargetQuarter) return true;
-        if (normalizedPaceQuarter === normalizedTargetQuarter && p.week < input.week) return true;
-        return false;
-      });
+      const immediatePaceBefore = allPacesInSubject
+        .filter(p => {
+          const normalizedPaceQuarter = normalizeQuarter(p.quarter);
+          if (normalizedPaceQuarter < normalizedTargetQuarter) return true;
+          if (normalizedPaceQuarter === normalizedTargetQuarter && p.week < input.week) return true;
+          return false;
+        })
+        .sort((a, b) => {
+          const aQuarter = normalizeQuarter(a.quarter);
+          const bQuarter = normalizeQuarter(b.quarter);
+          if (aQuarter !== bQuarter) return bQuarter.localeCompare(aQuarter);
+          return b.week - a.week;
+        })
+        .shift();
 
-      for (const paceBefore of pacesBeforeTarget) {
-        if (paceBefore.paceCatalog.orderIndex > newPaceOrderIndex) {
-          return Err(new InvalidEntityError('ProjectionPace', `Cannot add pace: cannot place pace with orderIndex ${newPaceOrderIndex} after pace with orderIndex ${paceBefore.paceCatalog.orderIndex} (at ${paceBefore.quarter} week ${paceBefore.week})`));
+      if (immediatePaceBefore && immediatePaceBefore.paceCatalog.orderIndex > newPaceOrderIndex) {
+        const orderIndexDiff = immediatePaceBefore.paceCatalog.orderIndex - newPaceOrderIndex;
+        const weekDiff = input.week - immediatePaceBefore.week;
+        const isImmediatelyAfter = normalizedTargetQuarter === normalizeQuarter(immediatePaceBefore.quarter) && weekDiff === 1;
+
+        if (orderIndexDiff >= 1 && isImmediatelyAfter) {
+          return Err(new InvalidEntityError('ProjectionPace', `Cannot add pace: cannot place pace with orderIndex ${newPaceOrderIndex} after pace with orderIndex ${immediatePaceBefore.paceCatalog.orderIndex} (at ${immediatePaceBefore.quarter} week ${immediatePaceBefore.week})`));
         }
       }
 

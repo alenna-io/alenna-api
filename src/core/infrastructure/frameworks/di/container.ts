@@ -7,6 +7,7 @@ import {
   PrismaProjectionPaceRepository,
   PrismaSubjectRepository,
   PrismaCategoryRepository,
+  PrismaDailyGoalRepository,
 } from '../../repositories';
 // Domain Services
 import { AlennaProjectionAlgorithm } from '../../../domain/algorithms/alenna-projection.algorithm';
@@ -20,7 +21,8 @@ import {
   AddPaceUseCase,
   DeletePaceUseCase,
   UpdateGradeUseCase,
-  MarkUngradedUseCase
+  MarkUngradedUseCase,
+  GetDailyGoalsUseCase
 } from '../../../application/use-cases/projections';
 // Category Use Cases
 import { GetCategoriesWithSubjectsUseCase } from '../../../application/use-cases/categories';
@@ -40,6 +42,7 @@ const paceCatalogRepository = new PrismaPaceCatalogRepository();
 const projectionPaceRepository = new PrismaProjectionPaceRepository();
 const subjectRepository = new PrismaSubjectRepository();
 const categoryRepository = new PrismaCategoryRepository();
+const dailyGoalRepository = new PrismaDailyGoalRepository();
 
 // Domain Services
 const alennaProjectionGenerator = new AlennaProjectionAlgorithm();
@@ -94,6 +97,11 @@ const markUngradedUseCase = new MarkUngradedUseCase(
   projectionRepository
 );
 
+const getDailyGoalsUseCase = new GetDailyGoalsUseCase(
+  projectionRepository,
+  dailyGoalRepository
+);
+
 // Category Use Cases
 const getCategoriesWithSubjectsUseCase = new GetCategoriesWithSubjectsUseCase(
   categoryRepository
@@ -126,6 +134,7 @@ export const container = {
     projectionPaceRepository,
     subjectRepository,
     categoryRepository,
+    dailyGoalRepository,
   },
   service: {
     projectionGenerator: alennaProjectionGenerator,
@@ -141,6 +150,7 @@ export const container = {
     deletePaceUseCase,
     updateGradeUseCase,
     markUngradedUseCase,
+    getDailyGoalsUseCase,
     // Category Use Cases
     getCategoriesWithSubjectsUseCase,
     // School Use Cases
