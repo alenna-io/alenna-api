@@ -13,7 +13,9 @@ import { AlennaProjectionAlgorithm } from '../../../domain/algorithms/alenna-pro
 // Projection Use Cases
 import {
   CreateProjectionUseCase,
-  GenerateProjectionUseCase
+  GenerateProjectionUseCase,
+  GetProjectionListUseCase,
+  GetProjectionDetailsUseCase
 } from '../../../application/use-cases/projections';
 // Category Use Cases
 import { GetCategoriesWithSubjectsUseCase } from '../../../application/use-cases/categories';
@@ -57,6 +59,14 @@ const generateProjectionUseCase = new GenerateProjectionUseCase(
   alennaProjectionGenerator
 );
 
+const getProjectionListUseCase = new GetProjectionListUseCase(
+  projectionRepository
+);
+
+const getProjectionDetailsUseCase = new GetProjectionDetailsUseCase(
+  projectionRepository
+);
+
 // Category Use Cases
 const getCategoriesWithSubjectsUseCase = new GetCategoriesWithSubjectsUseCase(
   categoryRepository
@@ -97,6 +107,8 @@ export const container = {
     // Projection Use Cases
     createProjectionUseCase,
     generateProjectionUseCase,
+    getProjectionListUseCase,
+    getProjectionDetailsUseCase,
     // Category Use Cases
     getCategoriesWithSubjectsUseCase,
     // School Use Cases

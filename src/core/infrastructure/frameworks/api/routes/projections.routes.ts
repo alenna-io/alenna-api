@@ -17,7 +17,9 @@ import { asyncHandler } from '../../../../../utils';
 const router: ExpressRouter = Router({ mergeParams: true }); // mergeParams to access studentId from parent route
 const projectionController = new ProjectionController(
   container.useCase.createProjectionUseCase,
-  container.useCase.generateProjectionUseCase
+  container.useCase.generateProjectionUseCase,
+  container.useCase.getProjectionListUseCase,
+  container.useCase.getProjectionDetailsUseCase
 );
 
 // Apply Clerk middleware and authentication
@@ -32,6 +34,16 @@ const projectionController = new ProjectionController(
 router.use(attachUserContext);
 
 // Routes
+router.get(
+  '/',
+  asyncHandler(projectionController.getList.bind(projectionController))
+);
+
+router.get(
+  '/:id',
+  asyncHandler(projectionController.getById.bind(projectionController))
+);
+
 router.post(
   '/',
   // requirePermission('projections.create'),

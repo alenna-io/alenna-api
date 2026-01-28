@@ -6,3 +6,4 @@ export * from './PrismaSchoolRepository';
 export * from './PrismaSchoolYearRepository';
 export * from './PrismaStudentRepository';
 export * from './PrismaSubjectRepository';
+export * from './types';
