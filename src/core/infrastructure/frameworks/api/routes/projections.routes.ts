@@ -12,7 +12,8 @@ import {
   CreateProjectionDTO,
   GenerateProjectionDTO,
   MovePaceDTO,
-  AddPaceDTO
+  AddPaceDTO,
+  UpdateGradeDTO
 } from '../../../../application/dtos/projections';
 import { asyncHandler } from '../../../../../utils';
 
@@ -24,7 +25,9 @@ const projectionController = new ProjectionController(
   container.useCase.getProjectionDetailsUseCase,
   container.useCase.movePaceUseCase,
   container.useCase.addPaceUseCase,
-  container.useCase.deletePaceUseCase
+  container.useCase.deletePaceUseCase,
+  container.useCase.updateGradeUseCase,
+  container.useCase.markUngradedUseCase
 );
 
 // Apply Clerk middleware and authentication
@@ -77,6 +80,17 @@ router.post(
 router.delete(
   '/:id/paces/:paceId',
   asyncHandler(projectionController.deletePaceHandler.bind(projectionController))
+);
+
+router.patch(
+  '/:id/paces/:paceId/grade',
+  validateBody(UpdateGradeDTO),
+  asyncHandler(projectionController.updateGradeHandler.bind(projectionController))
+);
+
+router.patch(
+  '/:id/paces/:paceId/mark-ungraded',
+  asyncHandler(projectionController.markUngradedHandler.bind(projectionController))
 );
 
 export default router;

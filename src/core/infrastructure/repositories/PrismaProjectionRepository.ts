@@ -2,7 +2,7 @@ import { CreateProjectionInput } from '../../application/dtos/projections/Create
 import { ProjectionWithStudent, ProjectionWithDetails } from './types/projections.types';
 import prisma from '../database/prisma.client';
 import { PrismaTransaction } from '../database/PrismaTransaction';
-import { Prisma } from '@prisma/client';
+import { Prisma, ProjectionPaceStatus } from '@prisma/client';
 import { IProjectionRepository } from '../../domain/interfaces/repositories';
 
 export class PrismaProjectionRepository implements IProjectionRepository {
@@ -213,6 +213,53 @@ export class PrismaProjectionRepository implements IProjectionRepository {
       },
       data: {
         deletedAt: new Date(),
+      },
+    });
+  }
+
+  async updateGrade(
+    projectionId: string,
+    paceId: string,
+    grade: number,
+    tx: PrismaTransaction = prisma
+  ): Promise<Prisma.ProjectionPaceGetPayload<{}>> {
+    const status = grade >= 80 ? ProjectionPaceStatus.COMPLETED : ProjectionPaceStatus.FAILED;
+
+    await tx.gradeHistory.create({
+      data: {
+        projectionPaceId: paceId,
+        grade,
+        note: null,
+      },
+    });
+
+    return await tx.projectionPace.update({
+      where: {
+        id: paceId,
+        projectionId,
+        deletedAt: null,
+      },
+      data: {
+        grade,
+        status,
+      },
+    });
+  }
+
+  async markUngraded(
+    projectionId: string,
+    paceId: string,
+    tx: PrismaTransaction = prisma
+  ): Promise<Prisma.ProjectionPaceGetPayload<{}>> {
+    return await tx.projectionPace.update({
+      where: {
+        id: paceId,
+        projectionId,
+        deletedAt: null,
+      },
+      data: {
+        grade: null,
+        status: ProjectionPaceStatus.PENDING,
       },
     });
   }

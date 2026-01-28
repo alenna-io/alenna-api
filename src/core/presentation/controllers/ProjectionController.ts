@@ -4,7 +4,8 @@ import {
   CreateProjectionDTO,
   GenerateProjectionDTO,
   MovePaceDTO,
-  AddPaceDTO
+  AddPaceDTO,
+  UpdateGradeDTO
 } from '../../application/dtos/projections';
 import {
   CreateProjectionUseCase,
@@ -13,7 +14,9 @@ import {
   GetProjectionDetailsUseCase,
   MovePaceUseCase,
   AddPaceUseCase,
-  DeletePaceUseCase
+  DeletePaceUseCase,
+  UpdateGradeUseCase,
+  MarkUngradedUseCase
 } from '../../application/use-cases/projections';
 import { InvalidEntityError } from '../../domain/errors';
 import { validateCuid } from '../../domain/utils/validation';
@@ -26,7 +29,9 @@ export class ProjectionController {
     private readonly getProjectionDetails: GetProjectionDetailsUseCase = container.useCase.getProjectionDetailsUseCase,
     private readonly movePace: MovePaceUseCase = container.useCase.movePaceUseCase,
     private readonly addPace: AddPaceUseCase = container.useCase.addPaceUseCase,
-    private readonly deletePace: DeletePaceUseCase = container.useCase.deletePaceUseCase
+    private readonly deletePace: DeletePaceUseCase = container.useCase.deletePaceUseCase,
+    private readonly updateGrade: UpdateGradeUseCase = container.useCase.updateGradeUseCase,
+    private readonly markUngraded: MarkUngradedUseCase = container.useCase.markUngradedUseCase
   ) { }
 
   async create(req: Request, res: Response): Promise<Response> {
@@ -146,5 +151,47 @@ export class ProjectionController {
     }
 
     return res.status(204).send();
+  }
+
+  async updateGradeHandler(req: Request, res: Response): Promise<Response> {
+    const projectionId = req.params.id;
+    const paceId = req.params.paceId;
+    if (!projectionId) {
+      throw new InvalidEntityError('Projection', 'Projection ID is required');
+    }
+    if (!paceId) {
+      throw new InvalidEntityError('ProjectionPace', 'Pace ID is required');
+    }
+    validateCuid(projectionId, 'Projection');
+    validateCuid(paceId, 'ProjectionPace');
+
+    const input = UpdateGradeDTO.parse(req.body);
+
+    const result = await this.updateGrade.execute(projectionId, paceId, input);
+    if (!result.success) {
+      throw result.error;
+    }
+
+    return res.status(200).json(result.data);
+  }
+
+  async markUngradedHandler(req: Request, res: Response): Promise<Response> {
+    const projectionId = req.params.id;
+    const paceId = req.params.paceId;
+    if (!projectionId) {
+      throw new InvalidEntityError('Projection', 'Projection ID is required');
+    }
+    if (!paceId) {
+      throw new InvalidEntityError('ProjectionPace', 'Pace ID is required');
+    }
+    validateCuid(projectionId, 'Projection');
+    validateCuid(paceId, 'ProjectionPace');
+
+    const result = await this.markUngraded.execute(projectionId, paceId);
+    if (!result.success) {
+      throw result.error;
+    }
+
+    return res.status(200).json(result.data);
   }
 }

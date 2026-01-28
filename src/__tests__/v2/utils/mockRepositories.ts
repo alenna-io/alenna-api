@@ -47,6 +47,12 @@ export function createMockProjectionRepository(): IProjectionRepository {
   return {
     findActiveByStudent: vi.fn() as unknown as (studentId: string, schoolId: string, schoolYear: string) => Promise<Projection | null>,
     create: vi.fn() as unknown as (data: CreateProjectionInput, tx?: PrismaTransaction) => Promise<Projection>,
+    findManyBySchoolId: vi.fn() as unknown as (schoolId: string, schoolYear?: string, tx?: PrismaTransaction) => Promise<any>,
+    findById: vi.fn() as unknown as (id: string, tx?: PrismaTransaction) => Promise<any>,
+    movePace: vi.fn() as unknown as (projectionId: string, paceId: string, quarter: string, week: number, tx?: PrismaTransaction) => Promise<any>,
+    addPace: vi.fn() as unknown as (projectionId: string, paceCatalogId: string, quarter: string, week: number, tx?: PrismaTransaction) => Promise<any>,
+    restorePace: vi.fn() as unknown as (paceId: string, quarter: string, week: number, tx?: PrismaTransaction) => Promise<any>,
+    deletePace: vi.fn() as unknown as (projectionId: string, paceId: string, tx?: PrismaTransaction) => Promise<void>,
   };
 }
 
@@ -58,9 +64,11 @@ export function createMockProjectionPaceRepository(): IProjectionPaceRepository 
 
 export function createMockPaceCatalogRepository(): IPaceCatalogRepository {
   return {
-    findByCodeAndSubjectId: vi.fn() as unknown as (code: string, subjectId: string) => Promise<PaceCatalog | null>,
-    findByCodesAndSubjects: vi.fn() as unknown as (codes: string[], subjectIds: string[]) => Promise<Map<string, PaceCatalog>>,
-    findByCategoryAndOrderRange: vi.fn() as unknown as (categoryId: string, startPace: number, endPace: number) => Promise<Prisma.PaceCatalogGetPayload<{ include: { subject: true } }>[]>,
+    findById: vi.fn() as unknown as (id: string, tx?: PrismaTransaction) => Promise<any>,
+    findByCodeAndSubjectId: vi.fn() as unknown as (code: string, subjectId: string, tx?: PrismaTransaction) => Promise<PaceCatalog | null>,
+    findByCodesAndSubjects: vi.fn() as unknown as (codes: string[], subjectIds: string[], tx?: PrismaTransaction) => Promise<Map<string, PaceCatalog>>,
+    findByCategoryAndOrderRange: vi.fn() as unknown as (categoryId: string, startPace: number, endPace: number, tx?: PrismaTransaction) => Promise<Prisma.PaceCatalogGetPayload<{ include: { subject: true } }>[]>,
+    findByCategory: vi.fn() as unknown as (categoryName: string, tx?: PrismaTransaction) => Promise<any[]>,
   };
 }
 
