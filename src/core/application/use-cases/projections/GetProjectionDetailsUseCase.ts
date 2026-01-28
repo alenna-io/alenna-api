@@ -1,4 +1,4 @@
-import { IProjectionRepository } from '../../../domain/interfaces/repositories';
+import { IProjectionRepository, ISchoolYearRepository } from '../../../domain/interfaces/repositories';
 import { InvalidEntityError, ObjectNotFoundError, DomainError } from '../../../domain/errors';
 import { validateCuid } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
@@ -7,6 +7,7 @@ import { GetProjectionDetailsOutput } from '../../dtos/projections/GetProjection
 export class GetProjectionDetailsUseCase {
   constructor(
     private readonly projectionRepository: IProjectionRepository,
+    private readonly schoolYearRepository: ISchoolYearRepository,
   ) { }
 
   async execute(projectionId: string): Promise<Result<GetProjectionDetailsOutput, DomainError>> {
@@ -19,11 +20,15 @@ export class GetProjectionDetailsUseCase {
         return Err(new ObjectNotFoundError('Projection', `Projection with ID ${projectionId} not found`));
       }
 
+      const schoolYear = await this.schoolYearRepository.findById(projection.schoolYear);
+      const schoolYearName = schoolYear?.name || projection.schoolYear;
+
       const output: GetProjectionDetailsOutput = {
         id: projection.id,
         studentId: projection.studentId,
         schoolId: projection.schoolId,
         schoolYear: projection.schoolYear,
+        schoolYearName,
         status: projection.status,
         student: {
           id: projection.student.id,

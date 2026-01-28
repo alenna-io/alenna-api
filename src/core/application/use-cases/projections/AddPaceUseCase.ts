@@ -1,0 +1,83 @@
+import { IProjectionRepository, IPaceCatalogRepository } from '../../../domain/interfaces/repositories';
+import { InvalidEntityError, ObjectNotFoundError, ObjectAlreadyExistsError, DomainError } from '../../../domain/errors';
+import { AddPaceInput } from '../../../application/dtos/projections/AddPaceInput';
+import { validateCuid } from '../../../domain/utils/validation';
+import { Result, Ok, Err } from '../../../domain/utils/Result';
+import { Prisma } from '@prisma/client';
+
+export class AddPaceUseCase {
+  constructor(
+    private readonly projectionRepository: IProjectionRepository,
+    private readonly paceCatalogRepository: IPaceCatalogRepository,
+  ) { }
+
+  async execute(projectionId: string, input: AddPaceInput): Promise<Result<Prisma.ProjectionPaceGetPayload<{}>, DomainError>> {
+    try {
+      validateCuid(projectionId, 'Projection');
+      validateCuid(input.paceCatalogId, 'PaceCatalog');
+
+      const projection = await this.projectionRepository.findById(projectionId);
+      if (!projection) {
+        return Err(new ObjectNotFoundError('Projection', `Projection with ID ${projectionId} not found`));
+      }
+
+      if (projection.status !== 'OPEN') {
+        return Err(new InvalidEntityError('Projection', 'Cannot edit closed projection'));
+      }
+
+      const paceCatalog = await this.paceCatalogRepository.findById(input.paceCatalogId);
+      if (!paceCatalog) {
+        return Err(new ObjectNotFoundError('PaceCatalog', `Pace catalog with ID ${input.paceCatalogId} not found`));
+      }
+
+      const existingPace = projection.projectionPaces.find(
+        p => !p.deletedAt && p.paceCatalogId === input.paceCatalogId
+      );
+      if (existingPace) {
+        return Err(new ObjectAlreadyExistsError('ProjectionPace', 'This pace is already in the projection'));
+      }
+
+      const subjectId = paceCatalog.subject.id;
+      const newPaceOrderIndex = paceCatalog.orderIndex;
+
+      const allPacesInSubject = projection.projectionPaces.filter(
+        p => !p.deletedAt && p.paceCatalog.subject.id === subjectId
+      );
+
+      const normalizeQuarter = (q: string) => q.startsWith('Q') ? q : `Q${q}`;
+      const normalizedTargetQuarter = normalizeQuarter(input.quarter);
+
+      const targetWeekPace = allPacesInSubject.find(
+        p => normalizeQuarter(p.quarter) === normalizedTargetQuarter && p.week === input.week
+      );
+
+      if (targetWeekPace) {
+        const targetPaceOrderIndex = targetWeekPace.paceCatalog.orderIndex;
+        if (targetPaceOrderIndex > newPaceOrderIndex) {
+          return Err(new InvalidEntityError('ProjectionPace', `Cannot add pace: cannot place pace with orderIndex ${newPaceOrderIndex} at position that already has pace with orderIndex ${targetPaceOrderIndex}`));
+        }
+      }
+
+      const pacesBeforeTarget = allPacesInSubject.filter(p => {
+        const normalizedPaceQuarter = normalizeQuarter(p.quarter);
+        if (normalizedPaceQuarter < normalizedTargetQuarter) return true;
+        if (normalizedPaceQuarter === normalizedTargetQuarter && p.week < input.week) return true;
+        return false;
+      });
+
+      for (const paceBefore of pacesBeforeTarget) {
+        if (paceBefore.paceCatalog.orderIndex > newPaceOrderIndex) {
+          return Err(new InvalidEntityError('ProjectionPace', `Cannot add pace: cannot place pace with orderIndex ${newPaceOrderIndex} after pace with orderIndex ${paceBefore.paceCatalog.orderIndex} (at ${paceBefore.quarter} week ${paceBefore.week})`));
+        }
+      }
+
+      const addedPace = await this.projectionRepository.addPace(projectionId, input.paceCatalogId, input.quarter, input.week);
+      return Ok(addedPace);
+    } catch (error) {
+      if (error instanceof InvalidEntityError || error instanceof ObjectNotFoundError || error instanceof ObjectAlreadyExistsError) {
+        return Err(error as DomainError);
+      }
+      throw error;
+    }
+  }
+}

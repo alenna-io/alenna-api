@@ -4,6 +4,22 @@ import { Prisma } from '@prisma/client';
 import { IPaceCatalogRepository } from '../../domain/interfaces/repositories/IPaceCatalogRepository';
 
 export class PrismaPaceCatalogRepository implements IPaceCatalogRepository {
+  async findById(
+    id: string,
+    tx: PrismaTransaction = prisma
+  ): Promise<Prisma.PaceCatalogGetPayload<{ include: { subject: { include: { category: true } } } }> | null> {
+    return await tx.paceCatalog.findUnique({
+      where: { id },
+      include: {
+        subject: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    });
+  }
+
   async findByCodeAndSubjectId(
     code: string,
     subjectId: string,
@@ -59,6 +75,32 @@ export class PrismaPaceCatalogRepository implements IPaceCatalogRepository {
         orderIndex: { gte: start, lte: end },
       },
       include: { subject: true },
+    });
+  }
+
+  async findByCategory(
+    categoryName: string,
+    tx: PrismaTransaction = prisma
+  ): Promise<Prisma.PaceCatalogGetPayload<{ include: { subject: { include: { category: true; level: true } } } }>[]> {
+    return await tx.paceCatalog.findMany({
+      where: {
+        subject: {
+          category: {
+            name: categoryName,
+          },
+        },
+      },
+      include: {
+        subject: {
+          include: {
+            category: true,
+            level: true,
+          },
+        },
+      },
+      orderBy: {
+        orderIndex: 'asc',
+      },
     });
   }
 }

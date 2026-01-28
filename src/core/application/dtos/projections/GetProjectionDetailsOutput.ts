@@ -50,6 +50,7 @@ export const GetProjectionDetailsOutputSchema = z.object({
   studentId: z.string(),
   schoolId: z.string(),
   schoolYear: z.string(),
+  schoolYearName: z.string(),
   status: z.enum(['OPEN', 'CLOSED']),
   student: z.object({
     id: z.string(),

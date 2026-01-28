@@ -8,4 +8,8 @@ export interface IProjectionRepository {
   create(data: CreateProjectionInput, tx?: PrismaTransaction): Promise<Prisma.ProjectionGetPayload<{}>>;
   findManyBySchoolId(schoolId: string, schoolYear?: string, tx?: PrismaTransaction): Promise<ProjectionWithStudent[]>;
   findById(id: string, tx?: PrismaTransaction): Promise<ProjectionWithDetails | null>;
+  movePace(projectionId: string, paceId: string, quarter: string, week: number, tx?: PrismaTransaction): Promise<Prisma.ProjectionPaceGetPayload<{}>>;
+  addPace(projectionId: string, paceCatalogId: string, quarter: string, week: number, tx?: PrismaTransaction): Promise<Prisma.ProjectionPaceGetPayload<{}>>;
+  restorePace(paceId: string, quarter: string, week: number, tx?: PrismaTransaction): Promise<Prisma.ProjectionPaceGetPayload<{}>>;
+  deletePace(projectionId: string, paceId: string, tx?: PrismaTransaction): Promise<void>;
 } 

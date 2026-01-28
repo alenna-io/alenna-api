@@ -86,6 +86,9 @@ export class PrismaProjectionRepository implements IProjectionRepository {
           },
         },
         projectionPaces: {
+          where: {
+            deletedAt: null,
+          },
           include: {
             paceCatalog: {
               include: {
@@ -119,5 +122,98 @@ export class PrismaProjectionRepository implements IProjectionRepository {
         },
       },
     }) as ProjectionWithDetails | null;
+  }
+
+  async movePace(
+    projectionId: string,
+    paceId: string,
+    quarter: string,
+    week: number,
+    tx: PrismaTransaction = prisma
+  ): Promise<Prisma.ProjectionPaceGetPayload<{}>> {
+    return await tx.projectionPace.update({
+      where: {
+        id: paceId,
+        projectionId,
+        deletedAt: null,
+      },
+      data: {
+        quarter,
+        week,
+      },
+    });
+  }
+
+  async addPace(
+    projectionId: string,
+    paceCatalogId: string,
+    quarter: string,
+    week: number,
+    tx: PrismaTransaction = prisma
+  ): Promise<Prisma.ProjectionPaceGetPayload<{}>> {
+    const softDeletedPace = await tx.projectionPace.findFirst({
+      where: {
+        projectionId,
+        paceCatalogId,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (softDeletedPace) {
+      return await tx.projectionPace.update({
+        where: {
+          id: softDeletedPace.id,
+        },
+        data: {
+          deletedAt: null,
+          quarter,
+          week,
+        },
+      });
+    }
+
+    return await tx.projectionPace.create({
+      data: {
+        projectionId,
+        paceCatalogId,
+        quarter,
+        week,
+      },
+    });
+  }
+
+  async restorePace(
+    paceId: string,
+    quarter: string,
+    week: number,
+    tx: PrismaTransaction = prisma
+  ): Promise<Prisma.ProjectionPaceGetPayload<{}>> {
+    return await tx.projectionPace.update({
+      where: {
+        id: paceId,
+      },
+      data: {
+        deletedAt: null,
+        quarter,
+        week,
+      },
+    });
+  }
+
+  async deletePace(
+    projectionId: string,
+    paceId: string,
+    tx: PrismaTransaction = prisma
+  ): Promise<void> {
+    await tx.projectionPace.update({
+      where: {
+        id: paceId,
+        projectionId,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
   }
 }

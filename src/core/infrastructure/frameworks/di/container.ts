@@ -15,7 +15,10 @@ import {
   CreateProjectionUseCase,
   GenerateProjectionUseCase,
   GetProjectionListUseCase,
-  GetProjectionDetailsUseCase
+  GetProjectionDetailsUseCase,
+  MovePaceUseCase,
+  AddPaceUseCase,
+  DeletePaceUseCase
 } from '../../../application/use-cases/projections';
 // Category Use Cases
 import { GetCategoriesWithSubjectsUseCase } from '../../../application/use-cases/categories';
@@ -64,6 +67,20 @@ const getProjectionListUseCase = new GetProjectionListUseCase(
 );
 
 const getProjectionDetailsUseCase = new GetProjectionDetailsUseCase(
+  projectionRepository,
+  schoolYearRepository
+);
+
+const movePaceUseCase = new MovePaceUseCase(
+  projectionRepository
+);
+
+const addPaceUseCase = new AddPaceUseCase(
+  projectionRepository,
+  paceCatalogRepository
+);
+
+const deletePaceUseCase = new DeletePaceUseCase(
   projectionRepository
 );
 
@@ -109,6 +126,9 @@ export const container = {
     generateProjectionUseCase,
     getProjectionListUseCase,
     getProjectionDetailsUseCase,
+    movePaceUseCase,
+    addPaceUseCase,
+    deletePaceUseCase,
     // Category Use Cases
     getCategoriesWithSubjectsUseCase,
     // School Use Cases

@@ -10,7 +10,9 @@ import {
 } from '../middleware';
 import {
   CreateProjectionDTO,
-  GenerateProjectionDTO
+  GenerateProjectionDTO,
+  MovePaceDTO,
+  AddPaceDTO
 } from '../../../../application/dtos/projections';
 import { asyncHandler } from '../../../../../utils';
 
@@ -19,7 +21,10 @@ const projectionController = new ProjectionController(
   container.useCase.createProjectionUseCase,
   container.useCase.generateProjectionUseCase,
   container.useCase.getProjectionListUseCase,
-  container.useCase.getProjectionDetailsUseCase
+  container.useCase.getProjectionDetailsUseCase,
+  container.useCase.movePaceUseCase,
+  container.useCase.addPaceUseCase,
+  container.useCase.deletePaceUseCase
 );
 
 // Apply Clerk middleware and authentication
@@ -55,6 +60,23 @@ router.post(
   '/generate',
   validateBody(GenerateProjectionDTO),
   asyncHandler(projectionController.generate.bind(projectionController))
+);
+
+router.patch(
+  '/:id/paces/:paceId/move',
+  validateBody(MovePaceDTO),
+  asyncHandler(projectionController.movePaceHandler.bind(projectionController))
+);
+
+router.post(
+  '/:id/paces',
+  validateBody(AddPaceDTO),
+  asyncHandler(projectionController.addPaceHandler.bind(projectionController))
+);
+
+router.delete(
+  '/:id/paces/:paceId',
+  asyncHandler(projectionController.deletePaceHandler.bind(projectionController))
 );
 
 export default router;
