@@ -83,9 +83,10 @@ describe('DeletePaceUseCase', () => {
       paceCatalog: {
         id: paceCatalogId,
         code: `100${orderIndex}`,
+        name: `Pace ${orderIndex}`,
         orderIndex,
         subjectId,
-        levelId: 'clh5555555555555555555555',
+        categoryId: 'clh6666666666666666666666',
         createdAt: new Date(),
         updatedAt: new Date(),
         subject: {
