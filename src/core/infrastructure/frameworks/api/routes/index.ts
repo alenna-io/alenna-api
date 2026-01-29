@@ -7,6 +7,7 @@ import subjectRoutes from './subjects.routes';
 import paceCatalogRoutes from './pace-catalog.routes';
 import dailyGoalsRoutes from './daily-goals.routes';
 import monthlyAssignmentsRoutes from './monthly-assignments.routes';
+import authRoutes from './auth.routes';
 
 const router: ExpressRouter = Router();
 
@@ -23,6 +24,7 @@ router.get('/v2/health', (_req, res) => {
 // API v1 routes
 const v1Router: ExpressRouter = Router();
 
+v1Router.use('/auth', authRoutes);
 v1Router.use('/categories', categoryRoutes);
 v1Router.use('/projections', projectionRoutes);
 v1Router.use('/schools', schoolRoutes);

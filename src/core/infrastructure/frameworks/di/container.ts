@@ -9,6 +9,7 @@ import {
   PrismaCategoryRepository,
   PrismaDailyGoalRepository,
   PrismaMonthlyAssignmentRepository,
+  PrismaUserRepository,
 } from '../../repositories';
 // Domain Services
 import { AlennaProjectionAlgorithm } from '../../../domain/algorithms/alenna-projection.algorithm';
@@ -39,6 +40,8 @@ import { GetSchoolWithCurrentYearByUserIdUseCase } from '../../../application/us
 import { GetEnrolledWithoutOpenProjectionUseCase } from '../../../application/use-cases/students';
 // Subject Use Cases
 import { GetSubjectAndNextLevelsWithPacesUseCase } from '../../../application/use-cases/subjects';
+// Auth Use Cases
+import { SetupPasswordUseCase, GetUserInfoUseCase } from '../../../application/use-cases/auth';
 // Monthly Goals Use Cases
 import {
   CreateMonthlyAssignmentTemplateUseCase,
@@ -62,6 +65,7 @@ const subjectRepository = new PrismaSubjectRepository();
 const categoryRepository = new PrismaCategoryRepository();
 const dailyGoalRepository = new PrismaDailyGoalRepository();
 const monthlyAssignmentRepository = new PrismaMonthlyAssignmentRepository();
+const userRepository = new PrismaUserRepository();
 
 // Domain Services
 const alennaProjectionGenerator = new AlennaProjectionAlgorithm();
@@ -193,6 +197,15 @@ const markMonthlyAssignmentUngradedUseCase = new MarkMonthlyAssignmentUngradedUs
   projectionRepository
 );
 
+// Auth Use Cases
+const setupPasswordUseCase = new SetupPasswordUseCase(
+  userRepository
+);
+
+const getUserInfoUseCase = new GetUserInfoUseCase(
+  userRepository
+);
+
 // Container
 export const container = {
   repository: {
@@ -206,6 +219,7 @@ export const container = {
     categoryRepository,
     dailyGoalRepository,
     monthlyAssignmentRepository,
+    userRepository,
   },
   service: {
     projectionGenerator: alennaProjectionGenerator,
@@ -242,5 +256,8 @@ export const container = {
     getProjectionMonthlyAssignmentsUseCase,
     updateMonthlyAssignmentGradeUseCase,
     markMonthlyAssignmentUngradedUseCase,
+    // Auth Use Cases
+    setupPasswordUseCase,
+    getUserInfoUseCase,
   },
 };

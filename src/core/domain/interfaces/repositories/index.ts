@@ -8,3 +8,4 @@ export * from './ISchoolRepository';
 export * from './ISchoolYearRepository';
 export * from './IStudentRepository';
 export * from './ISubjectRepository';
+export * from './IUserRepository';

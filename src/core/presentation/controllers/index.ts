@@ -1,3 +1,4 @@
+export * from './AuthController';
 export * from './CategoryController';
 export * from './ProjectionController';
 export * from './DailyGoalController';
