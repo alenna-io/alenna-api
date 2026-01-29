@@ -175,7 +175,7 @@ describe('CreateProjectionUseCase', () => {
 
   it('returns Err when student belongs to different school (tenant isolation)', async () => {
     const studentId = 'clh1234567890abcdefghijkl';
-    const schoolId = 'clh1111111111111111111111';
+    const _schoolId = 'clh1111111111111111111111';
     const differentSchoolId = 'clh9999999999999999999999';
     const schoolYear = 'clh2222222222222222222222';
 

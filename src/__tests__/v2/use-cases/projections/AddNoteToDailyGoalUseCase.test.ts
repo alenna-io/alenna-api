@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AddNoteToDailyGoalUseCase } from '../../../../core/application/use-cases/daily-goals/AddNoteToDailyGoalUseCase';
 import { InvalidEntityError, ObjectNotFoundError } from '../../../../core/domain/errors';
 import { createMockDailyGoalRepository } from '../../utils/mockRepositories';
-import { Prisma } from '@prisma/client';
 
 describe('AddNoteToDailyGoalUseCase', () => {
   let dailyGoalRepo: ReturnType<typeof createMockDailyGoalRepository>;

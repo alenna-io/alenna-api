@@ -3,25 +3,7 @@ import { GetDailyGoalsUseCase } from '../../../../core/application/use-cases/dai
 import { ObjectNotFoundError } from '../../../../core/domain/errors';
 import { createMockProjectionRepository, createMockDailyGoalRepository } from '../../utils/mockRepositories';
 import { ProjectionStatus } from '@prisma/client';
-import { Prisma } from '@prisma/client';
-
-type ProjectionWithDetails = Prisma.ProjectionGetPayload<{
-  include: {
-    projectionPaces: {
-      include: {
-        paceCatalog: {
-          include: {
-            subject: {
-              include: {
-                category: true;
-              };
-            };
-          };
-        };
-      };
-    };
-  };
-}>;
+import { ProjectionWithDetails } from '../../../../core/infrastructure/repositories/types/projections.types';
 
 describe('GetDailyGoalsUseCase', () => {
   let projectionRepo: ReturnType<typeof createMockProjectionRepository>;
@@ -35,7 +17,7 @@ describe('GetDailyGoalsUseCase', () => {
   });
 
   const createMockProjection = (overrides?: Partial<ProjectionWithDetails>): ProjectionWithDetails => {
-    return {
+    const base: ProjectionWithDetails = {
       id: 'clh1111111111111111111111',
       studentId: 'clh2222222222222222222222',
       schoolId: 'clh3333333333333333333333',
@@ -45,8 +27,37 @@ describe('GetDailyGoalsUseCase', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       projectionPaces: [],
-      ...overrides,
-    } as ProjectionWithDetails;
+      student: {
+        id: 'clh2222222222222222222222',
+        userId: 'clh7777777777777777777777',
+        schoolId: 'clh3333333333333333333333',
+        deletedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        user: {
+          id: 'clh7777777777777777777777',
+          clerkId: null,
+          email: 'test@example.com',
+          firstName: 'Test',
+          lastName: 'User',
+          phone: null,
+          streetAddress: null,
+          city: null,
+          state: null,
+          country: null,
+          zipCode: null,
+          schoolId: 'clh3333333333333333333333',
+          status: 'ACTIVE',
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          language: 'es',
+          createdPassword: false,
+        },
+      },
+      dailyGoals: [],
+    };
+    return { ...base, ...overrides } as ProjectionWithDetails;
   };
 
   const createMockDailyGoal = (
