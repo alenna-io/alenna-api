@@ -8,7 +8,7 @@ import {
   PrismaSubjectRepository,
   PrismaCategoryRepository,
   PrismaDailyGoalRepository,
-  PrismaMonthlyGoalRepository,
+  PrismaMonthlyAssignmentRepository,
 } from '../../repositories';
 // Domain Services
 import { AlennaProjectionAlgorithm } from '../../../domain/algorithms/alenna-projection.algorithm';
@@ -41,15 +41,15 @@ import { GetEnrolledWithoutOpenProjectionUseCase } from '../../../application/us
 import { GetSubjectAndNextLevelsWithPacesUseCase } from '../../../application/use-cases/subjects';
 // Monthly Goals Use Cases
 import {
-  CreateMonthlyGoalTemplateUseCase,
-  GetMonthlyGoalsUseCase,
-  UpdateMonthlyGoalTemplateUseCase,
-  DeleteMonthlyGoalTemplateUseCase,
+  CreateMonthlyAssignmentTemplateUseCase,
+  GetMonthlyAssignmentsUseCase,
+  UpdateMonthlyAssignmentTemplateUseCase,
+  DeleteMonthlyAssignmentTemplateUseCase,
   CreateQuarterPercentageUseCase,
-  GetProjectionMonthlyGoalsUseCase,
-  UpdateMonthlyGoalGradeUseCase,
-  MarkMonthlyGoalUngradedUseCase,
-} from '../../../application/use-cases/monthly-goals';
+  GetProjectionMonthlyAssignmentsUseCase,
+  UpdateMonthlyAssignmentGradeUseCase,
+  MarkMonthlyAssignmentUngradedUseCase,
+} from '../../../application/use-cases/monthly-assignments';
 
 // Repositories
 const projectionRepository = new PrismaProjectionRepository();
@@ -61,7 +61,7 @@ const projectionPaceRepository = new PrismaProjectionPaceRepository();
 const subjectRepository = new PrismaSubjectRepository();
 const categoryRepository = new PrismaCategoryRepository();
 const dailyGoalRepository = new PrismaDailyGoalRepository();
-const monthlyGoalRepository = new PrismaMonthlyGoalRepository();
+const monthlyAssignmentRepository = new PrismaMonthlyAssignmentRepository();
 
 // Domain Services
 const alennaProjectionGenerator = new AlennaProjectionAlgorithm();
@@ -156,40 +156,40 @@ const getSubjectAndNextLevelsWithPacesUseCase = new GetSubjectAndNextLevelsWithP
 );
 
 // Monthly Goals Use Cases
-const createMonthlyGoalTemplateUseCase = new CreateMonthlyGoalTemplateUseCase(
-  monthlyGoalRepository,
+const createMonthlyAssignmentTemplateUseCase = new CreateMonthlyAssignmentTemplateUseCase(
+  monthlyAssignmentRepository,
   schoolYearRepository
 );
 
-const getMonthlyGoalsUseCase = new GetMonthlyGoalsUseCase(
-  monthlyGoalRepository
+const getMonthlyAssignmentsUseCase = new GetMonthlyAssignmentsUseCase(
+  monthlyAssignmentRepository
 );
 
-const updateMonthlyGoalTemplateUseCase = new UpdateMonthlyGoalTemplateUseCase(
-  monthlyGoalRepository
+const updateMonthlyAssignmentTemplateUseCase = new UpdateMonthlyAssignmentTemplateUseCase(
+  monthlyAssignmentRepository
 );
 
-const deleteMonthlyGoalTemplateUseCase = new DeleteMonthlyGoalTemplateUseCase(
-  monthlyGoalRepository
+const deleteMonthlyAssignmentTemplateUseCase = new DeleteMonthlyAssignmentTemplateUseCase(
+  monthlyAssignmentRepository
 );
 
 const createQuarterPercentageUseCase = new CreateQuarterPercentageUseCase(
-  monthlyGoalRepository,
+  monthlyAssignmentRepository,
   schoolYearRepository
 );
 
-const getProjectionMonthlyGoalsUseCase = new GetProjectionMonthlyGoalsUseCase(
-  monthlyGoalRepository,
+const getProjectionMonthlyAssignmentsUseCase = new GetProjectionMonthlyAssignmentsUseCase(
+  monthlyAssignmentRepository,
   projectionRepository
 );
 
-const updateMonthlyGoalGradeUseCase = new UpdateMonthlyGoalGradeUseCase(
-  monthlyGoalRepository,
+const updateMonthlyAssignmentGradeUseCase = new UpdateMonthlyAssignmentGradeUseCase(
+  monthlyAssignmentRepository,
   projectionRepository
 );
 
-const markMonthlyGoalUngradedUseCase = new MarkMonthlyGoalUngradedUseCase(
-  monthlyGoalRepository,
+const markMonthlyAssignmentUngradedUseCase = new MarkMonthlyAssignmentUngradedUseCase(
+  monthlyAssignmentRepository,
   projectionRepository
 );
 
@@ -205,7 +205,7 @@ export const container = {
     subjectRepository,
     categoryRepository,
     dailyGoalRepository,
-    monthlyGoalRepository,
+    monthlyAssignmentRepository,
   },
   service: {
     projectionGenerator: alennaProjectionGenerator,
@@ -234,13 +234,13 @@ export const container = {
     // Subject Use Cases
     getSubjectAndNextLevelsWithPacesUseCase,
     // Monthly Goals Use Cases
-    createMonthlyGoalTemplateUseCase,
-    getMonthlyGoalsUseCase,
-    updateMonthlyGoalTemplateUseCase,
-    deleteMonthlyGoalTemplateUseCase,
+    createMonthlyAssignmentTemplateUseCase,
+    getMonthlyAssignmentsUseCase,
+    updateMonthlyAssignmentTemplateUseCase,
+    deleteMonthlyAssignmentTemplateUseCase,
     createQuarterPercentageUseCase,
-    getProjectionMonthlyGoalsUseCase,
-    updateMonthlyGoalGradeUseCase,
-    markMonthlyGoalUngradedUseCase,
+    getProjectionMonthlyAssignmentsUseCase,
+    updateMonthlyAssignmentGradeUseCase,
+    markMonthlyAssignmentUngradedUseCase,
   },
 };

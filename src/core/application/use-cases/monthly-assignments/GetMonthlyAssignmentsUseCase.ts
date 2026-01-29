@@ -1,21 +1,21 @@
-import { IMonthlyGoalRepository } from '../../../domain/interfaces/repositories';
+import { IMonthlyAssignmentRepository } from '../../../domain/interfaces/repositories';
 import { DomainError, InvalidEntityError } from '../../../domain/errors';
-import { GetMonthlyGoalsOutput } from '../../dtos/monthly-goals';
+import { GetMonthlyAssignmentsOutput } from '../../dtos/monthly-assignments';
 import { validateCuid } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
 
-export class GetMonthlyGoalsUseCase {
+export class GetMonthlyAssignmentsUseCase {
   constructor(
-    private readonly monthlyGoalRepository: IMonthlyGoalRepository,
+    private readonly monthlyAssignmentRepository: IMonthlyAssignmentRepository,
   ) { }
 
-  async execute(schoolYearId: string): Promise<Result<GetMonthlyGoalsOutput, DomainError>> {
+  async execute(schoolYearId: string): Promise<Result<GetMonthlyAssignmentsOutput, DomainError>> {
     try {
       validateCuid(schoolYearId, 'SchoolYear');
 
       const [templates, percentages] = await Promise.all([
-        this.monthlyGoalRepository.findTemplatesBySchoolYear(schoolYearId),
-        this.monthlyGoalRepository.findPercentagesBySchoolYear(schoolYearId),
+        this.monthlyAssignmentRepository.findTemplatesBySchoolYear(schoolYearId),
+        this.monthlyAssignmentRepository.findPercentagesBySchoolYear(schoolYearId),
       ]);
 
       return Ok({ templates, percentages });

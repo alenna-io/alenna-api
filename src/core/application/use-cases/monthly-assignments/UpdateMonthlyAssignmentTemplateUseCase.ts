@@ -1,25 +1,25 @@
-import { IMonthlyGoalRepository } from '../../../domain/interfaces/repositories';
+import { IMonthlyAssignmentRepository } from '../../../domain/interfaces/repositories';
 import { InvalidEntityError, ObjectNotFoundError, DomainError } from '../../../domain/errors';
-import { UpdateMonthlyGoalTemplateInput } from '../../dtos/monthly-goals';
+import { UpdateMonthlyAssignmentTemplateInput } from '../../dtos/monthly-assignments';
 import { validateCuid } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
 import { Prisma } from '@prisma/client';
 
-export class UpdateMonthlyGoalTemplateUseCase {
+export class UpdateMonthlyAssignmentTemplateUseCase {
   constructor(
-    private readonly monthlyGoalRepository: IMonthlyGoalRepository,
+    private readonly monthlyAssignmentRepository: IMonthlyAssignmentRepository,
   ) { }
 
   async execute(
     templateId: string,
     schoolId: string,
-    input: UpdateMonthlyGoalTemplateInput
-  ): Promise<Result<Prisma.MonthlyGoalTemplateGetPayload<{}>, DomainError>> {
+    input: UpdateMonthlyAssignmentTemplateInput
+  ): Promise<Result<Prisma.MonthlyAssignmentTemplateGetPayload<{}>, DomainError>> {
     try {
-      validateCuid(templateId, 'MonthlyGoalTemplate');
+      validateCuid(templateId, 'MonthlyAssignmentTemplate');
       validateCuid(schoolId, 'School');
 
-      const template = await this.monthlyGoalRepository.updateTemplate(
+      const template = await this.monthlyAssignmentRepository.updateTemplate(
         templateId,
         schoolId,
         { name: input.name }

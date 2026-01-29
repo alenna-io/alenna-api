@@ -1,13 +1,13 @@
-import { IMonthlyGoalRepository, ISchoolYearRepository } from '../../../domain/interfaces/repositories';
+import { IMonthlyAssignmentRepository, ISchoolYearRepository } from '../../../domain/interfaces/repositories';
 import { InvalidEntityError, ObjectNotFoundError, DomainError } from '../../../domain/errors';
-import { CreateQuarterPercentageInput } from '../../dtos/monthly-goals';
+import { CreateQuarterPercentageInput } from '../../dtos/monthly-assignments';
 import { validateCuid } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
 import { Prisma } from '@prisma/client';
 
 export class CreateQuarterPercentageUseCase {
   constructor(
-    private readonly monthlyGoalRepository: IMonthlyGoalRepository,
+    private readonly monthlyAssignmentRepository: IMonthlyAssignmentRepository,
     private readonly schoolYearRepository: ISchoolYearRepository,
   ) { }
 
@@ -29,7 +29,7 @@ export class CreateQuarterPercentageUseCase {
         return Err(new InvalidEntityError('SchoolYear', 'School year is not active'));
       }
 
-      const percentage = await this.monthlyGoalRepository.createPercentage(
+      const percentage = await this.monthlyAssignmentRepository.createPercentage(
         schoolYearId,
         schoolId,
         { quarter: input.quarter, percentage: input.percentage }

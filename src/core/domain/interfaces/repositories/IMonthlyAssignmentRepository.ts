@@ -1,31 +1,31 @@
 import { PrismaTransaction } from '../../../infrastructure/database/PrismaTransaction';
 import { Prisma } from '@prisma/client';
 import type {
-  CreateMonthlyGoalTemplateInput,
-  UpdateMonthlyGoalTemplateInput,
+  CreateMonthlyAssignmentTemplateInput,
+  UpdateMonthlyAssignmentTemplateInput,
   CreateQuarterPercentageInput,
   UpdateQuarterPercentageInput,
-} from '../../../application/dtos/monthly-goals';
+} from '../../../application/dtos/monthly-assignments';
 
-export interface IMonthlyGoalRepository {
+export interface IMonthlyAssignmentRepository {
   createTemplate(
     schoolYearId: string,
     schoolId: string,
-    input: CreateMonthlyGoalTemplateInput,
+    input: CreateMonthlyAssignmentTemplateInput,
     tx?: PrismaTransaction
-  ): Promise<Prisma.MonthlyGoalTemplateGetPayload<{}>>;
+  ): Promise<Prisma.MonthlyAssignmentTemplateGetPayload<{}>>;
 
   findTemplatesBySchoolYear(
     schoolYearId: string,
     tx?: PrismaTransaction
-  ): Promise<Prisma.MonthlyGoalTemplateGetPayload<{}>[]>;
+  ): Promise<Prisma.MonthlyAssignmentTemplateGetPayload<{}>[]>;
 
   updateTemplate(
     templateId: string,
     schoolId: string,
-    input: UpdateMonthlyGoalTemplateInput,
+    input: UpdateMonthlyAssignmentTemplateInput,
     tx?: PrismaTransaction
-  ): Promise<Prisma.MonthlyGoalTemplateGetPayload<{}>>;
+  ): Promise<Prisma.MonthlyAssignmentTemplateGetPayload<{}>>;
 
   deleteTemplate(
     templateId: string,
@@ -55,23 +55,23 @@ export interface IMonthlyGoalRepository {
   findByProjection(
     projectionId: string,
     tx?: PrismaTransaction
-  ): Promise<Prisma.ProjectionMonthlyGoalGetPayload<{
+  ): Promise<Prisma.ProjectionMonthlyAssignmentGetPayload<{
     include: {
-      monthlyGoalTemplate: true;
+      monthlyAssignmentTemplate: true;
       gradeHistory: true;
     };
   }>[]>;
 
   updateGrade(
     projectionId: string,
-    monthlyGoalId: string,
+    monthlyAssignmentId: string,
     grade: number,
     tx?: PrismaTransaction
-  ): Promise<Prisma.ProjectionMonthlyGoalGetPayload<{}>>;
+  ): Promise<Prisma.ProjectionMonthlyAssignmentGetPayload<{}>>;
 
   markUngraded(
     projectionId: string,
-    monthlyGoalId: string,
+    monthlyAssignmentId: string,
     tx?: PrismaTransaction
-  ): Promise<Prisma.ProjectionMonthlyGoalGetPayload<{}>>;
+  ): Promise<Prisma.ProjectionMonthlyAssignmentGetPayload<{}>>;
 }

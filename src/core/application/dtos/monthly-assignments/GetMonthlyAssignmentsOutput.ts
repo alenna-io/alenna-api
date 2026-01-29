@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 
-export type GetMonthlyGoalsOutput = {
-  templates: Prisma.MonthlyGoalTemplateGetPayload<{}>[];
+export type GetMonthlyAssignmentsOutput = {
+  templates: Prisma.MonthlyAssignmentTemplateGetPayload<{}>[];
   percentages: Prisma.QuarterGradePercentageGetPayload<{}>[];
 };

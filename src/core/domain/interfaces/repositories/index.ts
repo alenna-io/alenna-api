@@ -1,6 +1,6 @@
 export * from './ICategoryRepository';
 export * from './IDailyGoalRepository';
-export * from './IMonthlyGoalRepository';
+export * from './IMonthlyAssignmentRepository';
 export * from './IPaceCatalogRepository';
 export * from './IProjectionRepository';
 export * from './IProjectionPacerepository';

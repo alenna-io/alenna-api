@@ -1,21 +1,21 @@
-import { IMonthlyGoalRepository, ISchoolYearRepository } from '../../../domain/interfaces/repositories';
+import { IMonthlyAssignmentRepository, ISchoolYearRepository } from '../../../domain/interfaces/repositories';
 import { InvalidEntityError, ObjectNotFoundError, DomainError } from '../../../domain/errors';
-import { CreateMonthlyGoalTemplateInput } from '../../dtos/monthly-goals';
+import { CreateMonthlyAssignmentTemplateInput } from '../../dtos/monthly-assignments';
 import { validateCuid } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
 import { Prisma } from '@prisma/client';
 
-export class CreateMonthlyGoalTemplateUseCase {
+export class CreateMonthlyAssignmentTemplateUseCase {
   constructor(
-    private readonly monthlyGoalRepository: IMonthlyGoalRepository,
+    private readonly monthlyAssignmentRepository: IMonthlyAssignmentRepository,
     private readonly schoolYearRepository: ISchoolYearRepository,
   ) { }
 
   async execute(
     schoolYearId: string,
     schoolId: string,
-    input: CreateMonthlyGoalTemplateInput
-  ): Promise<Result<Prisma.MonthlyGoalTemplateGetPayload<{}>, DomainError>> {
+    input: CreateMonthlyAssignmentTemplateInput
+  ): Promise<Result<Prisma.MonthlyAssignmentTemplateGetPayload<{}>, DomainError>> {
     try {
       validateCuid(schoolYearId, 'SchoolYear');
       validateCuid(schoolId, 'School');
@@ -29,7 +29,7 @@ export class CreateMonthlyGoalTemplateUseCase {
         return Err(new InvalidEntityError('SchoolYear', 'School year is not active'));
       }
 
-      const template = await this.monthlyGoalRepository.createTemplate(
+      const template = await this.monthlyAssignmentRepository.createTemplate(
         schoolYearId,
         schoolId,
         { name: input.name, quarter: input.quarter }

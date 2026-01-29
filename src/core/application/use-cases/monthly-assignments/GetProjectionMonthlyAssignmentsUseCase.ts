@@ -1,19 +1,19 @@
-import { IMonthlyGoalRepository, IProjectionRepository } from '../../../domain/interfaces/repositories';
+import { IMonthlyAssignmentRepository, IProjectionRepository } from '../../../domain/interfaces/repositories';
 import { InvalidEntityError, ObjectNotFoundError, DomainError } from '../../../domain/errors';
-import { GetProjectionMonthlyGoalsOutput } from '../../dtos/monthly-goals';
+import { GetProjectionMonthlyAssignmentsOutput } from '../../dtos/monthly-assignments';
 import { validateCuid } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
 
-export class GetProjectionMonthlyGoalsUseCase {
+export class GetProjectionMonthlyAssignmentsUseCase {
   constructor(
-    private readonly monthlyGoalRepository: IMonthlyGoalRepository,
+    private readonly monthlyAssignmentRepository: IMonthlyAssignmentRepository,
     private readonly projectionRepository: IProjectionRepository,
   ) { }
 
   async execute(
     projectionId: string,
     schoolId: string
-  ): Promise<Result<GetProjectionMonthlyGoalsOutput, DomainError>> {
+  ): Promise<Result<GetProjectionMonthlyAssignmentsOutput, DomainError>> {
     try {
       validateCuid(projectionId, 'Projection');
       validateCuid(schoolId, 'School');
@@ -23,8 +23,8 @@ export class GetProjectionMonthlyGoalsUseCase {
         return Err(new ObjectNotFoundError('Projection', 'Projection not found'));
       }
 
-      const monthlyGoals = await this.monthlyGoalRepository.findByProjection(projectionId);
-      return Ok(monthlyGoals);
+      const monthlyAssignments = await this.monthlyAssignmentRepository.findByProjection(projectionId);
+      return Ok(monthlyAssignments);
     } catch (error) {
       if (error instanceof InvalidEntityError || error instanceof ObjectNotFoundError) {
         return Err(error as DomainError);

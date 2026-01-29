@@ -6,7 +6,7 @@ import studentRoutes from './students.routes';
 import subjectRoutes from './subjects.routes';
 import paceCatalogRoutes from './pace-catalog.routes';
 import dailyGoalsRoutes from './daily-goals.routes';
-import monthlyGoalsRoutes from './monthly-goals.routes';
+import monthlyAssignmentsRoutes from './monthly-assignments.routes';
 
 const router: ExpressRouter = Router();
 
@@ -30,7 +30,7 @@ v1Router.use('/students', studentRoutes);
 v1Router.use('/subjects', subjectRoutes);
 v1Router.use('/pace-catalog', paceCatalogRoutes);
 v1Router.use('/daily-goals', dailyGoalsRoutes);
-v1Router.use('/monthly-goals', monthlyGoalsRoutes);
+v1Router.use('/monthly-assignments', monthlyAssignmentsRoutes);
 
 router.use('/v1', v1Router);
 

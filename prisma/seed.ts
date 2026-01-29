@@ -59,7 +59,7 @@ async function main() {
 
   const adminUser = await prisma.user.create({
     data: {
-      id: clerkUserId, // Use Clerk user ID as the primary key
+      id: "2b108fa4-0c11-43e1-9162-471024f19bdf", // Use a fixed ID instead of clerkUserId
       clerkId: clerkUserId,
       email: 'demo.admin@alenna.io',
       firstName: 'Admin',

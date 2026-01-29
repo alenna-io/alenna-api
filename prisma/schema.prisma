@@ -113,7 +113,7 @@ model SchoolYear {
   createdAt                        DateTime                          @default(now()) @map("created_at")
   updatedAt                        DateTime                          @updatedAt @map("updated_at")
   quarters                         Quarter[]
-  monthlyGoalTemplates             MonthlyGoalTemplate[]
+  monthlyAssignmentTemplates             MonthlyAssignmentTemplate[]
   quarterGradePercentages          QuarterGradePercentage[]
   school                           School                            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
@@ -205,7 +205,7 @@ model Projection {
   updatedAt          DateTime            @updatedAt
   dailyGoals         DailyGoal[]
   projectionPaces    ProjectionPace[]
-  projectionMonthlyGoals ProjectionMonthlyGoal[]
+  projectionMonthlyAssignments ProjectionMonthlyAssignment[]
   student            Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
@@ -213,13 +213,13 @@ model Projection {
   @@map("projections")
 }
 
-enum ProjectionMonthlyGoalStatus {
+enum ProjectionMonthlyAssignmentStatus {
   PENDING
   COMPLETED
   FAILED
 }
 
-model MonthlyGoalTemplate {
+model MonthlyAssignmentTemplate {
   id                String                  @id @default(cuid())
   name              String
   quarter           String
@@ -229,12 +229,12 @@ model MonthlyGoalTemplate {
   createdAt         DateTime                @default(now()) @map("created_at")
   updatedAt         DateTime                @updatedAt @map("updated_at")
   schoolYear        SchoolYear              @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
-  projectionMonthlyGoals ProjectionMonthlyGoal[]
+  projectionMonthlyAssignments ProjectionMonthlyAssignment[]
 
   @@unique([schoolYearId, quarter, name])
   @@index([schoolYearId])
   @@index([schoolYearId, quarter])
-  @@map("monthly_goal_templates")
+  @@map("monthly_assignment_templates")
 }
 
 model QuarterGradePercentage {
@@ -253,36 +253,36 @@ model QuarterGradePercentage {
   @@map("quarter_grade_percentages")
 }
 
-model ProjectionMonthlyGoal {
+model ProjectionMonthlyAssignment {
   id                  String                      @id @default(cuid())
   projectionId        String                      @map("projection_id")
-  monthlyGoalTemplateId String                    @map("monthly_goal_template_id")
+  monthlyAssignmentTemplateId String                    @map("monthly_assignment_template_id")
   grade               Int?
-  status              ProjectionMonthlyGoalStatus @default(PENDING)
+  status              ProjectionMonthlyAssignmentStatus @default(PENDING)
   deletedAt           DateTime?                   @map("deleted_at")
   createdAt           DateTime                    @default(now()) @map("created_at")
   updatedAt           DateTime                    @updatedAt @map("updated_at")
   projection          Projection                  @relation(fields: [projectionId], references: [id], onDelete: Cascade)
-  monthlyGoalTemplate MonthlyGoalTemplate        @relation(fields: [monthlyGoalTemplateId], references: [id], onDelete: Cascade)
-  gradeHistory        MonthlyGoalGradeHistory[]
+  monthlyAssignmentTemplate MonthlyAssignmentTemplate        @relation(fields: [monthlyAssignmentTemplateId], references: [id], onDelete: Cascade)
+  gradeHistory        MonthlyAssignmentGradeHistory[]
 
-  @@unique([projectionId, monthlyGoalTemplateId])
+  @@unique([projectionId, monthlyAssignmentTemplateId])
   @@index([projectionId])
   @@index([projectionId, status])
-  @@map("projection_monthly_goals")
+  @@map("projection_monthly_assignments")
 }
 
-model MonthlyGoalGradeHistory {
+model MonthlyAssignmentGradeHistory {
   id                    String                @id @default(cuid())
   grade                 Int
   date                  DateTime              @default(now())
   note                  String?
-  projectionMonthlyGoalId String              @map("projection_monthly_goal_id")
+  projectionMonthlyAssignmentId String              @map("projection_monthly_assignment_id")
   createdAt             DateTime              @default(now()) @map("created_at")
-  projectionMonthlyGoal ProjectionMonthlyGoal @relation(fields: [projectionMonthlyGoalId], references: [id], onDelete: Cascade)
+  projectionMonthlyAssignment ProjectionMonthlyAssignment @relation(fields: [projectionMonthlyAssignmentId], references: [id], onDelete: Cascade)
 
-  @@index([projectionMonthlyGoalId])
-  @@map("monthly_goal_grade_history")
+  @@index([projectionMonthlyAssignmentId])
+  @@map("monthly_assignment_grade_history")
 }
 
 model Category {

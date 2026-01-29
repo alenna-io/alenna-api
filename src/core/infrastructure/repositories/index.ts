@@ -1,6 +1,6 @@
 export * from './PrismaCategoryRepository';
 export * from './PrismaDailyGoalRepository';
-export * from './PrismaMonthlyGoalRepository';
+export * from './PrismaMonthlyAssignmentRepository';
 export * from './PrismaPaceCatalogRepository';
 export * from './PrismaProjectionPaceRepository';
 export * from './PrismaProjectionRepository';

@@ -1,24 +1,24 @@
 import prisma from '../database/prisma.client';
 import { PrismaTransaction } from '../database/PrismaTransaction';
-import { Prisma, ProjectionMonthlyGoalStatus } from '@prisma/client';
-import { IMonthlyGoalRepository } from '../../domain/interfaces/repositories/IMonthlyGoalRepository';
+import { Prisma, ProjectionMonthlyAssignmentStatus } from '@prisma/client';
+import { IMonthlyAssignmentRepository } from '../../domain/interfaces/repositories/IMonthlyAssignmentRepository';
 import type {
-  CreateMonthlyGoalTemplateInput,
-  UpdateMonthlyGoalTemplateInput,
+  CreateMonthlyAssignmentTemplateInput,
+  UpdateMonthlyAssignmentTemplateInput,
   CreateQuarterPercentageInput,
   UpdateQuarterPercentageInput,
-} from '../../application/dtos/monthly-goals';
+} from '../../application/dtos/monthly-assignments';
 
-export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
+export class PrismaMonthlyAssignmentRepository implements IMonthlyAssignmentRepository {
   async createTemplate(
     schoolYearId: string,
     schoolId: string,
-    input: CreateMonthlyGoalTemplateInput,
+    input: CreateMonthlyAssignmentTemplateInput,
     tx: PrismaTransaction = prisma
-  ): Promise<Prisma.MonthlyGoalTemplateGetPayload<{}>> {
+  ): Promise<Prisma.MonthlyAssignmentTemplateGetPayload<{}>> {
     if (tx === prisma) {
       return await prisma.$transaction(async (transaction) => {
-        const template = await transaction.monthlyGoalTemplate.create({
+        const template = await transaction.monthlyAssignmentTemplate.create({
           data: {
             name: input.name,
             quarter: input.quarter,
@@ -36,11 +36,11 @@ export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
         });
 
         if (projections.length > 0) {
-          await transaction.projectionMonthlyGoal.createMany({
+          await transaction.projectionMonthlyAssignment.createMany({
             data: projections.map((projection) => ({
               projectionId: projection.id,
-              monthlyGoalTemplateId: template.id,
-              status: ProjectionMonthlyGoalStatus.PENDING,
+              monthlyAssignmentTemplateId: template.id,
+              status: ProjectionMonthlyAssignmentStatus.PENDING,
             })),
             skipDuplicates: true,
           });
@@ -49,7 +49,7 @@ export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
         return template;
       });
     } else {
-      const template = await tx.monthlyGoalTemplate.create({
+      const template = await tx.monthlyAssignmentTemplate.create({
         data: {
           name: input.name,
           quarter: input.quarter,
@@ -67,11 +67,11 @@ export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
       });
 
       if (projections.length > 0) {
-        await tx.projectionMonthlyGoal.createMany({
+        await tx.projectionMonthlyAssignment.createMany({
           data: projections.map((projection) => ({
             projectionId: projection.id,
-            monthlyGoalTemplateId: template.id,
-            status: ProjectionMonthlyGoalStatus.PENDING,
+            monthlyAssignmentTemplateId: template.id,
+            status: ProjectionMonthlyAssignmentStatus.PENDING,
           })),
           skipDuplicates: true,
         });
@@ -84,8 +84,8 @@ export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
   async findTemplatesBySchoolYear(
     schoolYearId: string,
     tx: PrismaTransaction = prisma
-  ): Promise<Prisma.MonthlyGoalTemplateGetPayload<{}>[]> {
-    return await tx.monthlyGoalTemplate.findMany({
+  ): Promise<Prisma.MonthlyAssignmentTemplateGetPayload<{}>[]> {
+    return await tx.monthlyAssignmentTemplate.findMany({
       where: {
         schoolYearId,
         deletedAt: null,
@@ -100,10 +100,10 @@ export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
   async updateTemplate(
     templateId: string,
     schoolId: string,
-    input: UpdateMonthlyGoalTemplateInput,
+    input: UpdateMonthlyAssignmentTemplateInput,
     tx: PrismaTransaction = prisma
-  ): Promise<Prisma.MonthlyGoalTemplateGetPayload<{}>> {
-    return await tx.monthlyGoalTemplate.update({
+  ): Promise<Prisma.MonthlyAssignmentTemplateGetPayload<{}>> {
+    return await tx.monthlyAssignmentTemplate.update({
       where: {
         id: templateId,
         schoolId,
@@ -120,7 +120,7 @@ export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
     schoolId: string,
     tx: PrismaTransaction = prisma
   ): Promise<void> {
-    await tx.monthlyGoalTemplate.update({
+    await tx.monthlyAssignmentTemplate.update({
       where: {
         id: templateId,
         schoolId,
@@ -193,19 +193,19 @@ export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
   async findByProjection(
     projectionId: string,
     tx: PrismaTransaction = prisma
-  ): Promise<Prisma.ProjectionMonthlyGoalGetPayload<{
+  ): Promise<Prisma.ProjectionMonthlyAssignmentGetPayload<{
     include: {
-      monthlyGoalTemplate: true;
+      monthlyAssignmentTemplate: true;
       gradeHistory: true;
     };
   }>[]> {
-    return await tx.projectionMonthlyGoal.findMany({
+    return await tx.projectionMonthlyAssignment.findMany({
       where: {
         projectionId,
         deletedAt: null,
       },
       include: {
-        monthlyGoalTemplate: true,
+        monthlyAssignmentTemplate: true,
         gradeHistory: {
           orderBy: {
             date: 'desc',
@@ -214,12 +214,12 @@ export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
       },
       orderBy: [
         {
-          monthlyGoalTemplate: {
+          monthlyAssignmentTemplate: {
             quarter: 'asc',
           },
         },
         {
-          monthlyGoalTemplate: {
+          monthlyAssignmentTemplate: {
             name: 'asc',
           },
         },
@@ -229,23 +229,23 @@ export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
 
   async updateGrade(
     projectionId: string,
-    monthlyGoalId: string,
+    monthlyAssignmentId: string,
     grade: number,
     tx: PrismaTransaction = prisma
-  ): Promise<Prisma.ProjectionMonthlyGoalGetPayload<{}>> {
-    const status = grade >= 80 ? ProjectionMonthlyGoalStatus.COMPLETED : ProjectionMonthlyGoalStatus.FAILED;
+  ): Promise<Prisma.ProjectionMonthlyAssignmentGetPayload<{}>> {
+    const status = grade >= 80 ? ProjectionMonthlyAssignmentStatus.COMPLETED : ProjectionMonthlyAssignmentStatus.FAILED;
 
-    await tx.monthlyGoalGradeHistory.create({
+    await tx.monthlyAssignmentGradeHistory.create({
       data: {
-        projectionMonthlyGoalId: monthlyGoalId,
+        projectionMonthlyAssignmentId: monthlyAssignmentId,
         grade,
         note: null,
       },
     });
 
-    return await tx.projectionMonthlyGoal.update({
+    return await tx.projectionMonthlyAssignment.update({
       where: {
-        id: monthlyGoalId,
+        id: monthlyAssignmentId,
         projectionId,
         deletedAt: null,
       },
@@ -258,18 +258,18 @@ export class PrismaMonthlyGoalRepository implements IMonthlyGoalRepository {
 
   async markUngraded(
     projectionId: string,
-    monthlyGoalId: string,
+    monthlyAssignmentId: string,
     tx: PrismaTransaction = prisma
-  ): Promise<Prisma.ProjectionMonthlyGoalGetPayload<{}>> {
-    return await tx.projectionMonthlyGoal.update({
+  ): Promise<Prisma.ProjectionMonthlyAssignmentGetPayload<{}>> {
+    return await tx.projectionMonthlyAssignment.update({
       where: {
-        id: monthlyGoalId,
+        id: monthlyAssignmentId,
         projectionId,
         deletedAt: null,
       },
       data: {
         grade: null,
-        status: ProjectionMonthlyGoalStatus.PENDING,
+        status: ProjectionMonthlyAssignmentStatus.PENDING,
       },
     });
   }

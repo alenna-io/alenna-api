@@ -34,6 +34,9 @@ export const attachUserContext = async (
   try {
     const { userId, sessionId } = getAuth(req);
 
+    logger.info('[attachUserContext] Clerk userId:', userId);
+    logger.info('[attachUserContext] sessionId:', sessionId);
+
     if (!userId || !sessionId) {
       res.status(401).json({
         error: 'Unauthorized',
@@ -64,9 +67,10 @@ export const attachUserContext = async (
       return;
     }
 
+    logger.info('[attachUserContext] Looking up user by clerkId:', userId);
     const dbUser = await prisma.user.findUnique({
       where: {
-        id: userId,
+        clerkId: userId,
       },
       include: {
         school: true,
@@ -78,7 +82,15 @@ export const attachUserContext = async (
       },
     });
 
+    logger.info('[attachUserContext] dbUser found:', dbUser ? {
+      id: dbUser.id,
+      clerkId: dbUser.clerkId,
+      email: dbUser.email,
+      hasSchool: !!dbUser.school,
+    } : null);
+
     if (!dbUser) {
+      logger.error('[attachUserContext] User not found in database for clerkId:', userId);
       res.status(404).json({
         error: 'Not Found',
         message: 'User not found in database. Please contact your administrator.',
@@ -107,6 +119,10 @@ export const attachUserContext = async (
     req.userEmail = primaryEmailAddress.emailAddress;
     req.schoolId = dbUser.schoolId;
     req.userRoles = dbUser.userRoles.map((ur) => ur.role.name.toLowerCase());
+
+    logger.info('[attachUserContext] Setting req.userId to:', req.userId);
+    logger.info('[attachUserContext] req.userId type:', typeof req.userId);
+    logger.info('[attachUserContext] req.userId length:', req.userId?.length);
 
     next();
   } catch (error) {
