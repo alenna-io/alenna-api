@@ -369,7 +369,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
           const week = weeks[globalWeekIndex];
 
           // Check if we can place here maintaining sequential order
-          if (!this.canPlacePaceSequentially(week, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)) {
+          if (!this.canPlacePaceSequentially(week, subject, currentPaceCode, quarterBaseWeek, weeks)) {
             logger.debug(`[Q${quarter + 1}] Cannot place ${subject.categoryId} ${currentPaceCode} in week ${globalWeekIndex + 1} (would violate sequential order), searching alternative...`);
             // Try to find any available week in this quarter (search entire quarter)
             let found = false;
@@ -382,7 +382,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
                 !tryWeek.subjects.has(subject.categoryId) &&
                 !this.violatesNotPair(subject, tryWeek.subjects) &&
-                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks)
               ) {
                 logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (alternative placement)`);
                 this.placePace(tryWeek, subject, currentPaceCode);
@@ -401,7 +401,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 if (
                   tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
                   !tryWeek.subjects.has(subject.categoryId) &&
-                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks)
                 ) {
                   // Skip notPairWith check as last resort
                   logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (last resort, ignoring notPairWith)`);
@@ -433,7 +433,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
                 !tryWeek.subjects.has(subject.categoryId) &&
                 !this.violatesNotPair(subject, tryWeek.subjects) &&
-                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks)
               ) {
                 logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (alternative placement)`);
                 this.placePace(tryWeek, subject, currentPaceCode);
@@ -452,7 +452,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 if (
                   tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
                   !tryWeek.subjects.has(subject.categoryId) &&
-                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks)
                 ) {
                   // Skip notPairWith check as last resort
                   logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (last resort, ignoring notPairWith)`);
@@ -570,7 +570,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
           const week = weeks[globalWeekIndex];
 
           // Check if we can place here maintaining sequential order
-          if (!this.canPlacePaceSequentially(week, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)) {
+          if (!this.canPlacePaceSequentially(week, subject, currentPaceCode, quarterBaseWeek, weeks)) {
             logger.debug(`[Q${quarter + 1}] Cannot place ${subject.categoryId} ${currentPaceCode} in week ${globalWeekIndex + 1} (would violate sequential order), searching alternative...`);
             // Try to find next available week in this quarter
             let found = false;
@@ -583,7 +583,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
                 !tryWeek.subjects.has(subject.categoryId) &&
                 !this.violatesNotPair(subject, tryWeek.subjects) &&
-                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks)
               ) {
                 logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (alternative placement)`);
                 this.placePace(tryWeek, subject, currentPaceCode);
@@ -602,7 +602,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 if (
                   tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
                   !tryWeek.subjects.has(subject.categoryId) &&
-                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks)
                 ) {
                   logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (last resort, ignoring notPairWith)`);
                   this.placePace(tryWeek, subject, currentPaceCode);
@@ -633,7 +633,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
                 !tryWeek.subjects.has(subject.categoryId) &&
                 !this.violatesNotPair(subject, tryWeek.subjects) &&
-                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+                this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks)
               ) {
                 logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (alternative placement)`);
                 this.placePace(tryWeek, subject, currentPaceCode);
@@ -652,7 +652,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 if (
                   tryWeek.subjects.size < MAX_SUBJECTS_PER_WEEK &&
                   !tryWeek.subjects.has(subject.categoryId) &&
-                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks, isFirstPaceInQuarter)
+                  this.canPlacePaceSequentially(tryWeek, subject, currentPaceCode, quarterBaseWeek, weeks)
                 ) {
                   logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} ${currentPaceCode} in week ${tryWeekIndex + 1} (last resort, ignoring notPairWith)`);
                   this.placePace(tryWeek, subject, currentPaceCode);
