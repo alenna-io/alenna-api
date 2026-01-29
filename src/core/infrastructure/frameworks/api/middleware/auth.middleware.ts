@@ -67,10 +67,10 @@ export const attachUserContext = async (
       return;
     }
 
-    logger.info('[attachUserContext] Looking up user by clerkId:', userId);
+    logger.info('[attachUserContext] Looking up user by email:', primaryEmailAddress.emailAddress);
     const dbUser = await prisma.user.findUnique({
       where: {
-        clerkId: userId,
+        email: primaryEmailAddress.emailAddress,
       },
       include: {
         school: true,
@@ -90,7 +90,7 @@ export const attachUserContext = async (
     } : null);
 
     if (!dbUser) {
-      logger.error('[attachUserContext] User not found in database for clerkId:', userId);
+      logger.error('[attachUserContext] User not found in database for email:', primaryEmailAddress.emailAddress);
       res.status(404).json({
         error: 'Not Found',
         message: 'User not found in database. Please contact your administrator.',

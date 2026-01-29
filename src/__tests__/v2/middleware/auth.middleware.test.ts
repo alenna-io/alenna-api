@@ -74,18 +74,19 @@ describe('attachUserContext', () => {
   });
 
   it('should attach user context when user is authenticated and exists in database', async () => {
-    const mockUserId = 'user_123';
+    const mockClerkUserId = 'user_123';
     const mockSessionId = 'sess_123';
     const mockEmail = 'test@example.com';
     const mockSchoolId = 'school_123';
+    const mockDbUserId = 'clm1234567890abcdefghijklmn';
 
     vi.mocked(getAuth).mockReturnValue({
-      userId: mockUserId,
+      userId: mockClerkUserId,
       sessionId: mockSessionId,
     } as any);
 
     const mockClerkUser = {
-      id: mockUserId,
+      id: mockClerkUserId,
       primaryEmailAddressId: 'email_123',
       emailAddresses: [
         {
@@ -101,14 +102,22 @@ describe('attachUserContext', () => {
     mockGetUser.mockResolvedValue(mockClerkUser);
 
     mockFindUnique.mockResolvedValue({
-      id: mockUserId,
+      id: mockDbUserId,
       email: mockEmail,
+      clerkId: mockClerkUserId,
       schoolId: mockSchoolId,
       deletedAt: null,
       school: {
         id: mockSchoolId,
         status: SchoolStatus.ACTIVE,
       },
+      userRoles: [
+        {
+          role: {
+            name: 'SCHOOL_ADMIN',
+          },
+        },
+      ],
     } as any);
 
     await attachUserContext(
@@ -117,8 +126,8 @@ describe('attachUserContext', () => {
       mockNext
     );
 
-    expect(mockRequest.clerkUserId).toBe(mockUserId);
-    expect(mockRequest.userId).toBe(mockUserId);
+    expect(mockRequest.clerkUserId).toBe(mockClerkUserId);
+    expect(mockRequest.userId).toBe(mockDbUserId);
     expect(mockRequest.userEmail).toBe(mockEmail);
     expect(mockRequest.schoolId).toBe(mockSchoolId);
     expect(mockRequest.userRoles).toEqual(['school_admin']);
