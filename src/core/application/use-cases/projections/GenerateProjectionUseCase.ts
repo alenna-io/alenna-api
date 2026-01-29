@@ -123,7 +123,7 @@ export class GenerateProjectionUseCase {
   }
 
   private async validateStudentSchoolYear(input: GenerateProjectionInput, tx: PrismaTransaction) {
-    const student = await this.studentRepository.findById(input.studentId, tx as PrismaTransaction);
+    const student = await this.studentRepository.findById(input.studentId, input.schoolId, tx as PrismaTransaction);
     if (!student) {
       throw new InvalidEntityError('Student', 'Student not found; cannot create projection.');
     }
@@ -140,7 +140,7 @@ export class GenerateProjectionUseCase {
     }
 
     // Validate school year
-    const schoolYear = await this.schoolYearRepository.findById(input.schoolYear, tx as PrismaTransaction);
+    const schoolYear = await this.schoolYearRepository.findById(input.schoolYear, input.schoolId, tx as PrismaTransaction);
     if (!schoolYear) {
       throw new InvalidEntityError('SchoolYear', 'School year not found; cannot create projection.');
     }

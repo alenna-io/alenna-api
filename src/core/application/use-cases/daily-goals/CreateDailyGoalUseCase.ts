@@ -1,18 +1,20 @@
-import { IProjectionRepository } from '../../../domain/interfaces/repositories';
+import { IProjectionRepository, IDailyGoalRepository } from '../../../domain/interfaces/repositories';
 import { InvalidEntityError, ObjectNotFoundError, DomainError } from '../../../domain/errors';
+import { CreateDailyGoalInput } from '../../dtos/daily-goals/CreateDailyGoalInput';
 import { validateCuid } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
+import { Prisma } from '@prisma/client';
 
-export class DeletePaceUseCase {
+export class CreateDailyGoalUseCase {
   constructor(
     private readonly projectionRepository: IProjectionRepository,
+    private readonly dailyGoalRepository: IDailyGoalRepository,
   ) { }
 
-  async execute(projectionId: string, schoolId: string, paceId: string): Promise<Result<void, DomainError>> {
+  async execute(projectionId: string, schoolId: string, input: CreateDailyGoalInput): Promise<Result<Prisma.DailyGoalGetPayload<{}>, DomainError>> {
     try {
       validateCuid(projectionId, 'Projection');
       validateCuid(schoolId, 'School');
-      validateCuid(paceId, 'ProjectionPace');
 
       const projection = await this.projectionRepository.findById(projectionId, schoolId);
       if (!projection) {
@@ -23,17 +25,16 @@ export class DeletePaceUseCase {
         return Err(new InvalidEntityError('Projection', 'Cannot edit closed projection'));
       }
 
-      const pace = projection.projectionPaces.find(p => p.id === paceId && !p.deletedAt);
-      if (!pace) {
-        return Err(new ObjectNotFoundError('ProjectionPace', `Pace with ID ${paceId} not found in projection`));
-      }
+      const dailyGoal = await this.dailyGoalRepository.create(
+        projectionId,
+        input.subject,
+        input.quarter,
+        input.week,
+        input.dayOfWeek,
+        input.text
+      );
 
-      if (pace.grade !== null || pace.status !== 'PENDING') {
-        return Err(new InvalidEntityError('ProjectionPace', 'Cannot delete graded pace'));
-      }
-
-      await this.projectionRepository.deletePace(projectionId, paceId);
-      return Ok(undefined);
+      return Ok(dailyGoal);
     } catch (error) {
       if (error instanceof InvalidEntityError || error instanceof ObjectNotFoundError) {
         return Err(error as DomainError);

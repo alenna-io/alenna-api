@@ -10,17 +10,18 @@ export class GetProjectionDetailsUseCase {
     private readonly schoolYearRepository: ISchoolYearRepository,
   ) { }
 
-  async execute(projectionId: string): Promise<Result<GetProjectionDetailsOutput, DomainError>> {
+  async execute(projectionId: string, schoolId: string): Promise<Result<GetProjectionDetailsOutput, DomainError>> {
     try {
       validateCuid(projectionId, 'Projection');
+      validateCuid(schoolId, 'School');
 
-      const projection = await this.projectionRepository.findById(projectionId);
+      const projection = await this.projectionRepository.findById(projectionId, schoolId);
 
       if (!projection) {
         return Err(new ObjectNotFoundError('Projection', `Projection with ID ${projectionId} not found`));
       }
 
-      const schoolYear = await this.schoolYearRepository.findById(projection.schoolYear);
+      const schoolYear = await this.schoolYearRepository.findById(projection.schoolYear, schoolId);
       const schoolYearName = schoolYear?.name || projection.schoolYear;
 
       const output: GetProjectionDetailsOutput = {

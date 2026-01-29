@@ -2,15 +2,15 @@ import { Router, type Router as ExpressRouter } from 'express';
 import { container } from '../../di/container';
 import { SubjectController } from '../../../../presentation/controllers';
 import { asyncHandler } from '../../../../../utils';
-import { attachUserContext } from '../middleware/auth.middleware';
+import { attachUserContext, requireSchoolAdmin } from '../middleware';
 
 const router: ExpressRouter = Router();
 const subjectController = new SubjectController(
   container.useCase.getSubjectAndNextLevelsWithPacesUseCase
 );
 
-// Apply authentication middleware (MVP: hardcoded user)
 router.use(attachUserContext);
+router.use(requireSchoolAdmin);
 
 // Routes
 router.get(

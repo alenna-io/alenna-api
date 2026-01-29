@@ -7,4 +7,3 @@ export * from './AddPaceUseCase';
 export * from './DeletePaceUseCase';
 export * from './UpdateGradeUseCase';
 export * from './MarkUngradedUseCase';
-export * from './GetDailyGoalsUseCase';

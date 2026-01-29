@@ -10,11 +10,12 @@ export class GetDailyGoalsUseCase {
     private readonly dailyGoalRepository: IDailyGoalRepository,
   ) { }
 
-  async execute(projectionId: string, input: GetDailyGoalsInput): Promise<Result<GetDailyGoalsOutput, DomainError>> {
+  async execute(projectionId: string, schoolId: string, input: GetDailyGoalsInput): Promise<Result<GetDailyGoalsOutput, DomainError>> {
     try {
       validateCuid(projectionId, 'Projection');
+      validateCuid(schoolId, 'School');
 
-      const projection = await this.projectionRepository.findById(projectionId);
+      const projection = await this.projectionRepository.findById(projectionId, schoolId);
       if (!projection) {
         return Err(new ObjectNotFoundError('Projection', `Projection with ID ${projectionId} not found`));
       }

@@ -112,7 +112,7 @@ describe('DeletePaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.deletePace).mockResolvedValue(undefined);
 
-    const result = await useCase.execute('clh1111111111111111111111', pace1Id);
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', pace1Id);
 
     expect(result.success).toBe(true);
     expect(projectionRepo.deletePace).toHaveBeenCalledWith('clh1111111111111111111111', pace1Id);
@@ -122,7 +122,7 @@ describe('DeletePaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(null);
 
     const pace1Id = 'clh8888888888888888888888';
-    const result = await useCase.execute('clh1111111111111111111111', pace1Id);
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', pace1Id);
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -139,7 +139,7 @@ describe('DeletePaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
     const pace1Id = 'clh8888888888888888888888';
-    const result = await useCase.execute('clh1111111111111111111111', pace1Id);
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', pace1Id);
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -156,7 +156,7 @@ describe('DeletePaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
     const pace1Id = 'clh8888888888888888888888';
-    const result = await useCase.execute('clh1111111111111111111111', pace1Id);
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', pace1Id);
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -177,7 +177,7 @@ describe('DeletePaceUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', pace1Id);
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', pace1Id);
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -197,7 +197,7 @@ describe('DeletePaceUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', pace1Id);
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', pace1Id);
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -218,7 +218,7 @@ describe('DeletePaceUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', pace1Id);
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', pace1Id);
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -243,7 +243,7 @@ describe('DeletePaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.deletePace).mockResolvedValue(undefined);
 
-    const result = await useCase.execute('clh1111111111111111111111', pace1Id);
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', pace1Id);
 
     expect(result.success).toBe(true);
   });

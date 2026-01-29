@@ -81,12 +81,17 @@ export class ProjectionController {
 
   async getById(req: Request, res: Response): Promise<Response> {
     const projectionId = req.params.id;
+    const schoolId = req.schoolId;
     if (!projectionId) {
       throw new InvalidEntityError('Projection', 'Projection ID is required');
     }
+    if (!schoolId) {
+      throw new InvalidEntityError('School', 'School ID is required');
+    }
     validateCuid(projectionId, 'Projection');
+    validateCuid(schoolId, 'School');
 
-    const result = await this.getProjectionDetails.execute(projectionId);
+    const result = await this.getProjectionDetails.execute(projectionId, schoolId);
     if (!result.success) {
       throw result.error;
     }
@@ -106,9 +111,15 @@ export class ProjectionController {
     validateCuid(projectionId, 'Projection');
     validateCuid(paceId, 'ProjectionPace');
 
+    const schoolId = req.schoolId;
+    if (!schoolId) {
+      throw new InvalidEntityError('School', 'School ID is required');
+    }
+    validateCuid(schoolId, 'School');
+
     const input = MovePaceDTO.parse(req.body);
 
-    const result = await this.movePace.execute(projectionId, paceId, input);
+    const result = await this.movePace.execute(projectionId, schoolId, paceId, input);
     if (!result.success) {
       throw result.error;
     }
@@ -123,9 +134,15 @@ export class ProjectionController {
     }
     validateCuid(projectionId, 'Projection');
 
+    const schoolId = req.schoolId;
+    if (!schoolId) {
+      throw new InvalidEntityError('School', 'School ID is required');
+    }
+    validateCuid(schoolId, 'School');
+
     const input = AddPaceDTO.parse(req.body);
 
-    const result = await this.addPace.execute(projectionId, input);
+    const result = await this.addPace.execute(projectionId, schoolId, input);
     if (!result.success) {
       throw result.error;
     }
@@ -142,10 +159,15 @@ export class ProjectionController {
     if (!paceId) {
       throw new InvalidEntityError('ProjectionPace', 'Pace ID is required');
     }
+    const schoolId = req.schoolId;
+    if (!schoolId) {
+      throw new InvalidEntityError('School', 'School ID is required');
+    }
     validateCuid(projectionId, 'Projection');
     validateCuid(paceId, 'ProjectionPace');
+    validateCuid(schoolId, 'School');
 
-    const result = await this.deletePace.execute(projectionId, paceId);
+    const result = await this.deletePace.execute(projectionId, schoolId, paceId);
     if (!result.success) {
       throw result.error;
     }
@@ -165,9 +187,15 @@ export class ProjectionController {
     validateCuid(projectionId, 'Projection');
     validateCuid(paceId, 'ProjectionPace');
 
+    const schoolId = req.schoolId;
+    if (!schoolId) {
+      throw new InvalidEntityError('School', 'School ID is required');
+    }
+    validateCuid(schoolId, 'School');
+
     const input = UpdateGradeDTO.parse(req.body);
 
-    const result = await this.updateGrade.execute(projectionId, paceId, input);
+    const result = await this.updateGrade.execute(projectionId, schoolId, paceId, input);
     if (!result.success) {
       throw result.error;
     }
@@ -184,10 +212,15 @@ export class ProjectionController {
     if (!paceId) {
       throw new InvalidEntityError('ProjectionPace', 'Pace ID is required');
     }
+    const schoolId = req.schoolId;
+    if (!schoolId) {
+      throw new InvalidEntityError('School', 'School ID is required');
+    }
     validateCuid(projectionId, 'Projection');
     validateCuid(paceId, 'ProjectionPace');
+    validateCuid(schoolId, 'School');
 
-    const result = await this.markUngraded.execute(projectionId, paceId);
+    const result = await this.markUngraded.execute(projectionId, schoolId, paceId);
     if (!result.success) {
       throw result.error;
     }

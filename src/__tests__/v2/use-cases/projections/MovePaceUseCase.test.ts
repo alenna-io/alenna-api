@@ -130,7 +130,7 @@ describe('MovePaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.movePace).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh9999999999999999999999', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh9999999999999999999999', {
       quarter: 'Q1',
       week: 4,
     });
@@ -145,7 +145,7 @@ describe('MovePaceUseCase', () => {
   it('returns Err when projection does not exist', async () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(null);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       quarter: 'Q1',
       week: 2,
     });
@@ -164,7 +164,7 @@ describe('MovePaceUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       quarter: 'Q1',
       week: 2,
     });
@@ -183,7 +183,7 @@ describe('MovePaceUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       quarter: 'Q1',
       week: 2,
     });
@@ -205,7 +205,7 @@ describe('MovePaceUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       quarter: 'Q1',
       week: 2,
     });
@@ -228,7 +228,7 @@ describe('MovePaceUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       quarter: 'Q1',
       week: 3,
     });
@@ -252,7 +252,7 @@ describe('MovePaceUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       quarter: 'Q1',
       week: 4,
     });
@@ -282,7 +282,7 @@ describe('MovePaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.movePace).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       quarter: 'Q1',
       week: 3,
     });
@@ -308,7 +308,7 @@ describe('MovePaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.movePace).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       quarter: 'Q2',
       week: 1,
     });
@@ -335,7 +335,7 @@ describe('MovePaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.movePace).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clhaaaaaaaaaaaaaaaaaaaaaa', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clhaaaaaaaaaaaaaaaaaaaaaa', {
       quarter: 'Q1',
       week: 1,
     });
@@ -362,7 +362,7 @@ describe('MovePaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.movePace).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       quarter: 'Q1',
       week: 4,
     });

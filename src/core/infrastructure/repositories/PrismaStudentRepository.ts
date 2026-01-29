@@ -4,10 +4,11 @@ import { PrismaTransaction } from '../database/PrismaTransaction';
 import { Prisma, ProjectionStatus } from '@prisma/client';
 
 export class PrismaStudentRepository implements IStudentRepository {
-  async findById(id: string, tx: PrismaTransaction = prisma): Promise<Prisma.StudentGetPayload<{}> | null> {
-    return await tx.student.findUnique({
+  async findById(id: string, schoolId: string, tx: PrismaTransaction = prisma): Promise<Prisma.StudentGetPayload<{}> | null> {
+    return await tx.student.findFirst({
       where: {
         id,
+        schoolId,
       },
     });
   }

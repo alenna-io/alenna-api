@@ -72,11 +72,13 @@ export class PrismaProjectionRepository implements IProjectionRepository {
 
   async findById(
     id: string,
+    schoolId: string,
     tx: PrismaTransaction = prisma
   ): Promise<ProjectionWithDetails | null> {
-    return await tx.projection.findUnique({
+    return await tx.projection.findFirst({
       where: {
         id,
+        schoolId,
         deletedAt: null,
       },
       include: {

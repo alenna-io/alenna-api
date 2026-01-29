@@ -130,7 +130,7 @@ describe('UpdateGradeUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.updateGrade).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       grade: 85,
     });
 
@@ -159,7 +159,7 @@ describe('UpdateGradeUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.updateGrade).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       grade: 75,
     });
 
@@ -188,7 +188,7 @@ describe('UpdateGradeUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.updateGrade).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       grade: 80,
     });
 
@@ -216,7 +216,7 @@ describe('UpdateGradeUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.updateGrade).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       grade: 79,
     });
 
@@ -230,7 +230,7 @@ describe('UpdateGradeUseCase', () => {
   it('returns Err when projection does not exist', async () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(null);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       grade: 85,
     });
 
@@ -248,7 +248,7 @@ describe('UpdateGradeUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       grade: 85,
     });
 
@@ -266,7 +266,7 @@ describe('UpdateGradeUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       grade: 85,
     });
 
@@ -287,7 +287,7 @@ describe('UpdateGradeUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       grade: 85,
     });
 
@@ -314,7 +314,7 @@ describe('UpdateGradeUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.updateGrade).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888', {
       grade: 90,
     });
 

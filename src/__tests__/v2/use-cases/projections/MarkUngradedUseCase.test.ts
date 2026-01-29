@@ -113,7 +113,7 @@ describe('MarkUngradedUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.markUngraded).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888');
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888');
 
     expect(result.success).toBe(true);
     if (result.success) {
@@ -140,7 +140,7 @@ describe('MarkUngradedUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.markUngraded).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888');
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888');
 
     expect(result.success).toBe(true);
     if (result.success) {
@@ -166,7 +166,7 @@ describe('MarkUngradedUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.markUngraded).mockResolvedValue(updatedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888');
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888');
 
     expect(result.success).toBe(true);
     if (result.success) {
@@ -178,7 +178,7 @@ describe('MarkUngradedUseCase', () => {
   it('returns Err when projection does not exist', async () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(null);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888');
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888');
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -194,7 +194,7 @@ describe('MarkUngradedUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888');
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888');
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -210,7 +210,7 @@ describe('MarkUngradedUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888');
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888');
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -229,7 +229,7 @@ describe('MarkUngradedUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', 'clh8888888888888888888888');
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', 'clh8888888888888888888888');
 
     expect(result.success).toBe(false);
     if (!result.success) {

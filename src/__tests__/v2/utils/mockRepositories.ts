@@ -26,7 +26,7 @@ import { CreateProjectionInput } from '../../../core/application/dtos/projection
 
 export function createMockStudentRepository(): IStudentRepository {
   return {
-    findById: vi.fn() as unknown as (id: string) => Promise<Student | null>,
+    findById: vi.fn() as unknown as (id: string, schoolId: string, tx?: PrismaTransaction) => Promise<Student | null>,
     findEnrolledWithoutOpenProjectionBySchoolId: vi.fn() as unknown as (schoolId: string) => Promise<Student[]>,
   };
 }
@@ -40,7 +40,7 @@ export function createMockSchoolRepository(): ISchoolRepository {
 
 export function createMockSchoolYearRepository(): ISchoolYearRepository {
   return {
-    findById: vi.fn() as unknown as (id: string) => Promise<SchoolYear | null>,
+    findById: vi.fn() as unknown as (id: string, schoolId: string, tx?: PrismaTransaction) => Promise<SchoolYear | null>,
   };
 }
 
@@ -49,7 +49,7 @@ export function createMockProjectionRepository(): IProjectionRepository {
     findActiveByStudent: vi.fn() as unknown as (studentId: string, schoolId: string, schoolYear: string) => Promise<Projection | null>,
     create: vi.fn() as unknown as (data: CreateProjectionInput, tx?: PrismaTransaction) => Promise<Projection>,
     findManyBySchoolId: vi.fn() as unknown as (schoolId: string, schoolYear?: string, tx?: PrismaTransaction) => Promise<any>,
-    findById: vi.fn() as unknown as (id: string, tx?: PrismaTransaction) => Promise<any>,
+    findById: vi.fn() as unknown as (id: string, schoolId: string, tx?: PrismaTransaction) => Promise<any>,
     movePace: vi.fn() as unknown as (projectionId: string, paceId: string, quarter: string, week: number, tx?: PrismaTransaction) => Promise<any>,
     addPace: vi.fn() as unknown as (projectionId: string, paceCatalogId: string, quarter: string, week: number, tx?: PrismaTransaction) => Promise<any>,
     restorePace: vi.fn() as unknown as (paceId: string, quarter: string, week: number, tx?: PrismaTransaction) => Promise<any>,
@@ -62,6 +62,10 @@ export function createMockProjectionRepository(): IProjectionRepository {
 export function createMockDailyGoalRepository(): IDailyGoalRepository {
   return {
     findDailyGoalsByWeek: vi.fn() as unknown as (projectionId: string, quarter: string, week: number, tx?: PrismaTransaction) => Promise<any[]>,
+    create: vi.fn() as unknown as (projectionId: string, subject: string, quarter: string, week: number, dayOfWeek: number, text: string, tx?: PrismaTransaction) => Promise<any>,
+    findById: vi.fn() as unknown as (dailyGoalId: string, schoolId: string, tx?: PrismaTransaction) => Promise<any>,
+    updateNote: vi.fn() as unknown as (dailyGoalId: string, notes: string, schoolId: string, tx?: PrismaTransaction) => Promise<any>,
+    markComplete: vi.fn() as unknown as (dailyGoalId: string, isCompleted: boolean, schoolId: string, tx?: PrismaTransaction) => Promise<any>,
   };
 }
 

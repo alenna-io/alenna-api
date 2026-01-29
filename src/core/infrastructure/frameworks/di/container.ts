@@ -21,9 +21,15 @@ import {
   AddPaceUseCase,
   DeletePaceUseCase,
   UpdateGradeUseCase,
-  MarkUngradedUseCase,
-  GetDailyGoalsUseCase
+  MarkUngradedUseCase
 } from '../../../application/use-cases/projections';
+// Daily Goals Use Cases
+import {
+  GetDailyGoalsUseCase,
+  CreateDailyGoalUseCase,
+  AddNoteToDailyGoalUseCase,
+  MarkDailyGoalCompleteUseCase,
+} from '../../../application/use-cases/daily-goals';
 // Category Use Cases
 import { GetCategoriesWithSubjectsUseCase } from '../../../application/use-cases/categories';
 // School Use Cases
@@ -102,6 +108,19 @@ const getDailyGoalsUseCase = new GetDailyGoalsUseCase(
   dailyGoalRepository
 );
 
+const createDailyGoalUseCase = new CreateDailyGoalUseCase(
+  projectionRepository,
+  dailyGoalRepository
+);
+
+const addNoteToDailyGoalUseCase = new AddNoteToDailyGoalUseCase(
+  dailyGoalRepository
+);
+
+const markDailyGoalCompleteUseCase = new MarkDailyGoalCompleteUseCase(
+  dailyGoalRepository
+);
+
 // Category Use Cases
 const getCategoriesWithSubjectsUseCase = new GetCategoriesWithSubjectsUseCase(
   categoryRepository
@@ -151,6 +170,9 @@ export const container = {
     updateGradeUseCase,
     markUngradedUseCase,
     getDailyGoalsUseCase,
+    createDailyGoalUseCase,
+    addNoteToDailyGoalUseCase,
+    markDailyGoalCompleteUseCase,
     // Category Use Cases
     getCategoriesWithSubjectsUseCase,
     // School Use Cases

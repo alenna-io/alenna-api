@@ -10,12 +10,13 @@ export class UpdateGradeUseCase {
     private readonly projectionRepository: IProjectionRepository,
   ) { }
 
-  async execute(projectionId: string, paceId: string, input: UpdateGradeInput): Promise<Result<Prisma.ProjectionPaceGetPayload<{}>, DomainError>> {
+  async execute(projectionId: string, schoolId: string, paceId: string, input: UpdateGradeInput): Promise<Result<Prisma.ProjectionPaceGetPayload<{}>, DomainError>> {
     try {
       validateCuid(projectionId, 'Projection');
+      validateCuid(schoolId, 'School');
       validateCuid(paceId, 'ProjectionPace');
 
-      const projection = await this.projectionRepository.findById(projectionId);
+      const projection = await this.projectionRepository.findById(projectionId, schoolId);
       if (!projection) {
         return Err(new ObjectNotFoundError('Projection', `Projection with ID ${projectionId} not found`));
       }

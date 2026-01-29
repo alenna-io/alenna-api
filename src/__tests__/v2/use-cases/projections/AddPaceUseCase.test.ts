@@ -166,7 +166,7 @@ describe('AddPaceUseCase', () => {
     vi.mocked(paceCatalogRepo.findById).mockResolvedValue(newPaceCatalog);
     vi.mocked(projectionRepo.addPace).mockResolvedValue(addedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhdddddddddddddddddddddd',
       quarter: 'Q1',
       week: 3,
@@ -182,7 +182,7 @@ describe('AddPaceUseCase', () => {
   it('returns Err when projection does not exist', async () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(null);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhbbbbbbbbbbbbbbbbbbbbbb',
       quarter: 'Q1',
       week: 1,
@@ -202,7 +202,7 @@ describe('AddPaceUseCase', () => {
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhbbbbbbbbbbbbbbbbbbbbbb',
       quarter: 'Q1',
       week: 1,
@@ -221,7 +221,7 @@ describe('AddPaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(paceCatalogRepo.findById).mockResolvedValue(null);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhbbbbbbbbbbbbbbbbbbbbbb',
       quarter: 'Q1',
       week: 1,
@@ -247,7 +247,7 @@ describe('AddPaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(paceCatalogRepo.findById).mockResolvedValue(paceCatalog);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhbbbbbbbbbbbbbbbbbbbbbb',
       quarter: 'Q1',
       week: 2,
@@ -274,7 +274,7 @@ describe('AddPaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(paceCatalogRepo.findById).mockResolvedValue(newPaceCatalog);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhcccccccccccccccccccccc',
       quarter: 'Q1',
       week: 3,
@@ -301,7 +301,7 @@ describe('AddPaceUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(paceCatalogRepo.findById).mockResolvedValue(newPaceCatalog);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhcccccccccccccccccccccc',
       quarter: 'Q1',
       week: 4,
@@ -330,7 +330,7 @@ describe('AddPaceUseCase', () => {
     vi.mocked(paceCatalogRepo.findById).mockResolvedValue(newPaceCatalog);
     vi.mocked(projectionRepo.addPace).mockResolvedValue(addedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhdddddddddddddddddddddd',
       quarter: 'Q1',
       week: 3,
@@ -354,7 +354,7 @@ describe('AddPaceUseCase', () => {
     vi.mocked(paceCatalogRepo.findById).mockResolvedValue(newPaceCatalog);
     vi.mocked(projectionRepo.addPace).mockResolvedValue(addedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhcccccccccccccccccccccc',
       quarter: 'Q2',
       week: 1,
@@ -379,7 +379,7 @@ describe('AddPaceUseCase', () => {
     vi.mocked(paceCatalogRepo.findById).mockResolvedValue(newPaceCatalog);
     vi.mocked(projectionRepo.addPace).mockResolvedValue(addedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhbbbbbbbbbbbbbbbbbbbbbb',
       quarter: 'Q1',
       week: 1,
@@ -405,7 +405,7 @@ describe('AddPaceUseCase', () => {
     vi.mocked(paceCatalogRepo.findById).mockResolvedValue(newPaceCatalog);
     vi.mocked(projectionRepo.addPace).mockResolvedValue(addedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clheeeeeeeeeeeeeeeeeeeeee',
       quarter: 'Q1',
       week: 4,
@@ -430,12 +430,29 @@ describe('AddPaceUseCase', () => {
     vi.mocked(paceCatalogRepo.findById).mockResolvedValue(newPaceCatalog);
     vi.mocked(projectionRepo.addPace).mockResolvedValue(addedPace);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       paceCatalogId: 'clhdddddddddddddddddddddd',
       quarter: 'Q2',
       week: 1,
     });
 
     expect(result.success).toBe(true);
+  });
+
+  it('returns Err when projection belongs to different school (tenant isolation)', async () => {
+    vi.mocked(projectionRepo.findById).mockResolvedValue(null); // Repository returns null when schoolId doesn't match
+
+    const result = await useCase.execute('clh1111111111111111111111', 'clh9999999999999999999999', { // Different schoolId
+      paceCatalogId: 'clhbbbbbbbbbbbbbbbbbbbbbb',
+      quarter: 'Q1',
+      week: 1,
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(ObjectNotFoundError);
+      expect(result.error.message).toContain('Projection with ID');
+    }
+    expect(projectionRepo.findById).toHaveBeenCalledWith('clh1111111111111111111111', 'clh9999999999999999999999');
   });
 });

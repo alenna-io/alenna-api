@@ -1,11 +1,9 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { container } from '../../di/container';
 import { ProjectionController } from '../../../../presentation/controllers';
-// import { clerkMiddleware, requireAuth } from '@clerk/express';
 import {
   attachUserContext,
-  // ensureTenantIsolation,
-  // requirePermission,
+  requireSchoolAdmin,
   validateBody,
 } from '../middleware';
 import {
@@ -30,16 +28,8 @@ const projectionController = new ProjectionController(
   container.useCase.markUngradedUseCase
 );
 
-// Apply Clerk middleware and authentication
-// router.use(clerkMiddleware({
-//   publishableKey: process.env.CLERK_PUBLISHABLE_KEY!,
-//   secretKey: process.env.CLERK_SECRET_KEY!,
-// }));
-// router.use(requireAuth());
-// router.use(ensureTenantIsolation);
-
-// Apply authentication middleware (MVP: hardcoded user)
 router.use(attachUserContext);
+router.use(requireSchoolAdmin);
 
 // Routes
 router.get(
@@ -54,7 +44,6 @@ router.get(
 
 router.post(
   '/',
-  // requirePermission('projections.create'),
   validateBody(CreateProjectionDTO),
   asyncHandler(projectionController.create.bind(projectionController))
 );

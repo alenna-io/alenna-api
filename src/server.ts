@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import { clerkMiddleware } from '@clerk/express';
 import { config } from './config/env';
 import { logger } from './utils/logger';
 import routes from './core/infrastructure/frameworks/api/routes';
@@ -10,14 +11,18 @@ import { errorHandler } from './core/infrastructure/frameworks/api/middleware';
 // Initialize Express app
 const app: express.Application = express();
 
+// Initialize Clerk middleware
+app.use(clerkMiddleware({
+  publishableKey: config.clerk.publishableKey,
+  secretKey: config.clerk.secretKey,
+}));
+
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors()); // Enable CORS
 app.use(morgan('dev')); // HTTP request logging
 app.use(express.json({ strict: true })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
-
-// Error handler (must be last middleware)
 
 // API Routes
 app.use('/api', routes);

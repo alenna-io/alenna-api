@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { GetDailyGoalsUseCase } from '../../../../core/application/use-cases/projections/GetDailyGoalsUseCase';
+import { GetDailyGoalsUseCase } from '../../../../core/application/use-cases/daily-goals/GetDailyGoalsUseCase';
 import { ObjectNotFoundError } from '../../../../core/domain/errors';
 import { createMockProjectionRepository, createMockDailyGoalRepository } from '../../utils/mockRepositories';
 import { ProjectionStatus } from '@prisma/client';
@@ -88,7 +88,7 @@ describe('GetDailyGoalsUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(dailyGoalRepo.findDailyGoalsByWeek).mockResolvedValue(dailyGoals);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       quarter: 'Q1',
       week: 1,
     });
@@ -109,7 +109,7 @@ describe('GetDailyGoalsUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(dailyGoalRepo.findDailyGoalsByWeek).mockResolvedValue([]);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       quarter: 'Q1',
       week: 1,
     });
@@ -123,7 +123,7 @@ describe('GetDailyGoalsUseCase', () => {
   it('returns Err when projection does not exist', async () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(null);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       quarter: 'Q1',
       week: 1,
     });
@@ -145,7 +145,7 @@ describe('GetDailyGoalsUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(dailyGoalRepo.findDailyGoalsByWeek).mockResolvedValue(dailyGoals);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       quarter: 'Q2',
       week: 3,
     });
@@ -168,7 +168,7 @@ describe('GetDailyGoalsUseCase', () => {
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(dailyGoalRepo.findDailyGoalsByWeek).mockResolvedValue(dailyGoals);
 
-    const result = await useCase.execute('clh1111111111111111111111', {
+    const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
       quarter: 'Q1',
       week: 1,
     });

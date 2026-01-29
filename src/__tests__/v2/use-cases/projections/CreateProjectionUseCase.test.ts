@@ -172,4 +172,22 @@ describe('CreateProjectionUseCase', () => {
       expect(result.error.message).toBe('A projection already exists for this student in this school year.');
     }
   });
+
+  it('returns Err when student belongs to different school (tenant isolation)', async () => {
+    const studentId = 'clh1234567890abcdefghijkl';
+    const schoolId = 'clh1111111111111111111111';
+    const differentSchoolId = 'clh9999999999999999999999';
+    const schoolYear = 'clh2222222222222222222222';
+
+    vi.mocked(studentRepo.findById).mockResolvedValue(null); // Repository returns null when schoolId doesn't match
+
+    const result = await useCase.execute({ studentId, schoolId: differentSchoolId, schoolYear });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(InvalidEntityError);
+      expect(result.error.message).toBe('Student not found; cannot create projection.');
+    }
+    expect(studentRepo.findById).toHaveBeenCalledWith(studentId, differentSchoolId);
+  });
 });

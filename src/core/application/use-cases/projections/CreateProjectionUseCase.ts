@@ -25,7 +25,7 @@ export class CreateProjectionUseCase {
       validateCuid(input.schoolYear, 'SchoolYear');
 
       // Validate student
-      const student = await this.studentRepository.findById(input.studentId);
+      const student = await this.studentRepository.findById(input.studentId, input.schoolId);
       if (!student) {
         return Err(new InvalidEntityError('Student', 'Student not found; cannot create projection.'));
       }
@@ -42,7 +42,7 @@ export class CreateProjectionUseCase {
       }
 
       // Validate school year
-      const schoolYear = await this.schoolYearRepository.findById(input.schoolYear);
+      const schoolYear = await this.schoolYearRepository.findById(input.schoolYear, input.schoolId);
       if (!schoolYear) {
         return Err(new InvalidEntityError('SchoolYear', 'School year not found; cannot create projection.'));
       }

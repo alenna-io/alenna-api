@@ -1,7 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
-import prisma from '../../../database/prisma.client';
+import { getAuth } from '@clerk/express';
+import { createClerkClient } from '@clerk/backend';
+import { config } from '../../../../../config/env';
 import { logger } from '../../../../../utils/logger';
-import { SchoolStatus, UserStatus } from '@prisma/client';
+import prisma from '../../../database/prisma.client';
+import { SchoolStatus } from '@prisma/client';
+
+const clerk = createClerkClient({
+  secretKey: config.clerk.secretKey,
+});
 
 // Extend Express Request to include user and school context
 declare global {
@@ -11,15 +18,13 @@ declare global {
       userEmail?: string;
       schoolId?: string;
       userRoles?: string[];
+      clerkUserId?: string;
     }
   }
 }
 
 /**
- * Middleware to attach user and school info to request
- * 
- * MVP: Hardcoded user for development (bypasses Clerk authentication)
- * TODO: Replace with proper Clerk authentication after MVP
+ * Middleware to authenticate user with Clerk and attach user context to request
  */
 export const attachUserContext = async (
   req: Request,
@@ -27,65 +32,123 @@ export const attachUserContext = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // MVP: Hardcoded user - get first active user from database
-    // TODO: Replace with Clerk authentication after MVP
-    const user = await prisma.user.findFirst({
+    const { userId, sessionId } = getAuth(req);
+
+    if (!userId || !sessionId) {
+      res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Authentication required. Please sign in.',
+      });
+      return;
+    }
+
+    const user = await clerk.users.getUser(userId);
+
+    if (!user) {
+      res.status(401).json({
+        error: 'Unauthorized',
+        message: 'User not found.',
+      });
+      return;
+    }
+
+    const primaryEmailAddress = user.emailAddresses.find(
+      (email) => email.id === user.primaryEmailAddressId
+    );
+
+    if (!primaryEmailAddress) {
+      res.status(400).json({
+        error: 'Bad Request',
+        message: 'User email not found.',
+      });
+      return;
+    }
+
+    const dbUser = await prisma.user.findUnique({
       where: {
-        status: UserStatus.ACTIVE,
-        deletedAt: null,
+        id: userId,
       },
       include: {
         school: true,
       },
-      orderBy: {
-        createdAt: 'asc',
-      },
     });
 
-    if (!user) {
-      logger.warn('No active user found in database for MVP mode');
+    if (!dbUser) {
       res.status(404).json({
-        error: 'No active user found. Please create a user in the database.'
+        error: 'Not Found',
+        message: 'User not found in database. Please contact your administrator.',
       });
       return;
     }
 
-    // Check if school is active
-    if (user.school && user.school.status !== SchoolStatus.ACTIVE) {
+    if (dbUser.deletedAt) {
       res.status(403).json({
-        error: 'Your school account has been deactivated. Please contact your administrator.'
+        error: 'Forbidden',
+        message: 'Your account has been deactivated.',
       });
       return;
     }
 
-    // Attach user context to request
-    req.userId = user.id;
-    req.userEmail = user.email;
-    req.schoolId = user.schoolId;
-    req.userRoles = []; // MVP: Empty roles array (will be populated after auth implementation)
+    if (dbUser.school && dbUser.school.status !== SchoolStatus.ACTIVE) {
+      res.status(403).json({
+        error: 'Forbidden',
+        message: 'Your school account has been deactivated. Please contact your administrator.',
+      });
+      return;
+    }
+
+    req.clerkUserId = userId;
+    req.userId = dbUser.id;
+    req.userEmail = primaryEmailAddress.emailAddress;
+    req.schoolId = dbUser.schoolId;
+    req.userRoles = user.publicMetadata?.roles as string[] || [];
 
     next();
   } catch (error) {
     logger.error('Error in attachUserContext middleware:', error);
-    res.status(500).json({ error: 'Internal server error' });
+
+    if (error instanceof Error && error.message.includes('401')) {
+      res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid or expired authentication token.',
+      });
+      return;
+    }
+
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'An error occurred during authentication.',
+    });
   }
 };
 
 /**
- * Middleware to check if user has required role (DEPRECATED - use permission middleware instead)
- * @deprecated Use requirePermission() from permission.middleware instead
+ * Middleware to require school admin role
  */
-export const requireRole = (...roles: string[]) => {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    if (!req.userId) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
+export const requireSchoolAdmin = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.userId) {
+    res.status(401).json({
+      error: 'Unauthorized',
+      message: 'Authentication required.',
+    });
+    return;
+  }
 
-    // MVP: Skip role checking (roles not implemented yet)
-    // TODO: Implement role checking after auth is added
-    logger.debug(`MVP: Skipping role check for roles: ${roles.join(', ')}`);
-    next();
-  };
+  const roles = req.userRoles || [];
+  const hasSchoolAdminRole = roles.includes('school_admin');
+
+  if (!hasSchoolAdminRole) {
+    res.status(403).json({
+      error: 'Forbidden',
+      message: 'School admin role required to access this resource.',
+    });
+    return;
+  }
+
+  next();
 };
 
