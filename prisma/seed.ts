@@ -117,16 +117,41 @@ async function main() {
     {
       name: 'Q1',
       startDate: new Date('2025-09-01'),
-      endDate: new Date('2025-11-09'),
+      endDate: new Date('2025-11-07'),
       order: 1,
       weeksCount: 9,
+      weeks: [
+        { weekNumber: 1, startDate: '2025-09-01', endDate: '2025-09-12' },
+        { weekNumber: 2, startDate: '2025-09-15', endDate: '2025-09-19' },
+        { weekNumber: 3, startDate: '2025-09-22', endDate: '2025-09-26' },
+        { weekNumber: 4, startDate: '2025-09-29', endDate: '2025-10-03' },
+        { weekNumber: 5, startDate: '2025-10-06', endDate: '2025-10-10' },
+        { weekNumber: 6, startDate: '2025-10-13', endDate: '2025-10-17' },
+        { weekNumber: 7, startDate: '2025-10-20', endDate: '2025-10-24' },
+        { weekNumber: 8, startDate: '2025-10-27', endDate: '2025-10-31' },
+        { weekNumber: 9, startDate: '2025-11-03', endDate: '2025-11-07' },
+      ],
     },
     {
       name: 'Q2',
       startDate: new Date('2025-11-10'),
-      endDate: new Date('2026-02-08'),
+      endDate: new Date('2026-02-06'),
       order: 2,
       weeksCount: 9,
+      weeks: [
+        { weekNumber: 1, startDate: '2025-11-10', endDate: '2025-11-21' },
+        { weekNumber: 2, startDate: '2025-11-24', endDate: '2025-11-28' },
+        { weekNumber: 3, startDate: '2025-12-01', endDate: '2025-12-05' },
+        { weekNumber: 4, startDate: '2025-12-08', endDate: '2025-12-12' },
+        { weekNumber: 5, startDate: '2025-12-15', endDate: '2025-12-18' },
+        { weekNumber: 6, startDate: '2026-01-12', endDate: '2026-01-16' },
+        { weekNumber: 7, startDate: '2026-01-19', endDate: '2026-01-23' },
+        { weekNumber: 8, startDate: '2026-01-26', endDate: '2026-01-30' },
+        { weekNumber: 9, startDate: '2026-02-02', endDate: '2026-02-06' },
+      ],
+      holidays: [
+        { startDate: '2025-12-19', endDate: '2026-01-10', label: 'Winter Break' },
+      ],
     },
     {
       name: 'Q3',
@@ -134,6 +159,20 @@ async function main() {
       endDate: new Date('2026-04-28'),
       order: 3,
       weeksCount: 9,
+      weeks: [
+        { weekNumber: 1, startDate: '2026-02-09', endDate: '2026-02-13' },
+        { weekNumber: 2, startDate: '2026-02-16', endDate: '2026-02-20' },
+        { weekNumber: 3, startDate: '2026-02-23', endDate: '2026-02-27' },
+        { weekNumber: 4, startDate: '2026-03-02', endDate: '2026-03-06' },
+        { weekNumber: 5, startDate: '2026-03-09', endDate: '2026-03-13' },
+        { weekNumber: 6, startDate: '2026-03-16', endDate: '2026-03-20' },
+        { weekNumber: 7, startDate: '2026-03-23', endDate: '2026-03-27' },
+        { weekNumber: 8, startDate: '2026-04-13', endDate: '2026-04-18' },
+        { weekNumber: 9, startDate: '2026-04-20', endDate: '2026-04-28' },
+      ],
+      holidays: [
+        { startDate: '2026-03-30', endDate: '2026-04-10', label: 'Spring Break' },
+      ],
     },
     {
       name: 'Q4',
@@ -141,6 +180,17 @@ async function main() {
       endDate: new Date('2026-07-11'),
       order: 4,
       weeksCount: 9,
+      weeks: [
+        { weekNumber: 1, startDate: '2026-04-29', endDate: '2026-05-08' },
+        { weekNumber: 2, startDate: '2026-05-11', endDate: '2026-05-15' },
+        { weekNumber: 3, startDate: '2026-05-18', endDate: '2026-05-22' },
+        { weekNumber: 4, startDate: '2026-05-25', endDate: '2026-05-29' },
+        { weekNumber: 5, startDate: '2026-06-01', endDate: '2026-06-05' },
+        { weekNumber: 6, startDate: '2026-06-08', endDate: '2026-06-12' },
+        { weekNumber: 7, startDate: '2026-06-15', endDate: '2026-06-19' },
+        { weekNumber: 8, startDate: '2026-06-22', endDate: '2026-06-27' },
+        { weekNumber: 9, startDate: '2026-06-29', endDate: '2026-07-10' },
+      ],
     },
   ];
 
@@ -167,49 +217,64 @@ async function main() {
     quarters.push(quarter);
     console.log(`  ✅ Created quarter: ${quarter.name}`);
 
-    // Create School Weeks for this quarter
-    // Generate weeks starting from the quarter start date, aligned to Monday-Sunday
-    let currentDate = new Date(quarterData.startDate);
-
-    // Find the first Monday on or before the start date
-    const startDay = currentDate.getDay();
-    const daysToMonday = startDay === 0 ? 6 : startDay - 1;
-    currentDate.setDate(currentDate.getDate() - daysToMonday);
-
-    for (let weekNum = 1; weekNum <= quarterData.weeksCount; weekNum++) {
-      const weekStart = new Date(currentDate);
-      const weekEnd = new Date(currentDate);
-      weekEnd.setDate(weekEnd.getDate() + 6); // Sunday
-
-      // Ensure week doesn't exceed quarter boundaries
-      if (weekStart < quarterData.startDate) {
-        weekStart.setTime(quarterData.startDate.getTime());
-      }
-      if (weekEnd > quarterData.endDate) {
-        weekEnd.setTime(quarterData.endDate.getTime());
-      }
-
+    // Create School Weeks for this quarter with exact dates
+    for (const weekData of quarterData.weeks) {
       await prisma.schoolWeek.upsert({
         where: {
           quarterId_weekNumber: {
             quarterId: quarter.id,
-            weekNumber: weekNum,
+            weekNumber: weekData.weekNumber,
           },
         },
-        update: {},
+        update: {
+          startDate: new Date(weekData.startDate),
+          endDate: new Date(weekData.endDate),
+        },
         create: {
           id: randomUUID(),
           quarterId: quarter.id,
-          weekNumber: weekNum,
-          startDate: weekStart,
-          endDate: weekEnd,
+          weekNumber: weekData.weekNumber,
+          startDate: new Date(weekData.startDate),
+          endDate: new Date(weekData.endDate),
         },
       });
-
-      // Move to next Monday
-      currentDate.setDate(currentDate.getDate() + 7);
     }
     console.log(`    ✅ Created ${quarterData.weeksCount} school weeks for ${quarter.name}`);
+
+    // Create holidays for this quarter if they exist
+    if (quarterData.holidays) {
+      for (const holidayData of quarterData.holidays) {
+        const existingHoliday = await prisma.quarterHoliday.findFirst({
+          where: {
+            schoolYearId: schoolYear.id,
+            quarterId: quarter.id,
+            startDate: new Date(holidayData.startDate),
+          },
+        });
+
+        if (existingHoliday) {
+          await prisma.quarterHoliday.update({
+            where: { id: existingHoliday.id },
+            data: {
+              endDate: new Date(holidayData.endDate),
+              label: holidayData.label,
+            },
+          });
+        } else {
+          await prisma.quarterHoliday.create({
+            data: {
+              id: randomUUID(),
+              schoolYearId: schoolYear.id,
+              quarterId: quarter.id,
+              startDate: new Date(holidayData.startDate),
+              endDate: new Date(holidayData.endDate),
+              label: holidayData.label,
+            },
+          });
+        }
+      }
+      console.log(`    ✅ Created ${quarterData.holidays.length} holiday(s) for ${quarter.name}`);
+    }
   }
 
   console.log(`✅ Created ${quarters.length} quarters with school weeks`);

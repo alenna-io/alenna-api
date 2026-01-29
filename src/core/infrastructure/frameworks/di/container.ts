@@ -35,7 +35,7 @@ import {
 // Category Use Cases
 import { GetCategoriesWithSubjectsUseCase } from '../../../application/use-cases/categories';
 // School Use Cases
-import { GetSchoolWithCurrentYearByUserIdUseCase } from '../../../application/use-cases/schools';
+import { GetSchoolWithCurrentYearByUserIdUseCase, GetCurrentWeekUseCase } from '../../../application/use-cases/schools';
 // Student Use Cases
 import { GetEnrolledWithoutOpenProjectionUseCase } from '../../../application/use-cases/students';
 // Subject Use Cases
@@ -148,6 +148,10 @@ const getSchoolWithCurrentYearByUserIdUseCase = new GetSchoolWithCurrentYearByUs
   schoolRepository
 );
 
+const getCurrentWeekUseCase = new GetCurrentWeekUseCase(
+  schoolRepository
+);
+
 // Student Use Cases
 const getEnrolledWithoutOpenProjectionUseCase = new GetEnrolledWithoutOpenProjectionUseCase(
   studentRepository,
@@ -243,6 +247,7 @@ export const container = {
     getCategoriesWithSubjectsUseCase,
     // School Use Cases
     getSchoolWithCurrentYearByUserIdUseCase,
+    getCurrentWeekUseCase,
     // Student Use Cases
     getEnrolledWithoutOpenProjectionUseCase,
     // Subject Use Cases

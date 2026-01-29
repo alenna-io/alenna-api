@@ -38,49 +38,73 @@ export class AddPaceUseCase {
         return Err(new ObjectAlreadyExistsError('ProjectionPace', 'This pace is already in the projection'));
       }
 
-      const subjectId = paceCatalog.subject.id;
+      const categoryName = paceCatalog.subject.category.name;
       const newPaceOrderIndex = paceCatalog.orderIndex;
+      const isElectivesCategory = categoryName === 'Electives';
 
-      const allPacesInSubject = projection.projectionPaces.filter(
-        p => !p.deletedAt && p.paceCatalog.subject.id === subjectId
-      );
+      // For non-Electives categories, validate orderIndex across the entire category
+      // For Electives, skip order validation (no sequential order required)
+      const allPacesInCategory = isElectivesCategory
+        ? [] // Skip validation for Electives
+        : projection.projectionPaces.filter(
+          p => !p.deletedAt && p.paceCatalog.subject.category.name === categoryName
+        );
 
       const normalizeQuarter = (q: string) => q.startsWith('Q') ? q : `Q${q}`;
       const normalizedTargetQuarter = normalizeQuarter(input.quarter);
 
-      const targetWeekPace = allPacesInSubject.find(
-        p => normalizeQuarter(p.quarter) === normalizedTargetQuarter && p.week === input.week
-      );
+      // Only validate if not Electives
+      if (!isElectivesCategory) {
+        const targetWeekPace = allPacesInCategory.find(
+          p => normalizeQuarter(p.quarter) === normalizedTargetQuarter && p.week === input.week
+        );
 
-      if (targetWeekPace) {
-        const targetPaceOrderIndex = targetWeekPace.paceCatalog.orderIndex;
-        if (targetPaceOrderIndex > newPaceOrderIndex) {
-          return Err(new InvalidEntityError('ProjectionPace', `Cannot add pace: cannot place pace with orderIndex ${newPaceOrderIndex} at position that already has pace with orderIndex ${targetPaceOrderIndex}`));
+        if (targetWeekPace) {
+          const targetPaceOrderIndex = targetWeekPace.paceCatalog.orderIndex;
+          if (targetPaceOrderIndex > newPaceOrderIndex) {
+            return Err(new InvalidEntityError('ProjectionPace', `Cannot add pace: cannot place pace with orderIndex ${newPaceOrderIndex} at position that already has pace with orderIndex ${targetPaceOrderIndex}`));
+          }
         }
-      }
 
-      const immediatePaceBefore = allPacesInSubject
-        .filter(p => {
-          const normalizedPaceQuarter = normalizeQuarter(p.quarter);
-          if (normalizedPaceQuarter < normalizedTargetQuarter) return true;
-          if (normalizedPaceQuarter === normalizedTargetQuarter && p.week < input.week) return true;
-          return false;
-        })
-        .sort((a, b) => {
-          const aQuarter = normalizeQuarter(a.quarter);
-          const bQuarter = normalizeQuarter(b.quarter);
-          if (aQuarter !== bQuarter) return bQuarter.localeCompare(aQuarter);
-          return b.week - a.week;
-        })
-        .shift();
+        const immediatePaceBefore = allPacesInCategory
+          .filter(p => {
+            const normalizedPaceQuarter = normalizeQuarter(p.quarter);
+            if (normalizedPaceQuarter < normalizedTargetQuarter) return true;
+            if (normalizedPaceQuarter === normalizedTargetQuarter && p.week < input.week) return true;
+            return false;
+          })
+          .sort((a, b) => {
+            const aQuarter = normalizeQuarter(a.quarter);
+            const bQuarter = normalizeQuarter(b.quarter);
+            if (aQuarter !== bQuarter) return bQuarter.localeCompare(aQuarter);
+            return b.week - a.week;
+          })
+          .shift();
 
-      if (immediatePaceBefore && immediatePaceBefore.paceCatalog.orderIndex > newPaceOrderIndex) {
-        const orderIndexDiff = immediatePaceBefore.paceCatalog.orderIndex - newPaceOrderIndex;
-        const weekDiff = input.week - immediatePaceBefore.week;
-        const isImmediatelyAfter = normalizedTargetQuarter === normalizeQuarter(immediatePaceBefore.quarter) && weekDiff === 1;
+        if (immediatePaceBefore && immediatePaceBefore.paceCatalog.orderIndex > newPaceOrderIndex) {
+          const orderIndexDiff = immediatePaceBefore.paceCatalog.orderIndex - newPaceOrderIndex;
+          const weekDiff = input.week - immediatePaceBefore.week;
+          const isImmediatelyAfter = normalizedTargetQuarter === normalizeQuarter(immediatePaceBefore.quarter) && weekDiff === 1;
 
-        if (orderIndexDiff >= 1 && isImmediatelyAfter) {
-          return Err(new InvalidEntityError('ProjectionPace', `Cannot add pace: cannot place pace with orderIndex ${newPaceOrderIndex} after pace with orderIndex ${immediatePaceBefore.paceCatalog.orderIndex} (at ${immediatePaceBefore.quarter} week ${immediatePaceBefore.week})`));
+          if (orderIndexDiff >= 1 && isImmediatelyAfter) {
+            return Err(new InvalidEntityError('ProjectionPace', `Cannot add pace: cannot place pace with orderIndex ${newPaceOrderIndex} after pace with orderIndex ${immediatePaceBefore.paceCatalog.orderIndex} (at ${immediatePaceBefore.quarter} week ${immediatePaceBefore.week})`));
+          }
+        }
+
+        // Check if there's any pace after this position with lower orderIndex
+        // This prevents placing a higher orderIndex pace before a lower orderIndex pace
+        const pacesAfter = allPacesInCategory
+          .filter(p => {
+            const normalizedPaceQuarter = normalizeQuarter(p.quarter);
+            if (normalizedPaceQuarter > normalizedTargetQuarter) return true;
+            if (normalizedPaceQuarter === normalizedTargetQuarter && p.week > input.week) return true;
+            return false;
+          });
+
+        // Check if any pace after has a lower orderIndex
+        const paceAfterWithLowerOrder = pacesAfter.find(p => p.paceCatalog.orderIndex < newPaceOrderIndex);
+        if (paceAfterWithLowerOrder) {
+          return Err(new InvalidEntityError('ProjectionPace', `Cannot add pace: cannot place pace with orderIndex ${newPaceOrderIndex} before pace with orderIndex ${paceAfterWithLowerOrder.paceCatalog.orderIndex} (at ${paceAfterWithLowerOrder.quarter} week ${paceAfterWithLowerOrder.week})`));
         }
       }
 

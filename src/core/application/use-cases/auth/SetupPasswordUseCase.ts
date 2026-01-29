@@ -34,18 +34,32 @@ export class SetupPasswordUseCase {
     } catch (error) {
       logger.error('[SetupPasswordUseCase] Error setting up password:', error);
 
+      // Handle domain errors
       if (error instanceof InvalidEntityError || error instanceof ObjectNotFoundError) {
         return Err(error as DomainError);
       }
 
-      if (error instanceof Error && 'statusCode' in error) {
+      // Handle Clerk API errors (they have statusCode property)
+      if (error instanceof Error) {
         const statusCode = (error as any).statusCode;
-        if (statusCode === 400 || statusCode === 422) {
-          return Err(new InvalidEntityError('Password', error.message));
+        if (statusCode === 400 || statusCode === 422 || statusCode === 404) {
+          return Err(new InvalidEntityError('Password', error.message || 'Failed to update password'));
+        }
+
+        // For other errors, check if it's a Clerk error format
+        if ('errors' in error && Array.isArray((error as any).errors)) {
+          const clerkErrors = (error as any).errors;
+          if (clerkErrors.length > 0) {
+            const firstError = clerkErrors[0];
+            const errorMessage = firstError.longMessage || firstError.message || 'Failed to update password';
+            return Err(new InvalidEntityError('Password', errorMessage));
+          }
         }
       }
 
-      throw error;
+      // For any other error, wrap it in a DomainError
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      return Err(new InvalidEntityError('Password', `Failed to set password: ${errorMessage}`));
     }
   }
 }

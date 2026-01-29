@@ -22,6 +22,23 @@ export class PrismaSchoolRepository implements ISchoolRepository {
           where: {
             status: SchoolYearStatus.CURRENT_YEAR,
           },
+          include: {
+            quarters: {
+              include: {
+                schoolWeeks: {
+                  where: {
+                    deletedAt: null,
+                  },
+                  orderBy: {
+                    weekNumber: 'asc',
+                  },
+                },
+              },
+              orderBy: {
+                order: 'asc',
+              },
+            },
+          },
         },
       },
     });
