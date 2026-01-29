@@ -55,7 +55,12 @@ describe('MarkUngradedUseCase', () => {
       },
       dailyGoals: [],
     };
-    return { ...base, ...overrides } as ProjectionWithDetails;
+    return {
+      ...base,
+      ...overrides,
+      student: overrides?.student ?? base.student,
+      dailyGoals: overrides?.dailyGoals ?? base.dailyGoals,
+    } as ProjectionWithDetails;
   };
 
   const createMockPace = (
