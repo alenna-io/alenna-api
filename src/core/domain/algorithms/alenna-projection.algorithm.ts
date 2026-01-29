@@ -847,8 +847,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
     subject: SubjectPlan,
     paceCode: string,
     quarterBaseWeek: number,
-    weeks?: WeekSlot[],
-    isFirstPaceInQuarter: boolean = false
+    weeks?: WeekSlot[]
   ): boolean {
     const currentPaceNum = parseInt(paceCode);
 

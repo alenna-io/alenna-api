@@ -181,7 +181,7 @@ describe('AlennaProjectionAlgorithm', () => {
         byWeek.get(weekKey)!.push(pace);
       }
 
-      for (const [weekKey, paces] of byWeek) {
+      for (const [_weekKey, paces] of byWeek) {
         expect(paces.length).toBe(2);
         const categoryIds = paces.map(p => p.categoryId);
         expect(categoryIds).toContain('cat-1');
@@ -237,7 +237,7 @@ describe('AlennaProjectionAlgorithm', () => {
         byWeek.get(weekKey)!.push(pace);
       }
 
-      for (const [weekKey, paces] of byWeek) {
+      for (const [_weekKey, paces] of byWeek) {
         expect(paces.length).toBeGreaterThanOrEqual(1);
         expect(paces.length).toBeLessThanOrEqual(4);
       }
@@ -444,7 +444,7 @@ describe('AlennaProjectionAlgorithm', () => {
         byWeek.get(weekKey)!.push(pace);
       }
 
-      for (const [weekKey, paces] of byWeek) {
+      for (const [_weekKey, paces] of byWeek) {
         expect(paces.length).toBeLessThanOrEqual(3);
         const uniqueSubjects = new Set(paces.map(p => p.categoryId));
         expect(uniqueSubjects.size).toBe(paces.length);
@@ -499,7 +499,7 @@ describe('AlennaProjectionAlgorithm', () => {
       // Note: When totalPaces > 72, notPairWith constraints may be relaxed to ensure all paces are placed
       const totalPaces = result.length;
       if (totalPaces <= 72) {
-        for (const [weekKey, paces] of byWeek) {
+        for (const [_weekKey, paces] of byWeek) {
           const categoryIds = paces.map(p => p.categoryId);
           const hasCat1 = categoryIds.includes('cat-1');
           const hasCat2 = categoryIds.includes('cat-2');
@@ -648,7 +648,7 @@ describe('AlennaProjectionAlgorithm', () => {
         byQuarter.get(pace.quarter)!.push(pace);
       }
 
-      for (const [quarter, paces] of byQuarter) {
+      for (const [_quarter, paces] of byQuarter) {
         const cat1Paces = paces.filter(p => p.categoryId === 'cat-1');
         const paceCodes = cat1Paces.map(p => parseInt(p.paceCode)).sort((a, b) => a - b);
 
@@ -809,7 +809,7 @@ describe('AlennaProjectionAlgorithm', () => {
         byWeek.get(weekKey)!.push(pace);
       }
 
-      for (const [weekKey, paces] of byWeek) {
+      for (const [_weekKey, paces] of byWeek) {
         expect(paces.length).toBeLessThanOrEqual(3);
       }
     });

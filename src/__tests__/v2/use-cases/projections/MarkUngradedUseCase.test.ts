@@ -3,25 +3,7 @@ import { MarkUngradedUseCase } from '../../../../core/application/use-cases/proj
 import { InvalidEntityError, ObjectNotFoundError } from '../../../../core/domain/errors';
 import { createMockProjectionRepository } from '../../utils/mockRepositories';
 import { ProjectionStatus, ProjectionPaceStatus } from '@prisma/client';
-import { Prisma } from '@prisma/client';
-
-type ProjectionWithDetails = Prisma.ProjectionGetPayload<{
-  include: {
-    projectionPaces: {
-      include: {
-        paceCatalog: {
-          include: {
-            subject: {
-              include: {
-                category: true;
-              };
-            };
-          };
-        };
-      };
-    };
-  };
-}>;
+import { ProjectionWithDetails } from '../../../../core/infrastructure/repositories/types/projections.types';
 
 describe('MarkUngradedUseCase', () => {
   let projectionRepo: ReturnType<typeof createMockProjectionRepository>;
@@ -33,7 +15,7 @@ describe('MarkUngradedUseCase', () => {
   });
 
   const createMockProjection = (overrides?: Partial<ProjectionWithDetails>): ProjectionWithDetails => {
-    return {
+    const base: ProjectionWithDetails = {
       id: 'clh1111111111111111111111',
       studentId: 'clh2222222222222222222222',
       schoolId: 'clh3333333333333333333333',
@@ -43,8 +25,37 @@ describe('MarkUngradedUseCase', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       projectionPaces: [],
-      ...overrides,
-    } as ProjectionWithDetails;
+      student: {
+        id: 'clh2222222222222222222222',
+        userId: 'clh7777777777777777777777',
+        schoolId: 'clh3333333333333333333333',
+        deletedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        user: {
+          id: 'clh7777777777777777777777',
+          clerkId: null,
+          email: 'test@example.com',
+          firstName: 'Test',
+          lastName: 'User',
+          phone: null,
+          streetAddress: null,
+          city: null,
+          state: null,
+          country: null,
+          zipCode: null,
+          schoolId: 'clh3333333333333333333333',
+          status: 'ACTIVE',
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          language: 'es',
+          createdPassword: false,
+        },
+      },
+      dailyGoals: [],
+    };
+    return { ...base, ...overrides } as ProjectionWithDetails;
   };
 
   const createMockPace = (
@@ -82,17 +93,22 @@ describe('MarkUngradedUseCase', () => {
           name: 'Math',
           categoryId: 'clh6666666666666666666666',
           levelId: 'clh5555555555555555555555',
+          difficulty: 1,
           createdAt: new Date(),
           updatedAt: new Date(),
           category: {
             id: 'clh6666666666666666666666',
             name: 'Math',
+            description: null,
             displayOrder: 1,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         },
       },
+      gradeHistory: [],
+      originalQuarter: null,
+      originalWeek: null,
     };
   };
 
@@ -108,7 +124,7 @@ describe('MarkUngradedUseCase', () => {
       ...pace1,
       grade: null,
       status: ProjectionPaceStatus.PENDING,
-    };
+    } as typeof pace1;
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.markUngraded).mockResolvedValue(updatedPace);
@@ -135,7 +151,7 @@ describe('MarkUngradedUseCase', () => {
       ...pace1,
       grade: null,
       status: ProjectionPaceStatus.PENDING,
-    };
+    } as typeof pace1;
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.markUngraded).mockResolvedValue(updatedPace);
@@ -161,7 +177,7 @@ describe('MarkUngradedUseCase', () => {
       ...pace1,
       grade: null,
       status: ProjectionPaceStatus.PENDING,
-    };
+    } as typeof pace1;
 
     vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
     vi.mocked(projectionRepo.markUngraded).mockResolvedValue(updatedPace);
