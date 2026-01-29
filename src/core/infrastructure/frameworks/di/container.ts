@@ -8,6 +8,7 @@ import {
   PrismaSubjectRepository,
   PrismaCategoryRepository,
   PrismaDailyGoalRepository,
+  PrismaMonthlyGoalRepository,
 } from '../../repositories';
 // Domain Services
 import { AlennaProjectionAlgorithm } from '../../../domain/algorithms/alenna-projection.algorithm';
@@ -38,6 +39,17 @@ import { GetSchoolWithCurrentYearByUserIdUseCase } from '../../../application/us
 import { GetEnrolledWithoutOpenProjectionUseCase } from '../../../application/use-cases/students';
 // Subject Use Cases
 import { GetSubjectAndNextLevelsWithPacesUseCase } from '../../../application/use-cases/subjects';
+// Monthly Goals Use Cases
+import {
+  CreateMonthlyGoalTemplateUseCase,
+  GetMonthlyGoalsUseCase,
+  UpdateMonthlyGoalTemplateUseCase,
+  DeleteMonthlyGoalTemplateUseCase,
+  CreateQuarterPercentageUseCase,
+  GetProjectionMonthlyGoalsUseCase,
+  UpdateMonthlyGoalGradeUseCase,
+  MarkMonthlyGoalUngradedUseCase,
+} from '../../../application/use-cases/monthly-goals';
 
 // Repositories
 const projectionRepository = new PrismaProjectionRepository();
@@ -49,6 +61,7 @@ const projectionPaceRepository = new PrismaProjectionPaceRepository();
 const subjectRepository = new PrismaSubjectRepository();
 const categoryRepository = new PrismaCategoryRepository();
 const dailyGoalRepository = new PrismaDailyGoalRepository();
+const monthlyGoalRepository = new PrismaMonthlyGoalRepository();
 
 // Domain Services
 const alennaProjectionGenerator = new AlennaProjectionAlgorithm();
@@ -142,6 +155,44 @@ const getSubjectAndNextLevelsWithPacesUseCase = new GetSubjectAndNextLevelsWithP
   subjectRepository
 );
 
+// Monthly Goals Use Cases
+const createMonthlyGoalTemplateUseCase = new CreateMonthlyGoalTemplateUseCase(
+  monthlyGoalRepository,
+  schoolYearRepository
+);
+
+const getMonthlyGoalsUseCase = new GetMonthlyGoalsUseCase(
+  monthlyGoalRepository
+);
+
+const updateMonthlyGoalTemplateUseCase = new UpdateMonthlyGoalTemplateUseCase(
+  monthlyGoalRepository
+);
+
+const deleteMonthlyGoalTemplateUseCase = new DeleteMonthlyGoalTemplateUseCase(
+  monthlyGoalRepository
+);
+
+const createQuarterPercentageUseCase = new CreateQuarterPercentageUseCase(
+  monthlyGoalRepository,
+  schoolYearRepository
+);
+
+const getProjectionMonthlyGoalsUseCase = new GetProjectionMonthlyGoalsUseCase(
+  monthlyGoalRepository,
+  projectionRepository
+);
+
+const updateMonthlyGoalGradeUseCase = new UpdateMonthlyGoalGradeUseCase(
+  monthlyGoalRepository,
+  projectionRepository
+);
+
+const markMonthlyGoalUngradedUseCase = new MarkMonthlyGoalUngradedUseCase(
+  monthlyGoalRepository,
+  projectionRepository
+);
+
 // Container
 export const container = {
   repository: {
@@ -154,6 +205,7 @@ export const container = {
     subjectRepository,
     categoryRepository,
     dailyGoalRepository,
+    monthlyGoalRepository,
   },
   service: {
     projectionGenerator: alennaProjectionGenerator,
@@ -181,5 +233,14 @@ export const container = {
     getEnrolledWithoutOpenProjectionUseCase,
     // Subject Use Cases
     getSubjectAndNextLevelsWithPacesUseCase,
+    // Monthly Goals Use Cases
+    createMonthlyGoalTemplateUseCase,
+    getMonthlyGoalsUseCase,
+    updateMonthlyGoalTemplateUseCase,
+    deleteMonthlyGoalTemplateUseCase,
+    createQuarterPercentageUseCase,
+    getProjectionMonthlyGoalsUseCase,
+    updateMonthlyGoalGradeUseCase,
+    markMonthlyGoalUngradedUseCase,
   },
 };

@@ -26,6 +26,73 @@ async function main() {
 
   console.log('✅ Created school:', school.name);
 
+  // Create Roles
+  console.log('\n🔐 Creating roles...');
+  const schoolAdminRole = await prisma.role.upsert({
+    where: { name: 'SCHOOL_ADMIN' },
+    update: {},
+    create: {
+      name: 'SCHOOL_ADMIN',
+      description: 'School administrator with full access',
+    },
+  });
+  console.log('✅ Created role: SCHOOL_ADMIN');
+
+  const studentRole = await prisma.role.upsert({
+    where: { name: 'STUDENT' },
+    update: {},
+    create: {
+      name: 'STUDENT',
+      description: 'Student user with limited access',
+    },
+  });
+  console.log('✅ Created role: STUDENT');
+
+  // Create Admin User
+  console.log('\n👤 Creating admin user...');
+  const clerkUserId = 'user_33skKBEkI8wMg70KnEwHwrjVP93';
+
+  // Delete existing user if it exists with wrong ID
+  await prisma.user.deleteMany({
+    where: { email: 'demo.admin@alenna.io' },
+  });
+
+  const adminUser = await prisma.user.create({
+    data: {
+      id: clerkUserId, // Use Clerk user ID as the primary key
+      clerkId: clerkUserId,
+      email: 'demo.admin@alenna.io',
+      firstName: 'Admin',
+      lastName: 'User',
+      phone: '+1 (555) 000-0000',
+      streetAddress: '123 Admin Street',
+      city: 'Admin City',
+      state: 'AC',
+      country: 'USA',
+      zipCode: '00000',
+      schoolId: school.id,
+      createdPassword: false,
+    },
+  });
+  console.log('✅ Created admin user:', adminUser.email);
+  console.log('   User ID:', adminUser.id);
+
+  // Assign SCHOOL_ADMIN role to admin user
+  await prisma.userRole.upsert({
+    where: {
+      userId_roleId: {
+        userId: adminUser.id,
+        roleId: schoolAdminRole.id,
+      },
+    },
+    update: {},
+    create: {
+      userId: adminUser.id,
+      roleId: schoolAdminRole.id,
+    },
+  });
+  console.log('✅ Assigned SCHOOL_ADMIN role to admin user');
+
   // Create School Year
   console.log('\n📅 Creating School Year (2025-2026)...');
   const schoolYear = await prisma.schoolYear.upsert({
@@ -103,17 +170,17 @@ async function main() {
     // Create School Weeks for this quarter
     // Generate weeks starting from the quarter start date, aligned to Monday-Sunday
     let currentDate = new Date(quarterData.startDate);
-    
+
     // Find the first Monday on or before the start date
     const startDay = currentDate.getDay();
     const daysToMonday = startDay === 0 ? 6 : startDay - 1;
     currentDate.setDate(currentDate.getDate() - daysToMonday);
-    
+
     for (let weekNum = 1; weekNum <= quarterData.weeksCount; weekNum++) {
       const weekStart = new Date(currentDate);
       const weekEnd = new Date(currentDate);
       weekEnd.setDate(weekEnd.getDate() + 6); // Sunday
-      
+
       // Ensure week doesn't exceed quarter boundaries
       if (weekStart < quarterData.startDate) {
         weekStart.setTime(quarterData.startDate.getTime());
@@ -138,7 +205,7 @@ async function main() {
           endDate: weekEnd,
         },
       });
-      
+
       // Move to next Monday
       currentDate.setDate(currentDate.getDate() + 7);
     }
@@ -240,6 +307,21 @@ async function main() {
         id: studentId,
         userId: studentUser.id,
         schoolId: school.id,
+      },
+    });
+
+    // Assign STUDENT role
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: studentUser.id,
+          roleId: studentRole.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: studentUser.id,
+        roleId: studentRole.id,
       },
     });
 

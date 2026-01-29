@@ -70,6 +70,11 @@ export const attachUserContext = async (
       },
       include: {
         school: true,
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
       },
     });
 
@@ -101,7 +106,7 @@ export const attachUserContext = async (
     req.userId = dbUser.id;
     req.userEmail = primaryEmailAddress.emailAddress;
     req.schoolId = dbUser.schoolId;
-    req.userRoles = user.publicMetadata?.roles as string[] || [];
+    req.userRoles = dbUser.userRoles.map((ur) => ur.role.name.toLowerCase());
 
     next();
   } catch (error) {

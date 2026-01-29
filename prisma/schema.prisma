@@ -58,12 +58,43 @@ model User {
   updatedAt       DateTime         @updatedAt @map("updated_at")
   language        String?          @default("es")
   createdPassword Boolean          @default(false) @map("created_password")
-  student         Student?         // Optional: not all users are students
+  student         Student?
   school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  userRoles       UserRole[]
 
   @@index([schoolId])
   @@index([clerkId])
   @@map("users")
+}
+
+enum RoleType {
+  SCHOOL_ADMIN
+  STUDENT
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  name        RoleType   @unique
+  description String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  userRoles   UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  roleId    String   @map("role_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
 }
 
 enum SchoolYearStatus {
@@ -82,6 +113,8 @@ model SchoolYear {
   createdAt                        DateTime                          @default(now()) @map("created_at")
   updatedAt                        DateTime                          @updatedAt @map("updated_at")
   quarters                         Quarter[]
+  monthlyGoalTemplates             MonthlyGoalTemplate[]
+  quarterGradePercentages          QuarterGradePercentage[]
   school                           School                            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
@@ -172,11 +205,84 @@ model Projection {
   updatedAt          DateTime            @updatedAt
   dailyGoals         DailyGoal[]
   projectionPaces    ProjectionPace[]
+  projectionMonthlyGoals ProjectionMonthlyGoal[]
   student            Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
   @@index([studentId, schoolYear, status])
   @@map("projections")
+}
+
+enum ProjectionMonthlyGoalStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model MonthlyGoalTemplate {
+  id                String                  @id @default(cuid())
+  name              String
+  quarter           String
+  schoolYearId      String                  @map("school_year_id")
+  schoolId          String                  @map("school_id")
+  deletedAt         DateTime?               @map("deleted_at")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+  schoolYear        SchoolYear              @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  projectionMonthlyGoals ProjectionMonthlyGoal[]
+
+  @@unique([schoolYearId, quarter, name])
+  @@index([schoolYearId])
+  @@index([schoolYearId, quarter])
+  @@map("monthly_goal_templates")
+}
+
+model QuarterGradePercentage {
+  id           String      @id @default(cuid())
+  percentage   Int
+  quarter      String
+  schoolYearId String      @map("school_year_id")
+  schoolId     String      @map("school_id")
+  deletedAt    DateTime?   @map("deleted_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  schoolYear   SchoolYear  @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolYearId, quarter])
+  @@index([schoolYearId])
+  @@map("quarter_grade_percentages")
+}
+
+model ProjectionMonthlyGoal {
+  id                  String                      @id @default(cuid())
+  projectionId        String                      @map("projection_id")
+  monthlyGoalTemplateId String                    @map("monthly_goal_template_id")
+  grade               Int?
+  status              ProjectionMonthlyGoalStatus @default(PENDING)
+  deletedAt           DateTime?                   @map("deleted_at")
+  createdAt           DateTime                    @default(now()) @map("created_at")
+  updatedAt           DateTime                    @updatedAt @map("updated_at")
+  projection          Projection                  @relation(fields: [projectionId], references: [id], onDelete: Cascade)
+  monthlyGoalTemplate MonthlyGoalTemplate        @relation(fields: [monthlyGoalTemplateId], references: [id], onDelete: Cascade)
+  gradeHistory        MonthlyGoalGradeHistory[]
+
+  @@unique([projectionId, monthlyGoalTemplateId])
+  @@index([projectionId])
+  @@index([projectionId, status])
+  @@map("projection_monthly_goals")
+}
+
+model MonthlyGoalGradeHistory {
+  id                    String                @id @default(cuid())
+  grade                 Int
+  date                  DateTime              @default(now())
+  note                  String?
+  projectionMonthlyGoalId String              @map("projection_monthly_goal_id")
+  createdAt             DateTime              @default(now()) @map("created_at")
+  projectionMonthlyGoal ProjectionMonthlyGoal @relation(fields: [projectionMonthlyGoalId], references: [id], onDelete: Cascade)
+
+  @@index([projectionMonthlyGoalId])
+  @@map("monthly_goal_grade_history")
 }
 
 model Category {
@@ -319,4 +425,3 @@ model NoteHistory {
   @@index([dailyGoalId])
   @@map("note_history")
 }
-
