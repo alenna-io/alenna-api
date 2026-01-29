@@ -17,6 +17,7 @@ import { Prisma, ProjectionPaceStatus } from '@prisma/client';
 import { logger } from '../../../../utils/logger';
 import { validateCuid, validateCuids } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
+import { randomUUID } from 'crypto';
 
 export class GenerateProjectionUseCase {
   constructor(
@@ -96,7 +97,7 @@ export class GenerateProjectionUseCase {
           }
 
           return {
-            id: crypto.randomUUID(),
+            id: randomUUID(),
             projectionId: projection.id,
             paceCatalogId: paceCatalog.id,
             quarter: g.quarter.toString(),
