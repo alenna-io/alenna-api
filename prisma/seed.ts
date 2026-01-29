@@ -1,19 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { seedPaceCatalog } from './seed-pace-catalog';
-import { seedRBAC } from './seed-rbac';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // First, seed the PACE catalog (Categories, Levels, SubSubjects, PACEs)
+  // First, seed the PACE catalog (Categories, Levels, Subjects, PACEs)
   await seedPaceCatalog();
-  console.log('');
-
-  // Second, seed RBAC system (Modules, Permissions, Role Permissions)
-  await seedRBAC();
   console.log('');
 
   // Create demo school
@@ -22,7 +17,7 @@ async function main() {
     update: {},
     create: {
       id: 'demo-school',
-      name: 'Demo Grace Christian Academy',
+      name: 'Demo Academy',
       address: '123 Education Street, Learning City',
       phone: '+1 (555) 123-4567',
       email: 'admin@demoacademy.edu',
@@ -31,157 +26,177 @@ async function main() {
 
   console.log('✅ Created school:', school.name);
 
-  // Create demo admin user
-  const adminUser = await prisma.user.upsert({
-    where: { clerkId: 'user_33skKBEkI8wMg70KnEwHwrjVP93' },
+  // Create Roles
+  console.log('\n🔐 Creating roles...');
+  const schoolAdminRole = await prisma.role.upsert({
+    where: { name: 'SCHOOL_ADMIN' },
     update: {},
     create: {
-      clerkId: 'user_33skKBEkI8wMg70KnEwHwrjVP93',
+      name: 'SCHOOL_ADMIN',
+      description: 'School administrator with full access',
+    },
+  });
+  console.log('✅ Created role: SCHOOL_ADMIN');
+
+  const studentRole = await prisma.role.upsert({
+    where: { name: 'STUDENT' },
+    update: {},
+    create: {
+      name: 'STUDENT',
+      description: 'Student user with limited access',
+    },
+  });
+  console.log('✅ Created role: STUDENT');
+
+  // Create Admin User
+  console.log('\n👤 Creating admin user...');
+  const clerkUserId = 'user_33skKBEkI8wMg70KnEwHwrjVP93';
+
+  // Delete existing user if it exists with wrong ID
+  await prisma.user.deleteMany({
+    where: { email: 'demo.admin@alenna.io' },
+  });
+
+  const adminUser = await prisma.user.create({
+    data: {
+      id: "2b108fa4-0c11-43e1-9162-471024f19bdf", // Use a fixed ID instead of clerkUserId
+      clerkId: clerkUserId,
       email: 'demo.admin@alenna.io',
-      firstName: 'Demo',
-      lastName: 'Admin',
+      firstName: 'Admin',
+      lastName: 'User',
+      phone: '+1 (555) 000-0000',
+      streetAddress: '123 Admin Street',
+      city: 'Admin City',
+      state: 'AC',
+      country: 'USA',
+      zipCode: '00000',
       schoolId: school.id,
+      createdPassword: false,
     },
   });
+  console.log('✅ Created admin user:', adminUser.email);
+  console.log('   User ID:', adminUser.id);
 
-  // Assign ADMIN role
-  const adminRole = await prisma.role.findFirst({
-    where: { name: 'ADMIN', schoolId: null },
-  });
-  
-  if (adminRole) {
-    await prisma.userRole.upsert({
-      where: {
-        userId_roleId: {
-          userId: adminUser.id,
-          roleId: adminRole.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: adminUser.id,
-        roleId: adminRole.id,
-      },
-    });
-  }
-
-  console.log('✅ Created ADMIN user:', adminUser.email);
-  console.log('   Clerk ID:', adminUser.clerkId);
-  console.log('   ⚠️  Replace this with your actual Clerk user ID!');
-
-  // Create Alenna school for superadmin (global access)
-  const alennaSchool = await prisma.school.upsert({
+  // Assign SCHOOL_ADMIN role to admin user
+  await prisma.userRole.upsert({
     where: {
-      id: 'school_alenna_global'
+      userId_roleId: {
+        userId: adminUser.id,
+        roleId: schoolAdminRole.id,
+      },
     },
     update: {},
     create: {
-      id: 'school_alenna_global',
-      name: 'Alenna',
-      address: 'Global System Administration',
-      email: 'admin@alenna.io',
-      phone: null,
+      userId: adminUser.id,
+      roleId: schoolAdminRole.id,
     },
   });
+  console.log('✅ Assigned SCHOOL_ADMIN role to admin user');
 
-  // Create superadmin user (global access)
-  // Note: You need to update the clerkId with your actual Clerk ID
-  const superadminUser = await prisma.user.upsert({
-    where: { email: 'superadmin@alenna.io' },
-    update: {
-      clerkId: 'user_34R06gsf80RwrjEhG9aTYAsfIC6', // Actual Clerk ID
-    },
-    create: {
-      clerkId: 'user_34R06gsf80RwrjEhG9aTYAsfIC6', // Actual Clerk ID
-      email: 'superadmin@alenna.io',
-      firstName: 'Super',
-      lastName: 'Admin',
-      schoolId: alennaSchool.id, // Superadmin belongs to Alenna school
-    },
-  });
-
-  // Use the global SUPERADMIN role (created in RBAC seed)
-  const superadminRole = await prisma.role.findFirst({
-    where: { name: 'SUPERADMIN', schoolId: null },
-  });
-
-  if (!superadminRole) {
-    throw new Error('SUPERADMIN role not found. Make sure RBAC seed runs first.');
-  }
-  
-  if (superadminRole) {
-    await prisma.userRole.upsert({
-      where: {
-        userId_roleId: {
-          userId: superadminUser.id,
-          roleId: superadminRole.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: superadminUser.id,
-        roleId: superadminRole.id,
-      },
-    });
-  }
-
-  console.log('✅ Created SUPERADMIN user:', superadminUser.email);
-  console.log('   Clerk ID:', superadminUser.clerkId);
-  console.log('   ⚠️  Replace this with your actual Clerk user ID!');
-
-  // Create School Year with Quarters
-  console.log('\n📅 Creating School Year (2024-2025)...');
+  // Create School Year
+  console.log('\n📅 Creating School Year (2025-2026)...');
   const schoolYear = await prisma.schoolYear.upsert({
     where: {
-      id: 'school-year-2024-2025', // Use a fixed ID instead of compound key
+      id: 'school-year-2025-2026',
     },
     update: {},
     create: {
-      id: 'school-year-2024-2025',
+      id: 'school-year-2025-2026',
       schoolId: school.id,
-      name: '2024-2025',
-      startDate: new Date('2024-08-05'), // First Monday of August
-      endDate: new Date('2025-05-30'), // Last Friday of May
-      isActive: true,
+      name: '2025-2026',
+      startDate: new Date('2025-09-01'),
+      endDate: new Date('2026-07-11'),
     },
   });
 
-  // Create 4 Quarters with start/end dates
+  console.log('✅ Created school year:', schoolYear.name);
+
+  // Create Quarters
+  console.log('\n📅 Creating Quarters...');
   const quartersData = [
     {
       name: 'Q1',
-      displayName: 'Bloque 1',
-      startDate: new Date('2024-08-05'), // 9 weeks: Aug 5 - Oct 4
-      endDate: new Date('2024-10-04'),
+      startDate: new Date('2025-09-01'),
+      endDate: new Date('2025-11-07'),
       order: 1,
+      weeksCount: 9,
+      weeks: [
+        { weekNumber: 1, startDate: '2025-09-01', endDate: '2025-09-12' },
+        { weekNumber: 2, startDate: '2025-09-15', endDate: '2025-09-19' },
+        { weekNumber: 3, startDate: '2025-09-22', endDate: '2025-09-26' },
+        { weekNumber: 4, startDate: '2025-09-29', endDate: '2025-10-03' },
+        { weekNumber: 5, startDate: '2025-10-06', endDate: '2025-10-10' },
+        { weekNumber: 6, startDate: '2025-10-13', endDate: '2025-10-17' },
+        { weekNumber: 7, startDate: '2025-10-20', endDate: '2025-10-24' },
+        { weekNumber: 8, startDate: '2025-10-27', endDate: '2025-10-31' },
+        { weekNumber: 9, startDate: '2025-11-03', endDate: '2025-11-07' },
+      ],
     },
     {
       name: 'Q2',
-      displayName: 'Bloque 2',
-      startDate: new Date('2024-10-14'), // 9 weeks: Oct 14 - Dec 13 (skip Oct 7-11 fall break)
-      endDate: new Date('2024-12-13'),
+      startDate: new Date('2025-11-10'),
+      endDate: new Date('2026-02-06'),
       order: 2,
+      weeksCount: 9,
+      weeks: [
+        { weekNumber: 1, startDate: '2025-11-10', endDate: '2025-11-21' },
+        { weekNumber: 2, startDate: '2025-11-24', endDate: '2025-11-28' },
+        { weekNumber: 3, startDate: '2025-12-01', endDate: '2025-12-05' },
+        { weekNumber: 4, startDate: '2025-12-08', endDate: '2025-12-12' },
+        { weekNumber: 5, startDate: '2025-12-15', endDate: '2025-12-18' },
+        { weekNumber: 6, startDate: '2026-01-12', endDate: '2026-01-16' },
+        { weekNumber: 7, startDate: '2026-01-19', endDate: '2026-01-23' },
+        { weekNumber: 8, startDate: '2026-01-26', endDate: '2026-01-30' },
+        { weekNumber: 9, startDate: '2026-02-02', endDate: '2026-02-06' },
+      ],
+      holidays: [
+        { startDate: '2025-12-19', endDate: '2026-01-10', label: 'Winter Break' },
+      ],
     },
     {
       name: 'Q3',
-      displayName: 'Bloque 3',
-      startDate: new Date('2025-01-06'), // 9 weeks: Jan 6 - Mar 7 (skip Dec 16-Jan 3 winter break)
-      endDate: new Date('2025-03-07'),
+      startDate: new Date('2026-02-09'),
+      endDate: new Date('2026-04-28'),
       order: 3,
+      weeksCount: 9,
+      weeks: [
+        { weekNumber: 1, startDate: '2026-02-09', endDate: '2026-02-13' },
+        { weekNumber: 2, startDate: '2026-02-16', endDate: '2026-02-20' },
+        { weekNumber: 3, startDate: '2026-02-23', endDate: '2026-02-27' },
+        { weekNumber: 4, startDate: '2026-03-02', endDate: '2026-03-06' },
+        { weekNumber: 5, startDate: '2026-03-09', endDate: '2026-03-13' },
+        { weekNumber: 6, startDate: '2026-03-16', endDate: '2026-03-20' },
+        { weekNumber: 7, startDate: '2026-03-23', endDate: '2026-03-27' },
+        { weekNumber: 8, startDate: '2026-04-13', endDate: '2026-04-18' },
+        { weekNumber: 9, startDate: '2026-04-20', endDate: '2026-04-28' },
+      ],
+      holidays: [
+        { startDate: '2026-03-30', endDate: '2026-04-10', label: 'Spring Break' },
+      ],
     },
     {
       name: 'Q4',
-      displayName: 'Bloque 4',
-      startDate: new Date('2025-03-17'), // 9 weeks: Mar 17 - May 16 (skip Mar 10-14 spring break)
-      endDate: new Date('2025-05-16'),
+      startDate: new Date('2026-04-29'),
+      endDate: new Date('2026-07-11'),
       order: 4,
+      weeksCount: 9,
+      weeks: [
+        { weekNumber: 1, startDate: '2026-04-29', endDate: '2026-05-08' },
+        { weekNumber: 2, startDate: '2026-05-11', endDate: '2026-05-15' },
+        { weekNumber: 3, startDate: '2026-05-18', endDate: '2026-05-22' },
+        { weekNumber: 4, startDate: '2026-05-25', endDate: '2026-05-29' },
+        { weekNumber: 5, startDate: '2026-06-01', endDate: '2026-06-05' },
+        { weekNumber: 6, startDate: '2026-06-08', endDate: '2026-06-12' },
+        { weekNumber: 7, startDate: '2026-06-15', endDate: '2026-06-19' },
+        { weekNumber: 8, startDate: '2026-06-22', endDate: '2026-06-27' },
+        { weekNumber: 9, startDate: '2026-06-29', endDate: '2026-07-10' },
+      ],
     },
   ];
 
+  const quarters = [];
   for (const quarterData of quartersData) {
-    await prisma.quarter.upsert({
+    const quarter = await prisma.quarter.upsert({
       where: {
         schoolYearId_name: {
           schoolYearId: schoolYear.id,
@@ -193,774 +208,197 @@ async function main() {
         id: randomUUID(),
         schoolYearId: schoolYear.id,
         name: quarterData.name,
-        displayName: quarterData.displayName,
         startDate: quarterData.startDate,
         endDate: quarterData.endDate,
         order: quarterData.order,
-        weeksCount: 9,
+        weeksCount: quarterData.weeksCount,
       },
     });
-  }
+    quarters.push(quarter);
+    console.log(`  ✅ Created quarter: ${quarter.name}`);
 
-  console.log('✅ Created school year: 2024-2025 with 4 quarters (36 weeks total)');
-
-  // Create a second inactive school year for testing
-  console.log('\n📅 Creating School Year (2023-2024)...');
-  const schoolYear2023 = await prisma.schoolYear.upsert({
-    where: {
-      id: 'school-year-2023-2024', // Use a fixed ID instead of compound key
-    },
-    update: {},
-    create: {
-      id: 'school-year-2023-2024',
-      schoolId: school.id,
-      name: '2023-2024',
-      startDate: new Date('2023-08-07'),
-      endDate: new Date('2024-05-31'),
-      isActive: false, // This one is inactive
-    },
-  });
-
-  // Create quarters for 2023-2024
-  const quartersData2023 = [
-    {
-      name: 'Q1',
-      displayName: 'Bloque 1',
-      startDate: new Date('2023-08-07'),
-      endDate: new Date('2023-10-06'),
-      order: 1,
-    },
-    {
-      name: 'Q2',
-      displayName: 'Bloque 2',
-      startDate: new Date('2023-10-16'),
-      endDate: new Date('2023-12-15'),
-      order: 2,
-    },
-    {
-      name: 'Q3',
-      displayName: 'Bloque 3',
-      startDate: new Date('2024-01-08'),
-      endDate: new Date('2024-03-08'),
-      order: 3,
-    },
-    {
-      name: 'Q4',
-      displayName: 'Bloque 4',
-      startDate: new Date('2024-03-18'),
-      endDate: new Date('2024-05-17'),
-      order: 4,
-    },
-  ];
-
-  for (const quarterData of quartersData2023) {
-    await prisma.quarter.upsert({
-      where: {
-        schoolYearId_order: {
-          schoolYearId: schoolYear2023.id,
-          order: quarterData.order,
+    // Create School Weeks for this quarter with exact dates
+    for (const weekData of quarterData.weeks) {
+      await prisma.schoolWeek.upsert({
+        where: {
+          quarterId_weekNumber: {
+            quarterId: quarter.id,
+            weekNumber: weekData.weekNumber,
+          },
         },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        schoolYearId: schoolYear2023.id,
-        name: quarterData.name,
-        displayName: quarterData.displayName,
-        startDate: quarterData.startDate,
-        endDate: quarterData.endDate,
-        order: quarterData.order,
-        weeksCount: 9,
-      },
-    });
-  }
-
-  console.log('✅ Created school year: 2023-2024 with 4 quarters (inactive)');
-
-  // Enable modules for school
-  const studentsModule = await prisma.module.findUnique({ where: { name: 'Estudiantes' } });
-  const configModule = await prisma.module.findUnique({ where: { name: 'Configuración' } });
-  const usersModule = await prisma.module.findUnique({ where: { name: 'Usuarios' } });
-  
-  if (studentsModule) {
-    await prisma.schoolModule.upsert({
-      where: {
-        schoolId_moduleId: {
-          schoolId: school.id,
-          moduleId: studentsModule.id,
+        update: {
+          startDate: new Date(weekData.startDate),
+          endDate: new Date(weekData.endDate),
         },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        schoolId: school.id,
-        moduleId: studentsModule.id,
-        isActive: true,
-      },
-    });
-    console.log('✅ Enabled Students module for school');
-
-    // Assign Students module to demo admin
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: adminUser.id,
-          moduleId: studentsModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: adminUser.id,
-        moduleId: studentsModule.id,
-      },
-    });
-    console.log('✅ Assigned Students module to admin');
-  }
-
-  if (configModule) {
-    await prisma.schoolModule.upsert({
-      where: {
-        schoolId_moduleId: {
-          schoolId: school.id,
-          moduleId: configModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        schoolId: school.id,
-        moduleId: configModule.id,
-        isActive: true,
-      },
-    });
-    console.log('✅ Enabled Configuration module for school');
-
-    // Assign Configuration module to demo admin
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: adminUser.id,
-          moduleId: configModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: adminUser.id,
-        moduleId: configModule.id,
-      },
-    });
-    console.log('✅ Assigned Configuration module to admin');
-  }
-
-  // Enable Users module for Alenna school and assign to superadmin
-  if (usersModule) {
-    await prisma.schoolModule.upsert({
-      where: {
-        schoolId_moduleId: {
-          schoolId: alennaSchool.id,
-          moduleId: usersModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        schoolId: alennaSchool.id,
-        moduleId: usersModule.id,
-        isActive: true,
-      },
-    });
-    console.log('✅ Enabled Users module for Alenna school');
-
-    // Assign Users module to superadmin
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: superadminUser.id,
-          moduleId: usersModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: superadminUser.id,
-        moduleId: usersModule.id,
-      },
-    });
-    console.log('✅ Assigned Users module to superadmin');
-  }
-
-  // Enable Schools module for Alenna school and assign to superadmin
-  const schoolsModule = await prisma.module.findUnique({ where: { name: 'Escuelas' } });
-  if (schoolsModule) {
-    await prisma.schoolModule.upsert({
-      where: {
-        schoolId_moduleId: {
-          schoolId: alennaSchool.id,
-          moduleId: schoolsModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        schoolId: alennaSchool.id,
-        moduleId: schoolsModule.id,
-        isActive: true,
-      },
-    });
-    console.log('✅ Enabled Schools module for Alenna school');
-
-    // Assign Schools module to superadmin
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: superadminUser.id,
-          moduleId: schoolsModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: superadminUser.id,
-        moduleId: schoolsModule.id,
-      },
-    });
-    console.log('✅ Assigned Schools module to superadmin');
-  }
-
-  // Superadmins don't get Configuración module as it's per-school
-  // They manage schools through the Users module instead
-
-  // Create demo users for each role
-  console.log('\n👥 Creating demo users for each role...');
-
-  // Get roles
-  const teacherRole = await prisma.role.findFirst({ where: { name: 'TEACHER', schoolId: null } });
-  const parentRole = await prisma.role.findFirst({ where: { name: 'PARENT', schoolId: null } });
-  const studentRole = await prisma.role.findFirst({ where: { name: 'STUDENT', schoolId: null } });
-  
-  // 1. Demo Teacher
-  if (teacherRole && studentsModule) {
-    const teacherUser = await prisma.user.upsert({
-      where: { email: 'demo.teacher@alenna.io' },
-      update: {},
-      create: {
-        id: randomUUID(),
-        clerkId: 'demo_teacher_clerk',
-        email: 'demo.teacher@alenna.io',
-        firstName: 'Demo',
-        lastName: 'Teacher',
-        schoolId: school.id,
-      },
-    });
-
-    await prisma.userRole.upsert({
-      where: {
-        userId_roleId: {
-          userId: teacherUser.id,
-          roleId: teacherRole.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: teacherUser.id,
-        roleId: teacherRole.id,
-      },
-    });
-
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: teacherUser.id,
-          moduleId: studentsModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: teacherUser.id,
-        moduleId: studentsModule.id,
-      },
-    });
-
-    console.log('✅ Created TEACHER user:', teacherUser.email);
-  }
-
-  // 2. Demo Parent (will be linked to first student created)
-  let demoParentUser: any = null;
-  if (parentRole && studentsModule) {
-    demoParentUser = await prisma.user.upsert({
-      where: { email: 'demo.parent@alenna.io' },
-      update: {},
-      create: {
-        id: randomUUID(),
-        clerkId: 'demo_parent_clerk',
-        email: 'demo.parent@alenna.io',
-        firstName: 'Demo',
-        lastName: 'Parent',
-        schoolId: school.id,
-      },
-    });
-
-    await prisma.userRole.upsert({
-      where: {
-        userId_roleId: {
-          userId: demoParentUser.id,
-          roleId: parentRole.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: demoParentUser.id,
-        roleId: parentRole.id,
-      },
-    });
-
-    await prisma.userModule.upsert({
-      where: {
-        userId_moduleId: {
-          userId: demoParentUser.id,
-          moduleId: studentsModule.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: demoParentUser.id,
-        moduleId: studentsModule.id,
-      },
-    });
-
-    console.log('✅ Created PARENT user:', demoParentUser.email);
-  }
-
-  // 3. Demo Student (separate from regular students - explicit demo account)
-  if (studentRole) {
-    const demoStudentUser = await prisma.user.upsert({
-      where: { email: 'demo.student@alenna.io' },
-      update: {},
-      create: {
-        id: randomUUID(),
-        clerkId: 'demo_student_clerk',
-        email: 'demo.student@alenna.io',
-        firstName: 'Demo',
-        lastName: 'Student',
-        schoolId: school.id,
-      },
-    });
-
-    await prisma.userRole.upsert({
-      where: {
-        userId_roleId: {
-          userId: demoStudentUser.id,
-          roleId: studentRole.id,
-        },
-      },
-      update: {},
-      create: {
-        id: randomUUID(),
-        userId: demoStudentUser.id,
-        roleId: studentRole.id,
-      },
-    });
-
-    // Students typically don't have module access yet (no permissions)
-    // Can be granted later when student features are added
-
-    console.log('✅ Created STUDENT user:', demoStudentUser.email);
-  }
-
-  // Clear existing students first (cascade deletes projections, paces, daily goals)
-  await prisma.student.deleteMany({ where: { schoolId: school.id } });
-
-  // Clear existing certification types
-  await prisma.certificationType.deleteMany({ where: { schoolId: school.id } });
-
-  // Create certification types for the school
-  const certificationTypesData = [
-    { name: 'INEA', description: 'Instituto Nacional para la Educación de los Adultos' },
-    { name: 'Grace Christian', description: 'Grace Christian School Program' },
-    { name: 'Home Life', description: 'Home Life Academy Program' },
-    { name: 'Lighthouse', description: 'Lighthouse Christian Academy' },
-    { name: 'Otro', description: 'Other certification programs' },
-  ];
-
-  const certificationTypes = await Promise.all(
-    certificationTypesData.map(async (certType) =>
-      prisma.certificationType.create({
-        data: {
+        create: {
           id: randomUUID(),
-          name: certType.name,
-          description: certType.description,
-          schoolId: school.id,
-          isActive: true,
+          quarterId: quarter.id,
+          weekNumber: weekData.weekNumber,
+          startDate: new Date(weekData.startDate),
+          endDate: new Date(weekData.endDate),
         },
-      })
-    )
-  );
+      });
+    }
+    console.log(`    ✅ Created ${quarterData.weeksCount} school weeks for ${quarter.name}`);
 
-  console.log('✅ Created certification types:', certificationTypes.map(c => c.name).join(', '));
+    // Create holidays for this quarter if they exist
+    if (quarterData.holidays) {
+      for (const holidayData of quarterData.holidays) {
+        const existingHoliday = await prisma.quarterHoliday.findFirst({
+          where: {
+            schoolYearId: schoolYear.id,
+            quarterId: quarter.id,
+            startDate: new Date(holidayData.startDate),
+          },
+        });
 
-  // Helper to find certification type by name
-  const getCertTypeId = (name: string) => {
-    const certType = certificationTypes.find(c => c.name === name);
-    if (!certType) throw new Error(`Certification type ${name} not found`);
-    return certType.id;
-  };
+        if (existingHoliday) {
+          await prisma.quarterHoliday.update({
+            where: { id: existingHoliday.id },
+            data: {
+              endDate: new Date(holidayData.endDate),
+              label: holidayData.label,
+            },
+          });
+        } else {
+          await prisma.quarterHoliday.create({
+            data: {
+              id: randomUUID(),
+              schoolYearId: schoolYear.id,
+              quarterId: quarter.id,
+              startDate: new Date(holidayData.startDate),
+              endDate: new Date(holidayData.endDate),
+              label: holidayData.label,
+            },
+          });
+        }
+      }
+      console.log(`    ✅ Created ${quarterData.holidays.length} holiday(s) for ${quarter.name}`);
+    }
+  }
 
-  // Create demo students
+  console.log(`✅ Created ${quarters.length} quarters with school weeks`);
+
+  // Create demo students (users as students)
+  console.log('\n👥 Creating students...');
+
   const studentsData = [
     {
       firstName: 'María',
       lastName: 'González López',
-      birthDate: new Date('2009-03-15'),
-      certificationTypeName: 'INEA',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 123 4567',
-      isLeveled: true,
-      expectedLevel: 'Secundaria',
-      currentLevel: 'L8',
-      address: 'Calle Principal 123, Colonia Centro, Ciudad de México',
+      email: 'maria.gonzalez@demo.alenna.io',
+      phone: '+52 555 123 4567',
+      streetAddress: 'Calle Principal 123',
+      city: 'Ciudad de México',
+      state: 'CDMX',
+      country: 'Mexico',
+      zipCode: '06000',
     },
     {
       firstName: 'José Antonio',
       lastName: 'Rodríguez',
-      birthDate: new Date('2010-07-22'),
-      certificationTypeName: 'Grace Christian',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 987 6543',
-      isLeveled: false,
-      currentLevel: 'L7',
-      address: 'Av. Libertad 456, Colonia Norte, Guadalajara',
+      email: 'jose.rodriguez@demo.alenna.io',
+      phone: '+52 555 987 6543',
+      streetAddress: 'Av. Libertad 456',
+      city: 'Guadalajara',
+      state: 'Jalisco',
+      country: 'Mexico',
+      zipCode: '44100',
     },
     {
       firstName: 'Sofía',
       lastName: 'Hernández Martínez',
-      birthDate: new Date('2008-11-08'),
-      certificationTypeName: 'Home Life',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 456 7890',
-      isLeveled: true,
-      expectedLevel: 'Preparatoria',
-      currentLevel: 'L10',
-      address: 'Calle Reforma 789, Colonia Sur, Monterrey',
+      email: 'sofia.hernandez@demo.alenna.io',
+      phone: '+52 555 456 7890',
+      streetAddress: 'Calle Reforma 789',
+      city: 'Monterrey',
+      state: 'Nuevo León',
+      country: 'Mexico',
+      zipCode: '64000',
     },
     {
       firstName: 'Diego Fernando',
       lastName: 'Silva',
-      birthDate: new Date('2011-01-30'),
-      certificationTypeName: 'Lighthouse',
-      graduationDate: new Date('2026-06-15'),
-      contactPhone: '+52 555 321 0987',
-      isLeveled: true,
-      expectedLevel: 'Primaria',
-      currentLevel: 'L5',
-      address: 'Blvd. Universidad 321, Colonia Este, Puebla',
+      email: 'diego.silva@demo.alenna.io',
+      phone: '+52 555 321 0987',
+      streetAddress: 'Blvd. Universidad 321',
+      city: 'Puebla',
+      state: 'Puebla',
+      country: 'Mexico',
+      zipCode: '72000',
     },
     {
       firstName: 'Camila',
       lastName: 'Jiménez Flores',
-      birthDate: new Date('2008-02-14'),
-      certificationTypeName: 'Grace Christian',
-      graduationDate: new Date('2025-06-15'),
-      contactPhone: '+52 555 234 5678',
-      isLeveled: true,
-      expectedLevel: 'Preparatoria',
-      currentLevel: 'L11',
-      address: 'Calle Morelos 234, Colonia Sur, Mérida',
+      email: 'camila.jimenez@demo.alenna.io',
+      phone: '+52 555 234 5678',
+      streetAddress: 'Calle Morelos 234',
+      city: 'Mérida',
+      state: 'Yucatán',
+      country: 'Mexico',
+      zipCode: '97000',
     },
   ];
 
-  // studentRole and parentRole already declared above
-
   for (const studentData of studentsData) {
-    const { certificationTypeName, currentLevel, ...restData } = studentData;
     const studentId = randomUUID();
-    
-    // Create User account for student (email must be unique)
-    const studentUser = await prisma.user.create({
-      data: {
+
+    // Create User account for student
+    const studentUser = await prisma.user.upsert({
+      where: { email: studentData.email },
+      update: {},
+      create: {
         id: randomUUID(),
-        clerkId: `student_${studentId}_clerk`, // Placeholder - will be set when student logs in
-        email: `student.${studentId.substring(0, 8)}@demo.alenna.io`, // Unique email using student ID
-        firstName: restData.firstName,
-        lastName: restData.lastName,
+        clerkId: `student_${studentId}_clerk`,
+        email: studentData.email,
+        firstName: studentData.firstName,
+        lastName: studentData.lastName,
+        phone: studentData.phone,
+        streetAddress: studentData.streetAddress,
+        city: studentData.city,
+        state: studentData.state,
+        country: studentData.country,
+        zipCode: studentData.zipCode,
+        schoolId: school.id,
+        createdPassword: false,
+      },
+    });
+
+    // Create Student record
+    await prisma.student.upsert({
+      where: { userId: studentUser.id },
+      update: {},
+      create: {
+        id: studentId,
+        userId: studentUser.id,
         schoolId: school.id,
       },
     });
 
     // Assign STUDENT role
-    if (studentRole) {
-      await prisma.userRole.create({
-        data: {
-          id: randomUUID(),
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
           userId: studentUser.id,
           roleId: studentRole.id,
         },
-      });
-    }
-
-    // Create Student record
-    const student = await prisma.student.create({
-      data: {
-        id: studentId,
+      },
+      update: {},
+      create: {
         userId: studentUser.id,
-        birthDate: restData.birthDate,
-        graduationDate: restData.graduationDate,
-        contactPhone: restData.contactPhone,
-        isLeveled: restData.isLeveled,
-        expectedLevel: restData.expectedLevel,
-        currentLevel: (currentLevel as string | undefined),
-        address: restData.address,
-        certificationTypeId: getCertTypeId(certificationTypeName),
-        schoolId: school.id,
+        roleId: studentRole.id,
       },
     });
-    
-    console.log('✅ Created student:', studentUser.firstName, studentUser.lastName);
 
-    // Link Demo Parent to first student (María)
-    if (restData.firstName === 'María' && demoParentUser) {
-      await prisma.userStudent.create({
-        data: {
-          id: randomUUID(),
-          userId: demoParentUser.id,
-          studentId: student.id,
-          relationship: 'Parent',
-        },
-      });
-      console.log('   ✅ Linked Demo Parent to student');
-    }
-
-    // Create additional parent users for María
-    const parentData = [
-      { firstName: 'Carlos', lastName: 'González', relationship: 'Father' },
-      { firstName: 'Ana', lastName: 'López', relationship: 'Mother' },
-    ];
-
-    if (restData.firstName === 'María' && parentRole) {
-      for (const parent of parentData) {
-        const parentUserId = randomUUID();
-        const parentUser = await prisma.user.create({
-          data: {
-            id: parentUserId,
-            clerkId: `parent_${parentUserId}_clerk`,
-            email: `parent.${parentUserId.substring(0, 8)}@demo.alenna.io`, // Unique email
-            firstName: parent.firstName,
-            lastName: parent.lastName,
-            schoolId: school.id,
-          },
-        });
-
-        // Assign PARENT role
-        await prisma.userRole.create({
-          data: {
-            id: randomUUID(),
-            userId: parentUser.id,
-            roleId: parentRole.id,
-          },
-        });
-
-        // Link parent to student
-        await prisma.userStudent.create({
-          data: {
-            id: randomUUID(),
-            userId: parentUser.id,
-            studentId: student.id,
-            relationship: parent.relationship,
-          },
-        });
-
-        // Give parent access to Students module
-        if (studentsModule) {
-          await prisma.userModule.create({
-            data: {
-              id: randomUUID(),
-              userId: parentUser.id,
-              moduleId: studentsModule.id,
-            },
-          });
-        }
-      }
-      console.log(`   ✅ Created ${parentData.length} parent users and linked to student`);
-    }
-
-    // Create a projection for this student (2024-2025 school year)
-    const projection = await prisma.projection.create({
-      data: {
-        id: randomUUID(),
-        studentId: student.id,
-        schoolYear: '2024-2025',
-        startDate: new Date('2024-08-01'),
-        endDate: new Date('2025-06-30'),
-        isActive: true,
-        notes: 'Initial projection for 2024-2025 school year',
-      },
-    });
-    console.log(`   ✅ Created projection: ${projection.schoolYear}`);
-
-    // Add sample ProjectionPaces for María (L8 student)
-    if (restData.firstName === 'María' && restData.lastName === 'González López') {
-      console.log('   🎯 Adding sample projection PACEs for María (L8)...');
-      
-      let projectionPacesCreated = 0;
-
-      // Get L8 subsubjects for each category
-      const getSubSubjectPaces = async (categoryName: string) => {
-        const subSubject = await prisma.subSubject.findFirst({
-          where: {
-            levelId: 'L8',
-            category: { name: categoryName },
-          },
-          include: {
-            paces: {
-              orderBy: { code: 'asc' },
-            },
-          },
-        });
-        return subSubject?.paces || [];
-      };
-
-      const mathPaces = await getSubSubjectPaces('Math');
-      const englishPaces = await getSubSubjectPaces('English');
-      const sciencePaces = await getSubSubjectPaces('Science');
-      const socialStudiesPaces = await getSubSubjectPaces('Social Studies');
-      const wordBuildingPaces = await getSubSubjectPaces('Word Building');
-      const spanishPaces = await getSubSubjectPaces('Spanish');
-
-      // Pattern: Week 1,4,7 = Math+English | Week 2,5,8 = Science+Social | Week 3,6,9 = Word+Spanish
-      // Each quarter progresses sequentially (Q1 uses 1085-1087, Q2 uses 1088-1090, etc.)
-      const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-      const pacesPerQuarter = 3; // 3 PACEs per subject per quarter (weeks 1,4,7 or 2,5,8 or 3,6,9)
-      
-      for (let quarterIndex = 0; quarterIndex < quarters.length; quarterIndex++) {
-        const quarter = quarters[quarterIndex];
-        
-        // Calculate which PACEs to use (sequential progression)
-        const startPaceIndex = quarterIndex * pacesPerQuarter; // Q1=0, Q2=3, Q3=6, Q4=9
-        
-        const quarterSchedule = [
-          // Week 1: Math, English
-          { week: 1, subjects: [
-            { paces: mathPaces, paceIndex: startPaceIndex },
-            { paces: englishPaces, paceIndex: startPaceIndex }
-          ]},
-          // Week 2: Science, Social Studies
-          { week: 2, subjects: [
-            { paces: sciencePaces, paceIndex: startPaceIndex },
-            { paces: socialStudiesPaces, paceIndex: startPaceIndex }
-          ]},
-          // Week 3: Word Building, Spanish
-          { week: 3, subjects: [
-            { paces: wordBuildingPaces, paceIndex: startPaceIndex },
-            { paces: spanishPaces, paceIndex: startPaceIndex }
-          ]},
-          // Week 4: Math, English
-          { week: 4, subjects: [
-            { paces: mathPaces, paceIndex: startPaceIndex + 1 },
-            { paces: englishPaces, paceIndex: startPaceIndex + 1 }
-          ]},
-          // Week 5: Science, Social Studies
-          { week: 5, subjects: [
-            { paces: sciencePaces, paceIndex: startPaceIndex + 1 },
-            { paces: socialStudiesPaces, paceIndex: startPaceIndex + 1 }
-          ]},
-          // Week 6: Word Building, Spanish
-          { week: 6, subjects: [
-            { paces: wordBuildingPaces, paceIndex: startPaceIndex + 1 },
-            { paces: spanishPaces, paceIndex: startPaceIndex + 1 }
-          ]},
-          // Week 7: Math, English
-          { week: 7, subjects: [
-            { paces: mathPaces, paceIndex: startPaceIndex + 2 },
-            { paces: englishPaces, paceIndex: startPaceIndex + 2 }
-          ]},
-          // Week 8: Science, Social Studies
-          { week: 8, subjects: [
-            { paces: sciencePaces, paceIndex: startPaceIndex + 2 },
-            { paces: socialStudiesPaces, paceIndex: startPaceIndex + 2 }
-          ]},
-          // Week 9: Word Building, Spanish
-          { week: 9, subjects: [
-            { paces: wordBuildingPaces, paceIndex: startPaceIndex + 2 },
-            { paces: spanishPaces, paceIndex: startPaceIndex + 2 }
-          ]},
-        ];
-
-        for (const schedule of quarterSchedule) {
-          for (const subjectData of schedule.subjects) {
-            const pace = subjectData.paces[subjectData.paceIndex];
-            if (!pace) continue;
-
-            // Only add grades for Q1 (completed quarter)
-            const isCompleted = quarter === 'Q1';
-            const grade = isCompleted ? Math.floor(Math.random() * 21) + 80 : null;
-
-            const projectionPace = await prisma.projectionPace.create({
-              data: {
-                id: randomUUID(),
-                projectionId: projection.id,
-                paceCatalogId: pace.id,
-                quarter,
-                week: schedule.week,
-                grade,
-                isCompleted,
-                isFailed: false,
-                comments: isCompleted ? 'Completed successfully' : undefined,
-              },
-            });
-
-            // Add grade history for completed PACEs in Q1
-            if (isCompleted) {
-              // 30% chance of retake
-              if (Math.random() > 0.7) {
-                await prisma.gradeHistory.create({
-                  data: {
-                    id: randomUUID(),
-                    projectionPaceId: projectionPace.id,
-                    grade: Math.floor(Math.random() * 15) + 65,
-                    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-                    note: 'Primera vez - necesita repasar',
-                  },
-                });
-              }
-
-              await prisma.gradeHistory.create({
-                data: {
-                  id: randomUUID(),
-                  projectionPaceId: projectionPace.id,
-                  grade: grade!,
-                  date: new Date(),
-                  note: grade! >= 90 ? 'Excelente trabajo' : undefined,
-                },
-              });
-            }
-
-            projectionPacesCreated++;
-          }
-        }
-      }
-
-      console.log(`   ✅ Created ${projectionPacesCreated} projection PACEs across all 4 quarters`);
-    }
+    console.log(`  ✅ Created student: ${studentUser.firstName} ${studentUser.lastName}`);
   }
 
   console.log('');
   console.log('✅ Seeding completed!');
   console.log('');
   console.log('📝 Demo school ID:', school.id);
-  console.log('   Use this ID when syncing users from Clerk');
+  console.log('   School Year ID:', schoolYear.id);
   console.log('');
-  console.log('📊 Database Summary:');
-  console.log(`   - 8 categories`);
-  console.log(`   - 13 levels (L1-L12 + Electives)`);
-  console.log(`   - ${certificationTypes.length} certification types`);
-  console.log(`   - ${studentsData.length} students with current levels`);
-  console.log(`   - ${studentsData.length} projections`);
-  console.log(`   - Sample ProjectionPaces created for María`);
 }
 
 main()
@@ -970,4 +408,4 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-  });
+  })

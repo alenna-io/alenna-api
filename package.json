@@ -6,18 +6,25 @@
   "scripts": {
     "setup": "node -e \"console.log('Run ./setup.sh to initialize the project')\"",
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && npx prisma generate",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/server.js",
     "postinstall": "npx prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed:clean": "tsx prisma/seed-clean.ts && tsx prisma/seed.ts",
+    "prisma:backfill-categories": "tsx prisma/backfill-projection-categories.ts",
+    "billing:run": "tsx scripts/run-billing-job.ts",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:reset": "docker-compose down -v && docker-compose up -d",
-    "test": "echo \"Tests coming soon\"",
-    "lint": "eslint src --ext .ts"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "prepare": "husky install"
   },
   "keywords": [
     "express",
@@ -29,6 +36,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@clerk/backend": "^2.23.0",
     "@clerk/express": "^1.4.4",
     "@prisma/client": "^6.3.0",
     "cors": "^2.8.5",
@@ -36,16 +44,31 @@
     "express": "^4.21.2",
     "helmet": "^8.0.0",
     "morgan": "^1.10.0",
+    "node-cron": "^4.2.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "@flydotio/dockerfile": "^0.7.10",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.18.10",
+    "@types/node-cron": "^3.0.11",
+    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/ui": "^4.0.15",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.0",
     "prisma": "^6.3.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.15"
+  },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "eslint --fix"
+    ]
   },
   "packageManager": "pnpm@9.0.0"
 }
