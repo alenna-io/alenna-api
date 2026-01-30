@@ -27,12 +27,16 @@ export class AuthController {
 
   async setupPassword(req: Request, res: Response): Promise<Response> {
     const userId = req.userId;
+    const clerkUserId = req.clerkUserId;
     if (!userId) {
       throw new InvalidEntityError('User', 'User ID is required');
     }
+    if (!clerkUserId) {
+      throw new InvalidEntityError('User', 'Clerk user ID is required');
+    }
 
     const input = SetupPasswordDTO.parse(req.body);
-    const result = await this.setupPasswordUseCase.execute(userId, input);
+    const result = await this.setupPasswordUseCase.execute(userId, clerkUserId, input);
 
     if (!result.success) {
       throw result.error;
