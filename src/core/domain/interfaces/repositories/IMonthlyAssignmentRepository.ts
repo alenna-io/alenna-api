@@ -74,4 +74,9 @@ export interface IMonthlyAssignmentRepository {
     monthlyAssignmentId: string,
     tx?: PrismaTransaction
   ): Promise<Prisma.ProjectionMonthlyAssignmentGetPayload<{}>>;
+
+  hasTemplateAssignmentsWithGrades(
+    templateId: string,
+    tx?: PrismaTransaction
+  ): Promise<boolean>;
 }

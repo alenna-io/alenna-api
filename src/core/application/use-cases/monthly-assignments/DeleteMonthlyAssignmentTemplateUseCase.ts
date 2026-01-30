@@ -13,6 +13,14 @@ export class DeleteMonthlyAssignmentTemplateUseCase {
       validateCuid(templateId, 'MonthlyAssignmentTemplate');
       validateCuid(schoolId, 'School');
 
+      const hasGrades = await this.monthlyAssignmentRepository.hasTemplateAssignmentsWithGrades(templateId);
+      if (hasGrades) {
+        return Err(new InvalidEntityError(
+          'MonthlyAssignmentTemplate',
+          'Cannot delete monthly assignment template: there are assignments with grades assigned to this template'
+        ));
+      }
+
       await this.monthlyAssignmentRepository.deleteTemplate(templateId, schoolId);
       return Ok(undefined);
     } catch (error) {

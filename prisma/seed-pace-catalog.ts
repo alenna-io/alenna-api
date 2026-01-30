@@ -194,14 +194,14 @@ export async function seedPaceCatalog() {
     "Biblical Studies Old Testament Survey"
   );
 
-  // Business Math (No level: 001-012)
+  // Business Math (No level: 1-12)
   let businessMathOrderIndex: number = 1;
   await createSubSubjectWithPaces(
     'Electives',
     'Business Math',
     'Electives',
     2,
-    Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(3, '0')),
+    Array.from({ length: 12 }, (_, i) => String(i + 1)),
     businessMathOrderIndex,
     "Business Math"
   );
