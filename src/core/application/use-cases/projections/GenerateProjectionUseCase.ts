@@ -192,6 +192,7 @@ export class GenerateProjectionUseCase {
         subject.categoryId,
         subject.startPace,
         subject.endPace,
+        subject.subjectId || null,
         tx
       );
     }

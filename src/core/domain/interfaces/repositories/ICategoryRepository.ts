@@ -4,5 +4,5 @@ import { PrismaTransaction } from '../../../infrastructure/database/PrismaTransa
 export interface ICategoryRepository {
   findManyByIds(ids: string[], tx?: PrismaTransaction): Promise<Category[]>;
   findAllWithSubjects(tx?: PrismaTransaction): Promise<Category[]>;
-  assertContiguousPaceRange(categoryId: string, startPace: number, endPace: number, tx?: PrismaTransaction): Promise<void>;
+  assertContiguousPaceRange(categoryId: string, startPace: number, endPace: number, subjectId?: string | null, tx?: PrismaTransaction): Promise<void>;
 }

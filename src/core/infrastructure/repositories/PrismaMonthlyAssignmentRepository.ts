@@ -273,4 +273,20 @@ export class PrismaMonthlyAssignmentRepository implements IMonthlyAssignmentRepo
       },
     });
   }
+
+  async hasTemplateAssignmentsWithGrades(
+    templateId: string,
+    tx: PrismaTransaction = prisma
+  ): Promise<boolean> {
+    const count = await tx.projectionMonthlyAssignment.count({
+      where: {
+        monthlyAssignmentTemplateId: templateId,
+        grade: {
+          not: null,
+        },
+        deletedAt: null,
+      },
+    });
+    return count > 0;
+  }
 }

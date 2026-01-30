@@ -11,7 +11,7 @@ export class SetupPasswordUseCase {
     private readonly userRepository: IUserRepository,
   ) { }
 
-  async execute(userId: string, input: SetupPasswordInput): Promise<Result<void, DomainError>> {
+  async execute(userId: string, clerkUserId: string, input: SetupPasswordInput): Promise<Result<void, DomainError>> {
     try {
       validateCuid(userId, 'User');
 
@@ -20,11 +20,9 @@ export class SetupPasswordUseCase {
         return Err(new ObjectNotFoundError('User', `User with ID ${userId} not found`));
       }
 
-      if (!user.clerkId) {
-        return Err(new InvalidEntityError('User', 'User does not have a Clerk ID'));
-      }
-
-      await clerkService.updateUserPassword(user.clerkId, input.password);
+      // Use the clerkUserId from the request (from Clerk session) instead of from database
+      // This is more reliable as it comes directly from the authenticated session
+      await clerkService.updateUserPassword(clerkUserId, input.password);
       logger.info(`[SetupPasswordUseCase] Password updated in Clerk for user ${userId}`);
 
       await this.userRepository.updateCreatedPassword(userId, true);
