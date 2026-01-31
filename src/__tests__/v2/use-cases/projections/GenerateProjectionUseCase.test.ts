@@ -19,6 +19,7 @@ import {
   createMockProjectionPaceRepository,
   createMockSubjectRepository,
   createMockCategoryRepository,
+  createMockMonthlyAssignmentRepository,
 } from '../../utils/mockRepositories';
 
 import { createMockProjectionGenerator } from '../../utils/mockProjectionGenerator';
@@ -45,6 +46,7 @@ describe('GenerateProjectionUseCase', () => {
   let subjectRepo: ReturnType<typeof createMockSubjectRepository>;
   let categoryRepo: ReturnType<typeof createMockCategoryRepository>;
   let projectionGenerator: ReturnType<typeof createMockProjectionGenerator>;
+  let monthlyAssignmentRepo: ReturnType<typeof createMockMonthlyAssignmentRepository>;
   let useCase: GenerateProjectionUseCase;
 
   beforeEach(() => {
@@ -58,6 +60,7 @@ describe('GenerateProjectionUseCase', () => {
     subjectRepo = createMockSubjectRepository();
     categoryRepo = createMockCategoryRepository();
     projectionGenerator = createMockProjectionGenerator();
+    monthlyAssignmentRepo = createMockMonthlyAssignmentRepository();
 
     useCase = new GenerateProjectionUseCase(
       projectionRepo,
@@ -68,7 +71,8 @@ describe('GenerateProjectionUseCase', () => {
       paceCatalogRepo as any,
       subjectRepo,
       categoryRepo as any,
-      projectionGenerator
+      projectionGenerator,
+      monthlyAssignmentRepo
     );
   });
 
@@ -211,8 +215,18 @@ describe('GenerateProjectionUseCase', () => {
       },
     ]);
 
+    vi.mocked(monthlyAssignmentRepo.findTemplatesBySchoolYear).mockResolvedValue([]);
+
     vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
-      return await callback({} as any);
+      const mockTx = {
+        projection: {
+          create: vi.fn().mockResolvedValue(projection),
+        },
+        projectionMonthlyAssignment: {
+          createMany: vi.fn().mockResolvedValue(undefined),
+        },
+      };
+      return await callback(mockTx as any);
     });
 
     const result = await useCase.execute({

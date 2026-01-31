@@ -1,12 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('../../../../core/infrastructure/database/prisma.client', () => ({
+  default: {
+    $transaction: vi.fn(),
+  },
+}));
+
 import { CreateProjectionUseCase } from '../../../../core/application/use-cases/projections/CreateProjectionUseCase';
 import { ObjectAlreadyExistsError } from '../../../../core/domain/errors';
 import { InvalidEntityError } from '../../../../core/domain/errors';
+import prisma from '../../../../core/infrastructure/database/prisma.client';
 import {
   createMockStudentRepository,
   createMockSchoolRepository,
   createMockSchoolYearRepository,
   createMockProjectionRepository,
+  createMockMonthlyAssignmentRepository,
 } from '../../utils/mockRepositories';
 import {
   SchoolYear,
@@ -23,19 +32,23 @@ describe('CreateProjectionUseCase', () => {
   let schoolRepo: ReturnType<typeof createMockSchoolRepository>;
   let schoolYearRepo: ReturnType<typeof createMockSchoolYearRepository>;
   let projectionRepo: ReturnType<typeof createMockProjectionRepository>;
+  let monthlyAssignmentRepo: ReturnType<typeof createMockMonthlyAssignmentRepository>;
   let useCase: CreateProjectionUseCase;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     studentRepo = createMockStudentRepository();
     schoolRepo = createMockSchoolRepository();
     schoolYearRepo = createMockSchoolYearRepository();
     projectionRepo = createMockProjectionRepository();
+    monthlyAssignmentRepo = createMockMonthlyAssignmentRepository();
 
     useCase = new CreateProjectionUseCase(
       projectionRepo,
       studentRepo,
       schoolRepo,
-      schoolYearRepo
+      schoolYearRepo,
+      monthlyAssignmentRepo
     );
   });
 
@@ -88,7 +101,21 @@ describe('CreateProjectionUseCase', () => {
     vi.mocked(schoolRepo.findById).mockResolvedValue(school);
     vi.mocked(schoolYearRepo.findById).mockResolvedValue(schoolYear);
     vi.mocked(projectionRepo.findActiveByStudent).mockResolvedValue(null);
-    vi.mocked(projectionRepo.create).mockResolvedValue(projection);
+    vi.mocked(monthlyAssignmentRepo.findTemplatesBySchoolYear).mockResolvedValue([]);
+
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      const mockTx = {
+        projection: {
+          create: vi.fn().mockResolvedValue(projection),
+        },
+        projectionMonthlyAssignment: {
+          createMany: vi.fn().mockResolvedValue(undefined),
+        },
+      };
+      // Mock the repository create to return the projection
+      vi.mocked(projectionRepo.create).mockResolvedValue(projection);
+      return await callback(mockTx as any);
+    });
 
     const result = await useCase.execute({ studentId: student.id, schoolId: school.id, schoolYear: schoolYear.id });
 
