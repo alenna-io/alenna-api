@@ -75,7 +75,8 @@ const createProjectionUseCase = new CreateProjectionUseCase(
   projectionRepository,
   studentRepository,
   schoolRepository,
-  schoolYearRepository
+  schoolYearRepository,
+  monthlyAssignmentRepository
 );
 
 const generateProjectionUseCase = new GenerateProjectionUseCase(
@@ -87,7 +88,8 @@ const generateProjectionUseCase = new GenerateProjectionUseCase(
   paceCatalogRepository,
   subjectRepository,
   categoryRepository,
-  alennaProjectionGenerator
+  alennaProjectionGenerator,
+  monthlyAssignmentRepository
 );
 
 const getProjectionListUseCase = new GetProjectionListUseCase(
