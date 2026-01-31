@@ -9,6 +9,7 @@ import {
   ISubjectRepository,
   ICategoryRepository,
   IDailyGoalRepository,
+  IMonthlyAssignmentRepository,
 } from '../../../core/domain/interfaces/repositories';
 import {
   Prisma,
@@ -98,5 +99,21 @@ export function createMockCategoryRepository(): ICategoryRepository {
     findManyByIds: vi.fn() as unknown as (ids: string[]) => Promise<Category[]>,
     findAllWithSubjects: vi.fn() as unknown as () => Promise<Category[]>,
     assertContiguousPaceRange: vi.fn() as unknown as (categoryId: string, startPace: number, endPace: number) => Promise<void>,
+  };
+}
+
+export function createMockMonthlyAssignmentRepository(): IMonthlyAssignmentRepository {
+  return {
+    createTemplate: vi.fn() as unknown as (schoolYearId: string, schoolId: string, input: any, tx?: PrismaTransaction) => Promise<any>,
+    findTemplatesBySchoolYear: vi.fn() as unknown as (schoolYearId: string, tx?: PrismaTransaction) => Promise<any[]>,
+    updateTemplate: vi.fn() as unknown as (templateId: string, schoolId: string, input: any, tx?: PrismaTransaction) => Promise<any>,
+    deleteTemplate: vi.fn() as unknown as (templateId: string, schoolId: string, tx?: PrismaTransaction) => Promise<void>,
+    createPercentage: vi.fn() as unknown as (schoolYearId: string, schoolId: string, input: any, tx?: PrismaTransaction) => Promise<any>,
+    findPercentagesBySchoolYear: vi.fn() as unknown as (schoolYearId: string, tx?: PrismaTransaction) => Promise<any[]>,
+    updatePercentage: vi.fn() as unknown as (percentageId: string, schoolId: string, input: any, tx?: PrismaTransaction) => Promise<any>,
+    findByProjection: vi.fn() as unknown as (projectionId: string, tx?: PrismaTransaction) => Promise<any[]>,
+    updateGrade: vi.fn() as unknown as (projectionId: string, monthlyAssignmentId: string, grade: number, tx?: PrismaTransaction) => Promise<any>,
+    markUngraded: vi.fn() as unknown as (projectionId: string, monthlyAssignmentId: string, tx?: PrismaTransaction) => Promise<any>,
+    hasTemplateAssignmentsWithGrades: vi.fn() as unknown as (templateId: string, tx?: PrismaTransaction) => Promise<boolean>,
   };
 }

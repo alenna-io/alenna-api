@@ -7,13 +7,14 @@ import {
   IPaceCatalogRepository,
   ISubjectRepository,
   ICategoryRepository,
+  IMonthlyAssignmentRepository,
 } from '../../../domain/interfaces/repositories';
 import { ObjectAlreadyExistsError, InvalidEntityError, ObjectNotFoundError, DomainError } from '../../../domain/errors';
 import { GenerateProjectionInput } from '../../dtos/projections/GenerateProjectionInput';
 import { ProjectionGenerator } from '../../../domain/algorithms/projection-generator';
 import prisma from '../../../infrastructure/database/prisma.client';
 import { PrismaTransaction } from '../../../infrastructure/database/PrismaTransaction';
-import { Prisma, ProjectionPaceStatus } from '@prisma/client';
+import { Prisma, ProjectionPaceStatus, ProjectionMonthlyAssignmentStatus } from '@prisma/client';
 import { logger } from '../../../../utils/logger';
 import { validateCuid, validateCuids } from '../../../domain/utils/validation';
 import { Result, Ok, Err } from '../../../domain/utils/Result';
@@ -30,6 +31,7 @@ export class GenerateProjectionUseCase {
     private readonly subjectRepository: ISubjectRepository,
     private readonly categoryRepository: ICategoryRepository,
     private readonly projectionGenerator: ProjectionGenerator,
+    private readonly monthlyAssignmentRepository: IMonthlyAssignmentRepository,
   ) { }
 
   async execute(input: GenerateProjectionInput): Promise<Result<Prisma.ProjectionGetPayload<{}>, DomainError>> {
@@ -110,6 +112,24 @@ export class GenerateProjectionUseCase {
 
         logger.info("Persisting projection paces...");
         await this.projectionPaceRepository.createMany(projectionPacesData, tx as PrismaTransaction);
+
+        // Assign existing monthly assignment templates to the new projection
+        logger.info("Assigning existing monthly assignments to projection...");
+        const existingTemplates = await this.monthlyAssignmentRepository.findTemplatesBySchoolYear(
+          input.schoolYear,
+          tx as PrismaTransaction
+        );
+
+        if (existingTemplates.length > 0) {
+          await tx.projectionMonthlyAssignment.createMany({
+            data: existingTemplates.map((template) => ({
+              projectionId: projection.id,
+              monthlyAssignmentTemplateId: template.id,
+              status: ProjectionMonthlyAssignmentStatus.PENDING,
+            })),
+            skipDuplicates: true,
+          });
+        }
 
         return projection;
       });
