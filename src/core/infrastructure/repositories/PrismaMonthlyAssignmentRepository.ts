@@ -22,6 +22,7 @@ export class PrismaMonthlyAssignmentRepository implements IMonthlyAssignmentRepo
           data: {
             name: input.name,
             quarter: input.quarter,
+            month: input.month,
             schoolYearId,
             schoolId,
           },
@@ -53,6 +54,7 @@ export class PrismaMonthlyAssignmentRepository implements IMonthlyAssignmentRepo
         data: {
           name: input.name,
           quarter: input.quarter,
+          month: input.month,
           schoolYearId,
           schoolId,
         },
@@ -111,6 +113,7 @@ export class PrismaMonthlyAssignmentRepository implements IMonthlyAssignmentRepo
       },
       data: {
         name: input.name,
+        month: input.month,
       },
     });
   }
@@ -120,16 +123,51 @@ export class PrismaMonthlyAssignmentRepository implements IMonthlyAssignmentRepo
     schoolId: string,
     tx: PrismaTransaction = prisma
   ): Promise<void> {
-    await tx.monthlyAssignmentTemplate.update({
-      where: {
-        id: templateId,
-        schoolId,
-        deletedAt: null,
-      },
-      data: {
-        deletedAt: new Date(),
-      },
-    });
+    if (tx === prisma) {
+      await prisma.$transaction(async (transaction) => {
+        // Delete projection monthly assignments that have no grades
+        await transaction.projectionMonthlyAssignment.deleteMany({
+          where: {
+            monthlyAssignmentTemplateId: templateId,
+            grade: null,
+            deletedAt: null,
+          },
+        });
+
+        // Soft delete the template
+        await transaction.monthlyAssignmentTemplate.update({
+          where: {
+            id: templateId,
+            schoolId,
+            deletedAt: null,
+          },
+          data: {
+            deletedAt: new Date(),
+          },
+        });
+      });
+    } else {
+      // Delete projection monthly assignments that have no grades
+      await tx.projectionMonthlyAssignment.deleteMany({
+        where: {
+          monthlyAssignmentTemplateId: templateId,
+          grade: null,
+          deletedAt: null,
+        },
+      });
+
+      // Soft delete the template
+      await tx.monthlyAssignmentTemplate.update({
+        where: {
+          id: templateId,
+          schoolId,
+          deletedAt: null,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+    }
   }
 
   async createPercentage(

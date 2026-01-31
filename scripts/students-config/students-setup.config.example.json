@@ -1,0 +1,37 @@
+{
+  "students": [
+    {
+      "email": "maria.gonzalez@demo.alenna.io",
+      "firstName": "María",
+      "lastName": "González López",
+      "phone": "+52 555 123 4567",
+      "streetAddress": "Calle Principal 123",
+      "city": "Ciudad de México",
+      "state": "CDMX",
+      "country": "Mexico",
+      "zipCode": "06000"
+    },
+    {
+      "email": "jose.rodriguez@demo.alenna.io",
+      "firstName": "José Antonio",
+      "lastName": "Rodríguez",
+      "phone": "+52 555 987 6543",
+      "streetAddress": "Av. Libertad 456",
+      "city": "Guadalajara",
+      "state": "Jalisco",
+      "country": "Mexico",
+      "zipCode": "44100"
+    },
+    {
+      "email": "sofia.hernandez@demo.alenna.io",
+      "firstName": "Sofía",
+      "lastName": "Hernández Martínez",
+      "phone": "+52 555 456 7890",
+      "streetAddress": "Calle Reforma 789",
+      "city": "Monterrey",
+      "state": "Nuevo León",
+      "country": "Mexico",
+      "zipCode": "64000"
+    }
+  ]
+}
