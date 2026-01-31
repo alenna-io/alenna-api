@@ -32,7 +32,7 @@ export class CreateMonthlyAssignmentTemplateUseCase {
       const template = await this.monthlyAssignmentRepository.createTemplate(
         schoolYearId,
         schoolId,
-        { name: input.name, quarter: input.quarter }
+        { name: input.name, quarter: input.quarter, month: input.month }
       );
 
       return Ok(template);
@@ -40,6 +40,7 @@ export class CreateMonthlyAssignmentTemplateUseCase {
       if (error instanceof InvalidEntityError || error instanceof ObjectNotFoundError) {
         return Err(error as DomainError);
       }
+      // Prisma errors will be handled by the error handler middleware
       throw error;
     }
   }

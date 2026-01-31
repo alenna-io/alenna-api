@@ -243,6 +243,7 @@ model MonthlyAssignmentTemplate {
   id                String                  @id @default(cuid())
   name              String
   quarter           String
+  month             Int                     @default(1)
   schoolYearId      String                  @map("school_year_id")
   schoolId          String                  @map("school_id")
   deletedAt         DateTime?               @map("deleted_at")
@@ -251,7 +252,7 @@ model MonthlyAssignmentTemplate {
   schoolYear        SchoolYear              @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   projectionMonthlyAssignments ProjectionMonthlyAssignment[]
 
-  @@unique([schoolYearId, quarter, name])
+  @@unique([schoolYearId, quarter, name, month])
   @@index([schoolYearId])
   @@index([schoolYearId, quarter])
   @@map("monthly_assignment_templates")

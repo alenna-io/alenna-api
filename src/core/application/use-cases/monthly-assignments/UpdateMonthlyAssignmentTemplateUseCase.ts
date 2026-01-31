@@ -22,7 +22,7 @@ export class UpdateMonthlyAssignmentTemplateUseCase {
       const template = await this.monthlyAssignmentRepository.updateTemplate(
         templateId,
         schoolId,
-        { name: input.name }
+        { name: input.name, month: input.month }
       );
 
       return Ok(template);

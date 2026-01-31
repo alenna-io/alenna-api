@@ -16,14 +16,14 @@ export async function seedPaceCatalog() {
   // 1. Create Categories
   console.log('📚 Creating Categories...');
   const categoriesData = [
-    { name: 'Bible Reading', displayOrder: 1 },
-    { name: 'Electives', displayOrder: 2 },
-    { name: 'English', displayOrder: 3 },
-    { name: 'Math', displayOrder: 4 },
-    { name: 'Science', displayOrder: 5 },
-    { name: 'Social Studies', displayOrder: 6 },
-    { name: 'Word Building', displayOrder: 7 },
-    { name: 'Spanish', displayOrder: 8 },
+    { name: 'Math', displayOrder: 1 },
+    { name: 'English', displayOrder: 2 },
+    { name: 'Word Building', displayOrder: 3 },
+    { name: 'Science', displayOrder: 4 },
+    { name: 'Social Studies', displayOrder: 5 },
+    { name: 'Spanish', displayOrder: 6 },
+    { name: 'Electives', displayOrder: 7 },
+    { name: 'Bible Reading', displayOrder: 8 },
   ];
 
   const categories: Record<string, any> = {};
@@ -216,6 +216,30 @@ export async function seedPaceCatalog() {
     generatePaceCodes(9),
     generalBusinessOrderIndex,
     "General Business"
+  );
+
+  // Church History (L11: 1121-1132)
+  let churchHistoryOrderIndex: number = 121;
+  await createSubSubjectWithPaces(
+    'Electives',
+    'Church History',
+    'L11',
+    2,
+    generatePaceCodes(11),
+    churchHistoryOrderIndex,
+    "Church History"
+  );
+
+  // French (No-Level: 97-108)
+  let frenchOrderIndex: number = 97;
+  await createSubSubjectWithPaces(
+    'Electives',
+    'French',
+    'Electives',
+    2,
+    Array.from({ length: 12 }, (_, i) => String(97 + i)),
+    frenchOrderIndex,
+    "French"
   );
 
   // ENGLISH
