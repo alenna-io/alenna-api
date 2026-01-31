@@ -1,0 +1,22 @@
+{
+  "subjects": [
+    {
+      "categoryName": "Electives",
+      "subjectName": "French",
+      "levelId": "Electives",
+      "difficulty": 2,
+      "paceCodes": ["97", "98", "99", "100", "101", "102", "103", "104", "105", "106", "107", "108"],
+      "orderIndex": 97,
+      "paceNamePrefix": "French"
+    },
+    {
+      "categoryName": "Electives",
+      "subjectName": "Church History",
+      "levelId": "L11",
+      "difficulty": 2,
+      "paceCodes": ["1121", "1122", "1123", "1124", "1125", "1126", "1127", "1128", "1129", "1130", "1131", "1132"],
+      "orderIndex": 121,
+      "paceNamePrefix": "Church History"
+    }
+  ]
+}

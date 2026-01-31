@@ -1,0 +1,110 @@
+{
+  "school": {
+    "id": "105c3c4e-b47e-41f8-b3f7-577d99c7e0d7",
+    "name": "New Hope School",
+    "address": "Peregrina 11, Sin Nombre, 76230 Santa Rosa Jáuregui, Qro.",
+    "phone": "3314773004",
+    "email": "newhopeschoolmx@gmail.com"
+  },
+  "adminUser": {
+    "id": "2b108fa4-0c11-43e1-9162-471024f19bdf",
+    "clerkId": "user_33skKBEkI8wMg70KnEwHwrjVP93",
+    "email": "larissamr18@gmail.com",
+    "firstName": "Larissa",
+    "lastName": "Marañon",
+    "phone": "4427194472",
+    "streetAddress": "Peregrina 11, Sin Nombre, 76230 Santa Rosa Jáuregui, Qro.",
+    "city": "Querétaro",
+    "state": "Qro",
+    "country": "Mexico",
+    "zipCode": "76230"
+  },
+  "schoolYear": {
+    "id": "86b33091-13bd-4af6-b730-370b2293ebac",
+    "name": "2025-2026",
+    "startDate": "2025-09-01",
+    "endDate": "2026-07-11"
+  },
+  "quarters": [
+    {
+      "name": "Q1",
+      "startDate": "2025-09-01",
+      "endDate": "2025-11-07",
+      "order": 1,
+      "weeksCount": 9,
+      "weeks": [
+        { "weekNumber": 1, "startDate": "2025-09-01", "endDate": "2025-09-12" },
+        { "weekNumber": 2, "startDate": "2025-09-15", "endDate": "2025-09-19" },
+        { "weekNumber": 3, "startDate": "2025-09-22", "endDate": "2025-09-26" },
+        { "weekNumber": 4, "startDate": "2025-09-29", "endDate": "2025-10-03" },
+        { "weekNumber": 5, "startDate": "2025-10-06", "endDate": "2025-10-10" },
+        { "weekNumber": 6, "startDate": "2025-10-13", "endDate": "2025-10-17" },
+        { "weekNumber": 7, "startDate": "2025-10-20", "endDate": "2025-10-24" },
+        { "weekNumber": 8, "startDate": "2025-10-27", "endDate": "2025-10-31" },
+        { "weekNumber": 9, "startDate": "2025-11-03", "endDate": "2025-11-07" }
+      ],
+      "holidays": []
+    },
+    {
+      "name": "Q2",
+      "startDate": "2025-11-10",
+      "endDate": "2026-02-06",
+      "order": 2,
+      "weeksCount": 9,
+      "weeks": [
+        { "weekNumber": 1, "startDate": "2025-11-10", "endDate": "2025-11-21" },
+        { "weekNumber": 2, "startDate": "2025-11-24", "endDate": "2025-11-28" },
+        { "weekNumber": 3, "startDate": "2025-12-01", "endDate": "2025-12-05" },
+        { "weekNumber": 4, "startDate": "2025-12-08", "endDate": "2025-12-12" },
+        { "weekNumber": 5, "startDate": "2025-12-15", "endDate": "2025-12-18" },
+        { "weekNumber": 6, "startDate": "2026-01-12", "endDate": "2026-01-16" },
+        { "weekNumber": 7, "startDate": "2026-01-19", "endDate": "2026-01-23" },
+        { "weekNumber": 8, "startDate": "2026-01-26", "endDate": "2026-01-30" },
+        { "weekNumber": 9, "startDate": "2026-02-02", "endDate": "2026-02-06" }
+      ],
+      "holidays": [
+        { "startDate": "2025-12-19", "endDate": "2026-01-10", "label": "Winter Break" }
+      ]
+    },
+    {
+      "name": "Q3",
+      "startDate": "2026-02-09",
+      "endDate": "2026-04-28",
+      "order": 3,
+      "weeksCount": 9,
+      "weeks": [
+        { "weekNumber": 1, "startDate": "2026-02-09", "endDate": "2026-02-13" },
+        { "weekNumber": 2, "startDate": "2026-02-16", "endDate": "2026-02-20" },
+        { "weekNumber": 3, "startDate": "2026-02-23", "endDate": "2026-02-27" },
+        { "weekNumber": 4, "startDate": "2026-03-02", "endDate": "2026-03-06" },
+        { "weekNumber": 5, "startDate": "2026-03-09", "endDate": "2026-03-13" },
+        { "weekNumber": 6, "startDate": "2026-03-16", "endDate": "2026-03-20" },
+        { "weekNumber": 7, "startDate": "2026-03-23", "endDate": "2026-03-27" },
+        { "weekNumber": 8, "startDate": "2026-04-13", "endDate": "2026-04-18" },
+        { "weekNumber": 9, "startDate": "2026-04-20", "endDate": "2026-04-28" }
+      ],
+      "holidays": [
+        { "startDate": "2026-03-30", "endDate": "2026-04-10", "label": "Spring Break" }
+      ]
+    },
+    {
+      "name": "Q4",
+      "startDate": "2026-04-29",
+      "endDate": "2026-07-11",
+      "order": 4,
+      "weeksCount": 9,
+      "weeks": [
+        { "weekNumber": 1, "startDate": "2026-04-29", "endDate": "2026-05-08" },
+        { "weekNumber": 2, "startDate": "2026-05-11", "endDate": "2026-05-15" },
+        { "weekNumber": 3, "startDate": "2026-05-18", "endDate": "2026-05-22" },
+        { "weekNumber": 4, "startDate": "2026-05-25", "endDate": "2026-05-29" },
+        { "weekNumber": 5, "startDate": "2026-06-01", "endDate": "2026-06-05" },
+        { "weekNumber": 6, "startDate": "2026-06-08", "endDate": "2026-06-12" },
+        { "weekNumber": 7, "startDate": "2026-06-15", "endDate": "2026-06-19" },
+        { "weekNumber": 8, "startDate": "2026-06-22", "endDate": "2026-06-27" },
+        { "weekNumber": 9, "startDate": "2026-06-29", "endDate": "2026-07-10" }
+      ],
+      "holidays": []
+    }
+  ]
+}

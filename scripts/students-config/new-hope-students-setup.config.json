@@ -1,0 +1,269 @@
+{
+  "students": [
+    {
+      "firstName": "Alan Diaveli",
+      "lastName": "Castaño López",
+      "email": "alan.diaveli@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Atrid Jaqueline",
+      "lastName": "Vázquez Flores",
+      "email": "atrid.jaqueline@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Isabella",
+      "lastName": "León",
+      "email": "isabella.leon@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Juan Pedro",
+      "lastName": "Ulloa Beltrán",
+      "email": "juan.ulloa@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "León Javier",
+      "lastName": "Aguilar Astudillo",
+      "email": "leon.javier@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "María Fernanda",
+      "lastName": "Vázquez Flores",
+      "email": "maria.fernanda@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "María José",
+      "lastName": "Su Frausto",
+      "email": "maria.jose@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Paulina",
+      "lastName": "Su Frausto",
+      "email": "paulina.su@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Regina",
+      "lastName": "Esparza Martínez",
+      "email": "regina.esparza@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Sebastián",
+      "lastName": "Rodríguez Bravo",
+      "email": "sebastian.rodriguez@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Ximena",
+      "lastName": "Gómez Jaimes",
+      "email": "ximena.gomez@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Yasmin",
+      "lastName": "del Ángel Nieves Reyna",
+      "email": "yasmin.angel@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Alejandra",
+      "lastName": "González",
+      "email": "alejandra.gonzalez@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Benjamín",
+      "lastName": "Olivares Álvarez",
+      "email": "benjamin.olivares@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Dante Fernando",
+      "lastName": "Matamoros Velasco",
+      "email": "dante.matamoros@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Dara Romina",
+      "lastName": "Ortiz Ojeda",
+      "email": "dara.ortiz@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Emmanuel",
+      "lastName": "Esparza Martínez",
+      "email": "emmanuel.esparza@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Gerardo",
+      "lastName": "Elías Martínez",
+      "email": "gerardo.elias@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Nahara",
+      "lastName": "Lucy Pando",
+      "email": "nahara.pando@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Nicolás",
+      "lastName": "Campos Rivera",
+      "email": "nicolas.campos@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Rut",
+      "lastName": "Olivares López",
+      "email": "rut.olivares@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Sammara",
+      "lastName": "Gómez Jaimes",
+      "email": "sammara.gomez@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Sia",
+      "lastName": "Lucy Pando",
+      "email": "sia.lucy@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Sergio",
+      "lastName": "Garnica",
+      "email": "sergiogarnica.dev@gmail.com",
+      "phone": "4424396065",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    }
+  ]
+}
+
