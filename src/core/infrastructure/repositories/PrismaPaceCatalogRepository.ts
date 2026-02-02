@@ -63,16 +63,22 @@ export class PrismaPaceCatalogRepository implements IPaceCatalogRepository {
     categoryId: string,
     startPace: number,
     endPace: number,
+    subjectId: string,
     tx: PrismaTransaction = prisma
   ): Promise<Prisma.PaceCatalogGetPayload<{ include: { subject: true } }>[]> {
     // Normalize the input pace codes (remove leading zeros)
     const normalizedStartPace = normalizePaceCode(startPace);
     const normalizedEndPace = normalizePaceCode(endPace);
 
-    // Fetch all paces in the category to find matches by normalized code
+    // Fetch all paces for the specific subject to find matches by normalized code.
+    // IMPORTANT: We filter by subjectId because orderIndex is only unique within a subject,
+    // not across the category. This is especially critical for Electives where multiple
+    // subjects can have paces with the same orderIndex (e.g., Business Math pace 1 and
+    // Missions pace 1 both have orderIndex 1, but they're different subjects).
     const allPaces = await tx.paceCatalog.findMany({
       where: {
         subject: { categoryId },
+        subjectId: subjectId,
       },
       select: {
         id: true,
@@ -86,29 +92,33 @@ export class PrismaPaceCatalogRepository implements IPaceCatalogRepository {
       },
     });
 
-    // Find boundaries by comparing normalized codes
+    // Find boundaries by comparing normalized codes (only from the requested subject).
+    // Since we've already filtered by subjectId above, we're guaranteed to find boundaries
+    // from the correct subject, even if other subjects in the category have the same pace codes.
     const startBoundary = allPaces.find(p => normalizePaceCode(p.code) === normalizedStartPace);
     const endBoundary = allPaces.find(p => normalizePaceCode(p.code) === normalizedEndPace);
 
     if (!startBoundary) {
-      throw new Error(`Pace code ${startPace} not found in category ${categoryId}`);
+      throw new Error(`Pace code ${startPace} not found for subject ${subjectId} in category ${categoryId}`);
     }
 
     if (!endBoundary) {
-      throw new Error(`Pace code ${endPace} not found in category ${categoryId}`);
+      throw new Error(`Pace code ${endPace} not found for subject ${subjectId} in category ${categoryId}`);
     }
 
     const startOrderIndex = startBoundary.orderIndex;
     const endOrderIndex = endBoundary.orderIndex;
 
     if (!Number.isFinite(startOrderIndex) || !Number.isFinite(endOrderIndex)) {
-      throw new Error(`Invalid orderIndex values calculated for pace range ${startPace}-${endPace} in category ${categoryId}`);
+      throw new Error(`Invalid orderIndex values calculated for pace range ${startPace}-${endPace} for subject ${subjectId} in category ${categoryId}`);
     }
 
-    // Fetch all paces within the orderIndex range
+    // Fetch all paces within the orderIndex range for the specific subject.
+    // We filter by subjectId because orderIndex is only unique within a subject, not across the category.
     const pacesInRange = await tx.paceCatalog.findMany({
       where: {
         subject: { categoryId },
+        subjectId: subjectId,
         orderIndex: { gte: startOrderIndex, lte: endOrderIndex },
       },
       include: { subject: true },

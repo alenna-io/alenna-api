@@ -57,6 +57,7 @@ export function createMockProjectionRepository(): IProjectionRepository {
     deletePace: vi.fn() as unknown as (projectionId: string, paceId: string, tx?: PrismaTransaction) => Promise<void>,
     updateGrade: vi.fn() as unknown as (projectionId: string, paceId: string, grade: number, tx?: PrismaTransaction) => Promise<any>,
     markUngraded: vi.fn() as unknown as (projectionId: string, paceId: string, tx?: PrismaTransaction) => Promise<any>,
+    addSubject: vi.fn() as unknown as (projectionId: string, subjectId: string, tx?: PrismaTransaction) => Promise<any>,
   };
 }
 
@@ -81,7 +82,7 @@ export function createMockPaceCatalogRepository(): IPaceCatalogRepository {
     findById: vi.fn() as unknown as (id: string, tx?: PrismaTransaction) => Promise<any>,
     findByCodeAndSubjectId: vi.fn() as unknown as (code: string, subjectId: string, tx?: PrismaTransaction) => Promise<PaceCatalog | null>,
     findByCodesAndSubjects: vi.fn() as unknown as (codes: string[], subjectIds: string[], tx?: PrismaTransaction) => Promise<Map<string, PaceCatalog>>,
-    findByCategoryAndOrderRange: vi.fn() as unknown as (categoryId: string, startPace: number, endPace: number, tx?: PrismaTransaction) => Promise<Prisma.PaceCatalogGetPayload<{ include: { subject: true } }>[]>,
+    findByCategoryAndOrderRange: vi.fn() as unknown as (categoryId: string, startPace: number, endPace: number, subjectId: string, tx?: PrismaTransaction) => Promise<Prisma.PaceCatalogGetPayload<{ include: { subject: true } }>[]>,
     findByCategory: vi.fn() as unknown as (categoryName: string, tx?: PrismaTransaction) => Promise<any[]>,
   };
 }
