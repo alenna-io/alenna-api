@@ -222,6 +222,9 @@ describe('GenerateProjectionUseCase', () => {
         projection: {
           create: vi.fn().mockResolvedValue(projection),
         },
+        projectionSubject: {
+          createMany: vi.fn().mockResolvedValue(undefined),
+        },
         projectionMonthlyAssignment: {
           createMany: vi.fn().mockResolvedValue(undefined),
         },
