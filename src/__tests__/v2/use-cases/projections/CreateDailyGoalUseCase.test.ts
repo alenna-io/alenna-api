@@ -48,6 +48,7 @@ describe('CreateDailyGoalUseCase', () => {
         },
       },
       projectionPaces: [],
+      projectionSubjects: [],
       dailyGoals: [],
       ...overrides,
     } as ProjectionWithDetails;

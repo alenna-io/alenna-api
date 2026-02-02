@@ -238,11 +238,19 @@ export class GenerateProjectionUseCase {
     const requestedSubjectIds = new Set<string>();
 
     for (const subject of input.subjects) {
+      if (!subject.subjectId) {
+        throw new InvalidEntityError(
+          'Subject',
+          `Subject ID is required for category ${subject.categoryId}`
+        );
+      }
+
       const paces =
         await this.paceCatalogRepository.findByCategoryAndOrderRange(
           subject.categoryId,
           subject.startPace,
           subject.endPace,
+          subject.subjectId,
           tx
         );
 

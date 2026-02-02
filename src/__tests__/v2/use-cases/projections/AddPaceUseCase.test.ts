@@ -38,6 +38,7 @@ describe('AddPaceUseCase', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       projectionPaces: [],
+      projectionSubjects: [],
       student: {
         id: 'clh2222222222222222222222',
         userId: 'clh7777777777777777777777',
