@@ -57,6 +57,7 @@ export function createMockProjectionRepository(): IProjectionRepository {
     deletePace: vi.fn() as unknown as (projectionId: string, paceId: string, tx?: PrismaTransaction) => Promise<void>,
     updateGrade: vi.fn() as unknown as (projectionId: string, paceId: string, grade: number, tx?: PrismaTransaction) => Promise<any>,
     markUngraded: vi.fn() as unknown as (projectionId: string, paceId: string, tx?: PrismaTransaction) => Promise<any>,
+    addSubject: vi.fn() as unknown as (projectionId: string, subjectId: string, tx?: PrismaTransaction) => Promise<any>,
   };
 }
 
