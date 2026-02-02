@@ -11,6 +11,7 @@ import {
   GenerateProjectionDTO,
   MovePaceDTO,
   AddPaceDTO,
+  AddSubjectDTO,
   UpdateGradeDTO
 } from '../../../../application/dtos/projections';
 import { asyncHandler } from '../../../../../utils';
@@ -23,6 +24,7 @@ const projectionController = new ProjectionController(
   container.useCase.getProjectionDetailsUseCase,
   container.useCase.movePaceUseCase,
   container.useCase.addPaceUseCase,
+  container.useCase.addSubjectUseCase,
   container.useCase.deletePaceUseCase,
   container.useCase.updateGradeUseCase,
   container.useCase.markUngradedUseCase
@@ -64,6 +66,12 @@ router.post(
   '/:id/paces',
   validateBody(AddPaceDTO),
   asyncHandler(projectionController.addPaceHandler.bind(projectionController))
+);
+
+router.post(
+  '/:id/subjects',
+  validateBody(AddSubjectDTO),
+  asyncHandler(projectionController.addSubjectHandler.bind(projectionController))
 );
 
 router.delete(

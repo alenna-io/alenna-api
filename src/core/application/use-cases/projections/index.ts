@@ -4,6 +4,7 @@ export * from './GetProjectionListUseCase';
 export * from './GetProjectionDetailsUseCase';
 export * from './MovePaceUseCase';
 export * from './AddPaceUseCase';
+export * from './AddSubjectUseCase';
 export * from './DeletePaceUseCase';
 export * from './UpdateGradeUseCase';
 export * from './MarkUngradedUseCase';

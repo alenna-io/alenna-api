@@ -36,6 +36,15 @@ export type ProjectionWithDetails = Prisma.ProjectionGetPayload<{
         gradeHistory: true;
       };
     };
+    projectionSubjects: {
+      include: {
+        subject: {
+          include: {
+            category: true;
+          };
+        };
+      };
+    };
     dailyGoals: true;
   };
 }>;

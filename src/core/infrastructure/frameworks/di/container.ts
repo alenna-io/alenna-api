@@ -21,6 +21,7 @@ import {
   GetProjectionDetailsUseCase,
   MovePaceUseCase,
   AddPaceUseCase,
+  AddSubjectUseCase,
   DeletePaceUseCase,
   UpdateGradeUseCase,
   MarkUngradedUseCase
@@ -108,6 +109,12 @@ const movePaceUseCase = new MovePaceUseCase(
 const addPaceUseCase = new AddPaceUseCase(
   projectionRepository,
   paceCatalogRepository
+);
+
+const addSubjectUseCase = new AddSubjectUseCase(
+  projectionRepository,
+  subjectRepository,
+  categoryRepository
 );
 
 const deletePaceUseCase = new DeletePaceUseCase(
@@ -238,6 +245,7 @@ export const container = {
     getProjectionDetailsUseCase,
     movePaceUseCase,
     addPaceUseCase,
+    addSubjectUseCase,
     deletePaceUseCase,
     updateGradeUseCase,
     markUngradedUseCase,

@@ -5,6 +5,7 @@ import {
   GenerateProjectionDTO,
   MovePaceDTO,
   AddPaceDTO,
+  AddSubjectDTO,
   UpdateGradeDTO
 } from '../../application/dtos/projections';
 import {
@@ -14,6 +15,7 @@ import {
   GetProjectionDetailsUseCase,
   MovePaceUseCase,
   AddPaceUseCase,
+  AddSubjectUseCase,
   DeletePaceUseCase,
   UpdateGradeUseCase,
   MarkUngradedUseCase
@@ -29,6 +31,7 @@ export class ProjectionController {
     private readonly getProjectionDetails: GetProjectionDetailsUseCase = container.useCase.getProjectionDetailsUseCase,
     private readonly movePace: MovePaceUseCase = container.useCase.movePaceUseCase,
     private readonly addPace: AddPaceUseCase = container.useCase.addPaceUseCase,
+    private readonly addSubject: AddSubjectUseCase = container.useCase.addSubjectUseCase,
     private readonly deletePace: DeletePaceUseCase = container.useCase.deletePaceUseCase,
     private readonly updateGrade: UpdateGradeUseCase = container.useCase.updateGradeUseCase,
     private readonly markUngraded: MarkUngradedUseCase = container.useCase.markUngradedUseCase
@@ -143,6 +146,29 @@ export class ProjectionController {
     const input = AddPaceDTO.parse(req.body);
 
     const result = await this.addPace.execute(projectionId, schoolId, input);
+    if (!result.success) {
+      throw result.error;
+    }
+
+    return res.status(201).json(result.data);
+  }
+
+  async addSubjectHandler(req: Request, res: Response): Promise<Response> {
+    const projectionId = req.params.id;
+    if (!projectionId) {
+      throw new InvalidEntityError('Projection', 'Projection ID is required');
+    }
+    validateCuid(projectionId, 'Projection');
+
+    const schoolId = req.schoolId;
+    if (!schoolId) {
+      throw new InvalidEntityError('School', 'School ID is required');
+    }
+    validateCuid(schoolId, 'School');
+
+    const input = AddSubjectDTO.parse(req.body);
+
+    const result = await this.addSubject.execute(projectionId, schoolId, input);
     if (!result.success) {
       throw result.error;
     }
