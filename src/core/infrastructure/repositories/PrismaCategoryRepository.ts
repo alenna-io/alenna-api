@@ -69,65 +69,126 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     const normalizedStartPace = this.normalizePaceCode(startPace);
     const normalizedEndPace = this.normalizePaceCode(endPace);
 
-    // Build where clause - need to check both normalized and original formats
-    // Since codes might be stored as "001" but searched as "1", we need to fetch all
-    // paces in the subject and then filter by normalized code
-    const subjectWhereClause: any = {
-      categoryId,
-    };
+    let start: { code: string; orderIndex: number; subjectId: string } | null = null;
+    let end: { code: string; orderIndex: number; subjectId: string } | null = null;
 
-    if (subjectId) {
-      subjectWhereClause.id = subjectId;
-    }
+    if (isElectives) {
+      // For Electives: both paces must be in the specified subject (if provided) or same subject
+      const subjectWhereClause: any = {
+        categoryId,
+      };
 
-    // Fetch all paces in the subject/category to find matches by normalized code
-    const allPaces = await tx.paceCatalog.findMany({
-      where: {
-        subject: subjectWhereClause,
-      },
-      select: {
-        code: true,
-        orderIndex: true,
-        subjectId: true,
-      },
-    });
+      if (subjectId) {
+        subjectWhereClause.id = subjectId;
+      }
 
-    // Find boundaries by comparing normalized codes
-    const boundaries = allPaces.filter(pace => {
-      const normalizedCode = this.normalizePaceCode(pace.code);
-      return normalizedCode === normalizedStartPace || normalizedCode === normalizedEndPace;
-    });
+      const allPaces = await tx.paceCatalog.findMany({
+        where: {
+          subject: subjectWhereClause,
+        },
+        select: {
+          code: true,
+          orderIndex: true,
+          subjectId: true,
+        },
+      });
 
-    if (boundaries.length !== 2) {
-      const foundCodes = boundaries.map(b => b.code).join(', ');
-      const errorMessage = subjectId
-        ? `Start or end pace does not belong to this subject. Found: ${foundCodes || 'none'}. Looking for: ${startPace}, ${endPace}`
-        : `Start or end pace does not belong to this category. Found: ${foundCodes || 'none'}. Looking for: ${startPace}, ${endPace}`;
-      throw new InvalidEntityError(
-        'PaceCatalog',
-        errorMessage
-      );
-    }
+      const boundaries = allPaces.filter(pace => {
+        const normalizedCode = this.normalizePaceCode(pace.code);
+        return normalizedCode === normalizedStartPace || normalizedCode === normalizedEndPace;
+      });
 
-    // Find start and end boundaries by normalized code comparison
-    const start = boundaries.find(b => this.normalizePaceCode(b.code) === normalizedStartPace)!;
-    const end = boundaries.find(b => this.normalizePaceCode(b.code) === normalizedEndPace)!;
-
-    // If subjectId was provided, ensure both paces belong to the same subject
-    if (subjectId) {
-      if (start.subjectId !== end.subjectId || start.subjectId !== subjectId) {
+      if (boundaries.length !== 2) {
+        const foundCodes = boundaries.map(b => b.code).join(', ');
+        const errorMessage = subjectId
+          ? `Start or end pace does not belong to this subject. Found: ${foundCodes || 'none'}. Looking for: ${startPace}, ${endPace}`
+          : `Start or end pace does not belong to this category. Found: ${foundCodes || 'none'}. Looking for: ${startPace}, ${endPace}`;
         throw new InvalidEntityError(
           'PaceCatalog',
-          `Start and end paces must belong to the same subject. Start pace belongs to subject ${start.subjectId}, end pace belongs to subject ${end.subjectId}`
+          errorMessage
         );
       }
+
+      start = boundaries.find(b => this.normalizePaceCode(b.code) === normalizedStartPace)!;
+      end = boundaries.find(b => this.normalizePaceCode(b.code) === normalizedEndPace)!;
     } else {
-      // If no subjectId provided, ensure both paces belong to the same subject
-      if (start.subjectId !== end.subjectId) {
-        throw new InvalidEntityError(
-          'PaceCatalog',
-          `Start and end paces must belong to the same subject. Start pace (${startPace}) belongs to subject ${start.subjectId}, end pace (${endPace}) belongs to subject ${end.subjectId}`
-        );
+      // For non-Electives: allow spanning multiple subjects within the category
+      // Find start pace in the specified subject (if provided) or anywhere in category
+      // Find end pace anywhere in the category
+
+      if (subjectId) {
+        // First, find start pace in the specified subject
+        const startSubjectPaces = await tx.paceCatalog.findMany({
+          where: {
+            subject: {
+              id: subjectId,
+              categoryId,
+            },
+          },
+          select: {
+            code: true,
+            orderIndex: true,
+            subjectId: true,
+          },
+        });
+
+        const startBoundary = startSubjectPaces.find(p => this.normalizePaceCode(p.code) === normalizedStartPace);
+        if (!startBoundary) {
+          throw new InvalidEntityError(
+            'PaceCatalog',
+            `Start pace ${startPace} does not belong to subject ${subjectId} in category ${categoryId}`
+          );
+        }
+        start = startBoundary;
+
+        // Then, find end pace anywhere in the category
+        const allCategoryPaces = await tx.paceCatalog.findMany({
+          where: {
+            subject: { categoryId },
+          },
+          select: {
+            code: true,
+            orderIndex: true,
+            subjectId: true,
+          },
+        });
+
+        const endBoundary = allCategoryPaces.find(p => this.normalizePaceCode(p.code) === normalizedEndPace);
+        if (!endBoundary) {
+          throw new InvalidEntityError(
+            'PaceCatalog',
+            `End pace ${endPace} does not belong to category ${categoryId}`
+          );
+        }
+        end = endBoundary;
+      } else {
+        // No subjectId provided: find both paces anywhere in the category
+        const allCategoryPaces = await tx.paceCatalog.findMany({
+          where: {
+            subject: { categoryId },
+          },
+          select: {
+            code: true,
+            orderIndex: true,
+            subjectId: true,
+          },
+        });
+
+        const boundaries = allCategoryPaces.filter(pace => {
+          const normalizedCode = this.normalizePaceCode(pace.code);
+          return normalizedCode === normalizedStartPace || normalizedCode === normalizedEndPace;
+        });
+
+        if (boundaries.length !== 2) {
+          const foundCodes = boundaries.map(b => b.code).join(', ');
+          throw new InvalidEntityError(
+            'PaceCatalog',
+            `Start or end pace does not belong to this category. Found: ${foundCodes || 'none'}. Looking for: ${startPace}, ${endPace}`
+          );
+        }
+
+        start = boundaries.find(b => this.normalizePaceCode(b.code) === normalizedStartPace)!;
+        end = boundaries.find(b => this.normalizePaceCode(b.code) === normalizedEndPace)!;
       }
     }
 
@@ -138,13 +199,46 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       );
     }
 
-    // For Electives, skip strict contiguous validation - just ensure both paces exist in the subject
+    // For Electives: must be within the same subject
     if (isElectives) {
+      // If subjectId was provided, ensure both paces belong to that subject
+      if (subjectId) {
+        if (start.subjectId !== end.subjectId || start.subjectId !== subjectId) {
+          throw new InvalidEntityError(
+            'PaceCatalog',
+            `Start and end paces must belong to the same subject. Start pace belongs to subject ${start.subjectId}, end pace belongs to subject ${end.subjectId}`
+          );
+        }
+      } else {
+        // If no subjectId provided, ensure both paces belong to the same subject
+        if (start.subjectId !== end.subjectId) {
+          throw new InvalidEntityError(
+            'PaceCatalog',
+            `Start and end paces must belong to the same subject. Start pace (${startPace}) belongs to subject ${start.subjectId}, end pace (${endPace}) belongs to subject ${end.subjectId}`
+          );
+        }
+      }
       return; // Electives can have any pace numbers, just need to exist in the subject
     }
 
-    // For non-Electives, validate strict contiguous range
-    // Count all paces between them by orderIndex within the same subject
+    // For non-Electives: allow spanning multiple subjects within the same category
+    // as long as the pace range is contiguous across the category (using orderIndex)
+    // Both paces must belong to the category (already validated above)
+
+    // If subjectId was provided, validate that start pace belongs to that subject
+    // (but allow end pace to be in a different subject within the same category)
+    if (subjectId) {
+      if (start.subjectId !== subjectId) {
+        throw new InvalidEntityError(
+          'PaceCatalog',
+          `Start pace does not belong to the specified subject. Start pace (${startPace}) belongs to subject ${start.subjectId}, but ${subjectId} was specified`
+        );
+      }
+      // End pace can be in a different subject within the same category
+    }
+
+    // Validate strict contiguous range across the category (allowing multiple subjects)
+    // Count all paces between them by orderIndex within the category (not restricted to a single subject)
     const countWhereClause: any = {
       subject: { categoryId },
       orderIndex: {
@@ -152,12 +246,6 @@ export class PrismaCategoryRepository implements ICategoryRepository {
         lte: end.orderIndex,
       },
     };
-
-    // If subjectId was provided or we determined it, use it
-    const targetSubjectId = subjectId || boundaries[0].subjectId;
-    if (targetSubjectId) {
-      countWhereClause.subject.id = targetSubjectId;
-    }
 
     const count = await tx.paceCatalog.count({
       where: countWhereClause,
@@ -168,7 +256,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     if (count !== expected) {
       throw new InvalidEntityError(
         'PaceCatalog',
-        `Pace range is not contiguous within the ${subjectId ? 'subject' : 'category'}. Expected ${expected} paces, found ${count}`
+        `Pace range is not contiguous within the category. Expected ${expected} paces, found ${count}`
       );
     }
   }
