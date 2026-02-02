@@ -112,6 +112,18 @@ export class PrismaProjectionRepository implements IProjectionRepository {
             { week: 'asc' },
           ],
         },
+        projectionSubjects: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            subject: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
         dailyGoals: {
           where: {
             deletedAt: null,
@@ -262,6 +274,43 @@ export class PrismaProjectionRepository implements IProjectionRepository {
       data: {
         grade: null,
         status: ProjectionPaceStatus.PENDING,
+      },
+    });
+  }
+
+  async addSubject(
+    projectionId: string,
+    subjectId: string,
+    tx: PrismaTransaction = prisma
+  ): Promise<Prisma.ProjectionSubjectGetPayload<{}>> {
+    // Check if subject already exists (including soft-deleted)
+    const existing = await tx.projectionSubject.findFirst({
+      where: {
+        projectionId,
+        subjectId,
+      },
+    });
+
+    if (existing) {
+      // If soft-deleted, restore it; otherwise return existing
+      if (existing.deletedAt) {
+        return await tx.projectionSubject.update({
+          where: {
+            id: existing.id,
+          },
+          data: {
+            deletedAt: null,
+          },
+        });
+      }
+      return existing;
+    }
+
+    // Create new ProjectionSubject
+    return await tx.projectionSubject.create({
+      data: {
+        projectionId,
+        subjectId,
       },
     });
   }

@@ -18,6 +18,7 @@
     "school:create": "tsx scripts/create-school.ts",
     "students:create": "tsx scripts/create-students.ts",
     "paces:create": "tsx scripts/create-paces.ts",
+    "projections:backfill-subjects": "tsx scripts/backfill-projection-subjects.ts",
     "billing:run": "tsx scripts/run-billing-job.ts",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
