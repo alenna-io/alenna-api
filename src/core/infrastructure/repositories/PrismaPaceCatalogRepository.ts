@@ -63,11 +63,32 @@ export class PrismaPaceCatalogRepository implements IPaceCatalogRepository {
         code: { in: [String(startPace), String(endPace)] },
         subject: { categoryId },
       },
-      select: { orderIndex: true },
+      select: { orderIndex: true, code: true },
     });
+
+    if (boundaries.length === 0) {
+      throw new Error(`No paces found with codes ${startPace} or ${endPace} in category ${categoryId}`);
+    }
+
+    const foundCodes = boundaries.map(b => b.code);
+    const missingCodes: string[] = [];
+    if (!foundCodes.includes(String(startPace))) {
+      missingCodes.push(String(startPace));
+    }
+    if (!foundCodes.includes(String(endPace))) {
+      missingCodes.push(String(endPace));
+    }
+
+    if (missingCodes.length > 0) {
+      throw new Error(`Pace codes ${missingCodes.join(', ')} not found in category ${categoryId}`);
+    }
 
     const start = Math.min(...boundaries.map(b => b.orderIndex));
     const end = Math.max(...boundaries.map(b => b.orderIndex));
+
+    if (!Number.isFinite(start) || !Number.isFinite(end)) {
+      throw new Error(`Invalid orderIndex values calculated for pace range ${startPace}-${endPace} in category ${categoryId}`);
+    }
 
     return tx.paceCatalog.findMany({
       where: {
