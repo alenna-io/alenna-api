@@ -68,7 +68,7 @@ export class GenerateProjectionUseCase {
         }
 
         logger.info("Validating pace boundaries...");
-        const { paceCatalogMap, subjectDifficulties } = await this.getPaceCatalogAndSubjectDifficulties(input, tx as PrismaTransaction);
+        const { paceCatalogMap, subjectDifficulties, subjectIds } = await this.getPaceCatalogAndSubjectDifficulties(input, tx as PrismaTransaction);
         logger.debug("Subject Difficulties", subjectDifficulties);
 
         logger.info("Creating empty projection...");
@@ -112,6 +112,18 @@ export class GenerateProjectionUseCase {
 
         logger.info("Persisting projection paces...");
         await this.projectionPaceRepository.createMany(projectionPacesData, tx as PrismaTransaction);
+
+        // Create ProjectionSubject records for all unique subjects in the projection
+        logger.info("Creating ProjectionSubject records...");
+        if (subjectIds.size > 0) {
+          await tx.projectionSubject.createMany({
+            data: Array.from(subjectIds).map(subjectId => ({
+              projectionId: projection.id,
+              subjectId,
+            })),
+            skipDuplicates: true,
+          });
+        }
 
         // Assign existing monthly assignment templates to the new projection
         logger.info("Assigning existing monthly assignments to projection...");
@@ -177,7 +189,8 @@ export class GenerateProjectionUseCase {
     tx: PrismaTransaction
   ): Promise<{
     paceCatalogMap: Map<string, Prisma.PaceCatalogGetPayload<{}>>,
-    subjectDifficulties: Record<string, number>
+    subjectDifficulties: Record<string, number>,
+    subjectIds: Set<string>
   }> {
 
     if (!input.subjects.length) {
@@ -288,6 +301,7 @@ export class GenerateProjectionUseCase {
     return {
       paceCatalogMap,
       subjectDifficulties,
+      subjectIds: requestedSubjectIds,
     };
   }
 

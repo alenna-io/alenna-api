@@ -71,6 +71,22 @@ export class GetProjectionDetailsUseCase {
             note: history.note,
           })),
         })),
+        projectionSubjects: (projection.projectionSubjects || []).map(ps => ({
+          id: ps.id,
+          projectionId: ps.projectionId,
+          subjectId: ps.subjectId,
+          subject: {
+            id: ps.subject.id,
+            name: ps.subject.name,
+            category: {
+              id: ps.subject.category.id,
+              name: ps.subject.category.name,
+              displayOrder: ps.subject.category.displayOrder,
+            },
+          },
+          createdAt: ps.createdAt.toISOString(),
+          updatedAt: ps.updatedAt.toISOString(),
+        })),
         dailyGoals: projection.dailyGoals.map(goal => ({
           id: goal.id,
           subject: goal.subject,

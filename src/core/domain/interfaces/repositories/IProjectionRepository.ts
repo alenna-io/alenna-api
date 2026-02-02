@@ -14,4 +14,5 @@ export interface IProjectionRepository {
   deletePace(projectionId: string, paceId: string, tx?: PrismaTransaction): Promise<void>;
   updateGrade(projectionId: string, paceId: string, grade: number, tx?: PrismaTransaction): Promise<Prisma.ProjectionPaceGetPayload<{}>>;
   markUngraded(projectionId: string, paceId: string, tx?: PrismaTransaction): Promise<Prisma.ProjectionPaceGetPayload<{}>>;
+  addSubject(projectionId: string, subjectId: string, tx?: PrismaTransaction): Promise<Prisma.ProjectionSubjectGetPayload<{}>>;
 } 

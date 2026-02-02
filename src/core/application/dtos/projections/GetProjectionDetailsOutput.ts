@@ -45,6 +45,23 @@ export const DailyGoalDetailsSchema = z.object({
   notesCompleted: z.boolean(),
 });
 
+export const ProjectionSubjectDetailsSchema = z.object({
+  id: z.string(),
+  projectionId: z.string(),
+  subjectId: z.string(),
+  subject: z.object({
+    id: z.string(),
+    name: z.string(),
+    category: z.object({
+      id: z.string(),
+      name: z.string(),
+      displayOrder: z.number().int(),
+    }),
+  }),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
 export const GetProjectionDetailsOutputSchema = z.object({
   id: z.string(),
   studentId: z.string(),
@@ -61,9 +78,11 @@ export const GetProjectionDetailsOutputSchema = z.object({
     }),
   }),
   projectionPaces: z.array(ProjectionPaceDetailsSchema),
+  projectionSubjects: z.array(ProjectionSubjectDetailsSchema),
   dailyGoals: z.array(DailyGoalDetailsSchema),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
 
+export type ProjectionSubjectDetails = z.infer<typeof ProjectionSubjectDetailsSchema>;
 export type GetProjectionDetailsOutput = z.infer<typeof GetProjectionDetailsOutputSchema>;
