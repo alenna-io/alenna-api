@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DeletePaceUseCase } from '../../../../core/application/use-cases/projections/DeletePaceUseCase';
 import { InvalidEntityError, ObjectNotFoundError } from '../../../../core/domain/errors';
 import { createMockProjectionRepository } from '../../utils/mockRepositories';
-import { ProjectionStatus, ProjectionPaceStatus } from '@prisma/client';
+import { ProjectionStatus, ProjectionPaceStatus, Prisma } from '@prisma/client';
 import { ProjectionWithDetails } from '../../../../core/infrastructure/repositories/types/projections.types';
 
 describe('DeletePaceUseCase', () => {
@@ -76,7 +76,7 @@ describe('DeletePaceUseCase', () => {
       paceCatalogId,
       quarter,
       week,
-      grade,
+      grade: grade !== null ? new Prisma.Decimal(grade) : null,
       status,
       deletedAt,
       createdAt: new Date(),

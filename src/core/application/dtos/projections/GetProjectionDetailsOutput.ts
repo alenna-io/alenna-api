@@ -6,7 +6,7 @@ export const ProjectionPaceDetailsSchema = z.object({
   paceCatalogId: z.string(),
   quarter: z.string(),
   week: z.number().int(),
-  grade: z.number().int().nullable(),
+  grade: z.number().nullable(),
   status: z.enum(['PENDING', 'COMPLETED', 'FAILED', 'UNFINISHED']),
   originalQuarter: z.string().nullable(),
   originalWeek: z.number().int().nullable(),
@@ -27,7 +27,7 @@ export const ProjectionPaceDetailsSchema = z.object({
   }),
   gradeHistory: z.array(z.object({
     id: z.string(),
-    grade: z.number().int(),
+    grade: z.number(),
     date: z.string().datetime(),
     note: z.string().nullable(),
   })),
