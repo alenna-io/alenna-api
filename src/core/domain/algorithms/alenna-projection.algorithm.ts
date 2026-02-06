@@ -56,6 +56,9 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
     logger.debug("Building weeks...");
     const weeks = this.buildWeeks();
 
+    // Pass quarter limits to generation methods
+    const quarterLimits = pacesByQuarter;
+
     const isUniform =
       totalPaces === 72 &&
       subjects.length > 1 &&
@@ -66,7 +69,7 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       this.generateUniformByDifficulty(subjects, weeks);
     } else {
       logger.debug("Generating by frequency...");
-      this.generateByFrequency(subjects, weeks, totalPaces);
+      this.generateByFrequency(subjects, weeks, totalPaces, quarterLimits);
     }
 
     logger.debug("Returning generated projection...");
@@ -249,7 +252,8 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
   private generateByFrequency(
     subjects: SubjectPlan[],
     weeks: WeekSlot[],
-    _totalPaces: number
+    _totalPaces: number,
+    quarterLimits: number[]
   ) {
     logger.debug("Generating by frequency...");
     // Use subjectId as key to handle electives (multiple subjects with same categoryId)
@@ -265,6 +269,80 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       pacesByQuarterBySubjectMap.set(subject.subjectId, pacesByQuarter);
     }
 
+    // Log the quarter distribution for debugging
+    logger.debug(`Quarter distributions by subject:`);
+    for (const subject of subjects) {
+      const dist = pacesByQuarterBySubjectMap.get(subject.subjectId)!;
+      const total = dist.reduce((sum, val) => sum + val, 0);
+      logger.debug(`  ${subject.categoryId}: [${dist.join(', ')}] (total: ${total})`);
+    }
+
+    // Calculate actual totals per quarter
+    const actualQuarterTotals = [0, 0, 0, 0];
+    for (const subject of subjects) {
+      const dist = pacesByQuarterBySubjectMap.get(subject.subjectId)!;
+      for (let q = 0; q < 4; q++) {
+        actualQuarterTotals[q] += dist[q];
+      }
+    }
+    logger.debug(`Actual quarter totals (before adjustment): [${actualQuarterTotals.join(', ')}]`);
+    logger.debug(`Target quarter limits: [${quarterLimits.join(', ')}]`);
+
+    // Adjust per-subject distributions to match global quarter limits
+    // This ensures the sum of all subject distributions equals the target per quarter
+    const subjectsByPaceCount = [...subjects].sort((a, b) => b.paces.length - a.paces.length);
+
+    for (let q = 0; q < 4; q++) {
+      const diff = actualQuarterTotals[q] - quarterLimits[q];
+
+      if (diff > 0) {
+        // Quarter is over limit - move paces to later quarters
+        logger.debug(`[Q${q + 1}] Over by ${diff}, moving to later quarters`);
+        let remaining = diff;
+
+        for (const subject of subjectsByPaceCount) {
+          if (remaining <= 0) break;
+
+          const dist = pacesByQuarterBySubjectMap.get(subject.subjectId)!;
+          if (dist[q] > 1 && q < 3) { // Keep at least 1 pace per quarter, and only move forward
+            const canMove = Math.min(dist[q] - 1, remaining);
+            dist[q] -= canMove;
+            dist[q + 1] += canMove;
+            remaining -= canMove;
+            actualQuarterTotals[q] -= canMove;
+            actualQuarterTotals[q + 1] += canMove;
+            logger.debug(`  Moved ${canMove} from ${subject.categoryId} Q${q + 1}→Q${q + 2}`);
+          }
+        }
+      } else if (diff < 0) {
+        // Quarter is under limit - pull paces from earlier quarters
+        logger.debug(`[Q${q + 1}] Under by ${-diff}, pulling from earlier quarters`);
+        let remaining = -diff;
+
+        for (const subject of subjectsByPaceCount) {
+          if (remaining <= 0) break;
+
+          const dist = pacesByQuarterBySubjectMap.get(subject.subjectId)!;
+          if (q > 0 && dist[q - 1] > 1) { // Pull from previous quarter if it has spare paces
+            const canMove = Math.min(dist[q - 1] - 1, remaining);
+            dist[q - 1] -= canMove;
+            dist[q] += canMove;
+            remaining -= canMove;
+            actualQuarterTotals[q - 1] -= canMove;
+            actualQuarterTotals[q] += canMove;
+            logger.debug(`  Moved ${canMove} from ${subject.categoryId} Q${q}→Q${q + 1}`);
+          }
+        }
+      }
+    }
+
+    logger.debug(`Actual quarter totals (after adjustment): [${actualQuarterTotals.join(', ')}]`);
+    logger.debug(`Adjusted distributions by subject:`);
+    for (const subject of subjects) {
+      const dist = pacesByQuarterBySubjectMap.get(subject.subjectId)!;
+      logger.debug(`  ${subject.categoryId}: [${dist.join(', ')}]`);
+    }
+
     // Identify subjects with 28-36 paces (special case: use freq 1, offset 0)
     const highPaceSubjects = new Set<string>();
     for (const subject of subjects) {
@@ -272,29 +350,6 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
         highPaceSubjects.add(subject.subjectId);
         logger.debug(`Subject ${subject.subjectId} has ${subject.paces.length} paces, using special handling (freq 1, offset 0)`);
       }
-    }
-
-    // Calculate week frequencies by quarter for each subject (keyed by subjectId)
-    const weeklyQuarterFrequencyBySubjectMap = new Map<string, number[]>();
-    for (const subject of subjects) {
-      const pacesByQuarterBySubject = pacesByQuarterBySubjectMap.get(subject.subjectId);
-      if (!pacesByQuarterBySubject) {
-        throw new Error(`Paces by quarter by subject not found for subject: ${subject.subjectId}`);
-      }
-
-      const weekFrequenciesByQuarterBySubject = new Array(4).fill(0);
-      for (let q = 0; q < 4; q++) {
-        const pacesInQuarter = pacesByQuarterBySubject[q];
-        if (pacesInQuarter > 0) {
-          // Special case: subjects with 28-36 paces use frequency 1
-          if (highPaceSubjects.has(subject.subjectId)) {
-            weekFrequenciesByQuarterBySubject[q] = 1;
-          } else {
-            weekFrequenciesByQuarterBySubject[q] = Math.round(WEEKS_PER_QUARTER / pacesInQuarter);
-          }
-        }
-      }
-      weeklyQuarterFrequencyBySubjectMap.set(subject.subjectId, weekFrequenciesByQuarterBySubject);
     }
 
     // Process each quarter separately
@@ -321,29 +376,18 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       // Place paces for each subject in this quarter
       for (let index = 0; index < subjectsToPlace.length; index++) {
         const subject = subjectsToPlace[index];
-        let offset = index % 3; // Cycles: 0, 1, 2, 0, 1, 2...
+        const offset = highPaceSubjects.has(subject.subjectId) ? 0 : index % 3;
         const pacesInQuarter = pacesByQuarterBySubjectMap.get(subject.subjectId)?.[quarter] ?? 0;
-        let frequency = weeklyQuarterFrequencyBySubjectMap.get(subject.subjectId)?.[quarter] ?? 0;
 
-        // Special case: subjects with 28-36 paces use offset 0
-        if (highPaceSubjects.has(subject.subjectId)) {
-          offset = 0;
-        }
-
-        if (pacesInQuarter === 0 || frequency === 0) continue;
-
-        // Cap frequency so all paces fit within quarter bounds given the offset
-        if (pacesInQuarter > 1) {
-          const maxFreq = Math.floor((WEEKS_PER_QUARTER - 1 - offset) / (pacesInQuarter - 1));
-          frequency = Math.min(frequency, Math.max(1, maxFreq));
-        }
+        if (pacesInQuarter === 0) continue;
 
         const cursor = cursorsMap.get(subject.subjectId);
         if (!cursor) continue;
 
-        // Place each pace in this quarter
+        // Fractional step to spread paces evenly across all 9 weeks
+        const step = WEEKS_PER_QUARTER / pacesInQuarter;
+
         for (let paceIndex = 0; paceIndex < pacesInQuarter; paceIndex++) {
-          // Check if we've run out of paces for this subject
           if (cursor.index >= cursor.subject.paces.length) {
             logger.debug(`[Q${quarter + 1}] No more paces available for ${subject.categoryId}, stopping placement`);
             break;
@@ -351,17 +395,18 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
           const currentPaceCode = cursor.subject.paces[cursor.index];
 
-          // Skip if paceCode is undefined (shouldn't happen, but defensive check)
           if (!currentPaceCode) {
-            logger.debug(`[Q${quarter + 1}] Pace code is undefined at index ${cursor.index} for ${subject.categoryId}, skipping`);
             cursor.index++;
             continue;
           }
 
-          let weekIndexWithinQuarter = offset + (paceIndex * frequency);
+          let weekIndexWithinQuarter = Math.min(
+            WEEKS_PER_QUARTER - 1,
+            Math.floor(offset + paceIndex * step)
+          );
           const isFirstPaceInQuarter = paceIndex === 0;
 
-          logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} pace ${currentPaceCode} (paceIndex=${paceIndex}, offset=${offset}, frequency=${frequency}, weekIndexWithinQuarter=${weekIndexWithinQuarter})`);
+          logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} pace ${currentPaceCode} (paceIndex=${paceIndex}, offset=${offset}, step=${step.toFixed(2)}, weekIndexWithinQuarter=${weekIndexWithinQuarter})`);
 
           // For the first pace, prioritize weeks 1 and 2 to ensure they have 2 paces each
           if (isFirstPaceInQuarter) {
@@ -370,47 +415,12 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
             const week1 = weeks[week1Index];
             const week2 = weeks[week2Index];
 
-            // Try week 1 first if it has less than 2 paces
             if (week1 && week1.paces.length < 2 && !week1.subjects.has(subject.trackingId) && !this.violatesNotPair(subject, week1.subjects)) {
               logger.debug(`[Q${quarter + 1}] Prioritizing week 1 for first pace (has ${week1.paces.length} paces)`);
               weekIndexWithinQuarter = 0;
-            }
-            // Try week 2 if week 1 is full and week 2 has less than 2 paces
-            else if (week2 && week2.paces.length < 2 && !week2.subjects.has(subject.trackingId) && !this.violatesNotPair(subject, week2.subjects)) {
+            } else if (week2 && week2.paces.length < 2 && !week2.subjects.has(subject.trackingId) && !this.violatesNotPair(subject, week2.subjects)) {
               logger.debug(`[Q${quarter + 1}] Prioritizing week 2 for first pace (has ${week2.paces.length} paces)`);
               weekIndexWithinQuarter = 1;
-            }
-            // Otherwise use calculated offset
-          }
-
-          // If calculated week exceeds quarter bounds, use fallback strategy
-          if (weekIndexWithinQuarter >= WEEKS_PER_QUARTER) {
-            logger.debug(`[Q${quarter + 1}] Week index ${weekIndexWithinQuarter} exceeds quarter bounds, applying fallback strategy...`);
-
-            // Attempt 1: Reduce frequency
-            let newFrequency = Math.max(1, frequency - 1);
-            let newWeekIndex = offset + (paceIndex * newFrequency);
-
-            if (newWeekIndex < WEEKS_PER_QUARTER) {
-              logger.debug(`[Q${quarter + 1}] Fallback 1: Reduced frequency from ${frequency} to ${newFrequency}`);
-              weekIndexWithinQuarter = newWeekIndex;
-              frequency = newFrequency;
-            } else {
-              // Attempt 2: Reduce offset
-              let newOffset = Math.max(0, offset - 1);
-              newWeekIndex = newOffset + (paceIndex * frequency);
-
-              if (newWeekIndex < WEEKS_PER_QUARTER) {
-                logger.debug(`[Q${quarter + 1}] Fallback 2: Reduced offset from ${offset} to ${newOffset}`);
-                weekIndexWithinQuarter = newWeekIndex;
-                offset = newOffset;
-              } else {
-                // Last resort: offset 0, frequency 1
-                logger.debug(`[Q${quarter + 1}] Fallback 3: Using offset 0, frequency 1`);
-                weekIndexWithinQuarter = paceIndex; // paceIndex * 1
-                offset = 0;
-                frequency = 1;
-              }
             }
           }
 
@@ -425,10 +435,13 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
           // Check if we can place here maintaining sequential order
           if (!this.canPlacePaceSequentially(week, subject, currentPaceCode, quarterBaseWeek, weeks)) {
             logger.debug(`[Q${quarter + 1}] Cannot place ${subject.categoryId} ${currentPaceCode} in week ${globalWeekIndex + 1} (would violate sequential order), searching alternative...`);
-            // Try to find any available week in this quarter (search entire quarter)
+            // Try to find any available week in this quarter
+            // Search in order of least-filled weeks first to maintain balance
+            const quarterWeeks = Array.from({ length: WEEKS_PER_QUARTER }, (_, i) => quarterBaseWeek + i);
+            quarterWeeks.sort((a, b) => weeks[a].paces.length - weeks[b].paces.length);
+
             let found = false;
-            for (let attempt = 0; attempt < WEEKS_PER_QUARTER; attempt++) {
-              const tryWeekIndex = quarterBaseWeek + attempt;
+            for (const tryWeekIndex of quarterWeeks) {
               if (tryWeekIndex >= TOTAL_WEEKS) break;
 
               const tryWeek = weeks[tryWeekIndex];
@@ -447,8 +460,9 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
             }
             if (!found) {
               // If still not found, try any week in the quarter ignoring some constraints (last resort)
-              for (let attempt = 0; attempt < WEEKS_PER_QUARTER; attempt++) {
-                const tryWeekIndex = quarterBaseWeek + attempt;
+              // Prioritize least-filled weeks
+              const lastResortWeeks = Array.from({ length: WEEKS_PER_QUARTER }, (_, i) => quarterBaseWeek + i);
+              for (const tryWeekIndex of lastResortWeeks.sort((a, b) => weeks[a].paces.length - weeks[b].paces.length)) {
                 if (tryWeekIndex >= TOTAL_WEEKS) break;
 
                 const tryWeek = weeks[tryWeekIndex];
@@ -489,10 +503,13 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
             this.violatesNotPair(subject, week.subjects)
           ) {
             logger.debug(`[Q${quarter + 1}] Cannot place ${subject.subjectId} ${currentPaceCode} in week ${globalWeekIndex + 1} (constraints violated), searching alternative...`);
-            // Try to find any available week in this quarter (search entire quarter)
+            // Try to find any available week in this quarter
+            // Search in order of least-filled weeks first to maintain balance
+            const alternativeWeeks = Array.from({ length: WEEKS_PER_QUARTER }, (_, i) => quarterBaseWeek + i);
+            alternativeWeeks.sort((a, b) => weeks[a].paces.length - weeks[b].paces.length);
+
             let found = false;
-            for (let attempt = 0; attempt < WEEKS_PER_QUARTER; attempt++) {
-              const tryWeekIndex = quarterBaseWeek + attempt;
+            for (const tryWeekIndex of alternativeWeeks) {
               if (tryWeekIndex >= TOTAL_WEEKS) break;
 
               const tryWeek = weeks[tryWeekIndex];
@@ -511,8 +528,9 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
             }
             if (!found) {
               // If still not found, try any week in the quarter ignoring some constraints (last resort)
-              for (let attempt = 0; attempt < WEEKS_PER_QUARTER; attempt++) {
-                const tryWeekIndex = quarterBaseWeek + attempt;
+              // Prioritize least-filled weeks
+              const lastResortWeeks = Array.from({ length: WEEKS_PER_QUARTER }, (_, i) => quarterBaseWeek + i);
+              for (const tryWeekIndex of lastResortWeeks.sort((a, b) => weeks[a].paces.length - weeks[b].paces.length)) {
                 if (tryWeekIndex >= TOTAL_WEEKS) break;
 
                 const tryWeek = weeks[tryWeekIndex];
@@ -567,30 +585,18 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
       for (let index = 0; index < remainingSubjects.length; index++) {
         const subject = remainingSubjects[index];
-        let offset = (startingOffset + index) % 3; // Continues the cycle: 0, 1, 2, 0, 1, 2...
+        const offset = highPaceSubjects.has(subject.subjectId) ? 0 : (startingOffset + index) % 3;
         const pacesInQuarter = pacesByQuarterBySubjectMap.get(subject.subjectId)?.[quarter] ?? 0;
-        let frequency = weeklyQuarterFrequencyBySubjectMap.get(subject.subjectId)?.[quarter] ?? 0;
 
-        // Special case: subjects with 28-36 paces use offset 0
-        if (highPaceSubjects.has(subject.subjectId)) {
-          offset = 0;
-        }
-
-        if (pacesInQuarter === 0 || frequency === 0) continue;
-
-        // Cap frequency so all paces fit within quarter bounds given the effective offset
-        const effectiveOffset = startingOffset + offset;
-        if (pacesInQuarter > 1 && effectiveOffset < WEEKS_PER_QUARTER) {
-          const maxFreq = Math.floor((WEEKS_PER_QUARTER - 1 - effectiveOffset) / (pacesInQuarter - 1));
-          frequency = Math.min(frequency, Math.max(1, maxFreq));
-        }
+        if (pacesInQuarter === 0) continue;
 
         const cursor = cursorsMap.get(subject.subjectId);
         if (!cursor) continue;
 
-        // Use frequency-based placement with offset
+        // Fractional step to spread paces evenly across all 9 weeks
+        const step = WEEKS_PER_QUARTER / pacesInQuarter;
+
         for (let paceIndex = 0; paceIndex < pacesInQuarter; paceIndex++) {
-          // Check if we've run out of paces for this subject
           if (cursor.index >= cursor.subject.paces.length) {
             logger.debug(`[Q${quarter + 1}] No more paces available for ${subject.categoryId}, stopping placement`);
             break;
@@ -598,18 +604,18 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
           const currentPaceCode = cursor.subject.paces[cursor.index];
 
-          // Skip if paceCode is undefined (shouldn't happen, but defensive check)
           if (!currentPaceCode) {
-            logger.debug(`[Q${quarter + 1}] Pace code is undefined at index ${cursor.index} for ${subject.categoryId}, skipping`);
             cursor.index++;
             continue;
           }
 
-          const subjectOffset = startingOffset + offset;
-          let weekIndexWithinQuarter = subjectOffset + (paceIndex * frequency);
+          let weekIndexWithinQuarter = Math.min(
+            WEEKS_PER_QUARTER - 1,
+            Math.floor(offset + paceIndex * step)
+          );
           const isFirstPaceInQuarter = paceIndex === 0;
 
-          logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} pace ${currentPaceCode} (remaining subject, paceIndex=${paceIndex}, offset=${offset}, frequency=${frequency}, weekIndexWithinQuarter=${weekIndexWithinQuarter})`);
+          logger.debug(`[Q${quarter + 1}] Placing ${subject.categoryId} pace ${currentPaceCode} (remaining subject, paceIndex=${paceIndex}, offset=${offset}, step=${step.toFixed(2)}, weekIndexWithinQuarter=${weekIndexWithinQuarter})`);
 
           // For the first pace, prioritize weeks 1 and 2 to ensure they have 2 paces each
           if (isFirstPaceInQuarter) {
@@ -618,47 +624,12 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
             const week1 = weeks[week1Index];
             const week2 = weeks[week2Index];
 
-            // Try week 1 first if it has less than 2 paces
             if (week1 && week1.paces.length < 2 && !week1.subjects.has(subject.trackingId) && !this.violatesNotPair(subject, week1.subjects)) {
               logger.debug(`[Q${quarter + 1}] Prioritizing week 1 for first pace (has ${week1.paces.length} paces)`);
               weekIndexWithinQuarter = 0;
-            }
-            // Try week 2 if week 1 is full and week 2 has less than 2 paces
-            else if (week2 && week2.paces.length < 2 && !week2.subjects.has(subject.trackingId) && !this.violatesNotPair(subject, week2.subjects)) {
+            } else if (week2 && week2.paces.length < 2 && !week2.subjects.has(subject.trackingId) && !this.violatesNotPair(subject, week2.subjects)) {
               logger.debug(`[Q${quarter + 1}] Prioritizing week 2 for first pace (has ${week2.paces.length} paces)`);
               weekIndexWithinQuarter = 1;
-            }
-            // Otherwise use calculated offset
-          }
-
-          // If calculated week exceeds quarter bounds, use fallback strategy
-          if (weekIndexWithinQuarter >= WEEKS_PER_QUARTER) {
-            logger.debug(`[Q${quarter + 1}] Week index ${weekIndexWithinQuarter} exceeds quarter bounds, applying fallback strategy...`);
-
-            // Attempt 1: Reduce frequency
-            let newFrequency = Math.max(1, frequency - 1);
-            let newWeekIndex = subjectOffset + (paceIndex * newFrequency);
-
-            if (newWeekIndex < WEEKS_PER_QUARTER) {
-              logger.debug(`[Q${quarter + 1}] Fallback 1: Reduced frequency from ${frequency} to ${newFrequency}`);
-              weekIndexWithinQuarter = newWeekIndex;
-              frequency = newFrequency;
-            } else {
-              // Attempt 2: Reduce offset
-              let newOffset = Math.max(0, offset - 1);
-              newWeekIndex = startingOffset + newOffset + (paceIndex * frequency);
-
-              if (newWeekIndex < WEEKS_PER_QUARTER) {
-                logger.debug(`[Q${quarter + 1}] Fallback 2: Reduced offset from ${offset} to ${newOffset}`);
-                weekIndexWithinQuarter = newWeekIndex;
-                offset = newOffset;
-              } else {
-                // Last resort: offset 0, frequency 1
-                logger.debug(`[Q${quarter + 1}] Fallback 3: Using offset 0, frequency 1`);
-                weekIndexWithinQuarter = paceIndex; // paceIndex * 1
-                offset = 0;
-                frequency = 1;
-              }
             }
           }
 
@@ -1037,6 +1008,18 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       if (iterations >= MAX_ITERATIONS) {
         logger.warn(`[Q${quarter + 1}] Redistribution stopped after ${iterations} iterations to prevent infinite loop`);
       }
+
+      // Log final distribution
+      const finalCounts: Record<number, number> = {};
+      for (let i = 0; i < WEEKS_PER_QUARTER; i++) {
+        const count = weeks[quarterStart + i].paces.length;
+        finalCounts[count] = (finalCounts[count] || 0) + 1;
+      }
+      const distribution = Object.entries(finalCounts)
+        .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+        .map(([paces, weeks]) => `${weeks}×${paces}`)
+        .join(', ');
+      logger.debug(`[Q${quarter + 1}] Final distribution: ${distribution} (${totalPacesInQuarter} paces across ${WEEKS_PER_QUARTER} weeks, ideal=${idealPerWeek.toFixed(2)})`);
     }
   }
 
