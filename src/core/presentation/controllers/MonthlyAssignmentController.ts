@@ -152,7 +152,17 @@ export class MonthlyAssignmentController {
       throw result.error;
     }
 
-    return res.status(200).json(result.data);
+    // Convert Decimal grades to numbers for JSON response
+    const convertedData = result.data.map(assignment => ({
+      ...assignment,
+      grade: assignment.grade ? assignment.grade.toNumber() : null,
+      gradeHistory: assignment.gradeHistory.map(history => ({
+        ...history,
+        grade: history.grade.toNumber(),
+      })),
+    }));
+
+    return res.status(200).json(convertedData);
   }
 
   async updateGradeHandler(req: Request, res: Response): Promise<Response> {
@@ -179,7 +189,21 @@ export class MonthlyAssignmentController {
       throw result.error;
     }
 
-    return res.status(200).json(result.data);
+    // Convert Decimal to number for JSON response
+    const response: any = {
+      ...result.data,
+      grade: result.data.grade ? result.data.grade.toNumber() : null,
+    };
+
+    // Handle gradeHistory if it exists
+    if ('gradeHistory' in result.data && Array.isArray(result.data.gradeHistory)) {
+      response.gradeHistory = result.data.gradeHistory.map((h: any) => ({
+        ...h,
+        grade: h.grade.toNumber(),
+      }));
+    }
+
+    return res.status(200).json(response);
   }
 
   async markUngradedHandler(req: Request, res: Response): Promise<Response> {

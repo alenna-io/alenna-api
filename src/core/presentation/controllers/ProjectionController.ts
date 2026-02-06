@@ -226,7 +226,21 @@ export class ProjectionController {
       throw result.error;
     }
 
-    return res.status(200).json(result.data);
+    // Convert Decimal to number for JSON response
+    const response: any = {
+      ...result.data,
+      grade: result.data.grade ? result.data.grade.toNumber() : null,
+    };
+
+    // Handle gradeHistory if it exists
+    if ('gradeHistory' in result.data && Array.isArray(result.data.gradeHistory)) {
+      response.gradeHistory = result.data.gradeHistory.map((h: any) => ({
+        ...h,
+        grade: h.grade.toNumber(),
+      }));
+    }
+
+    return res.status(200).json(response);
   }
 
   async markUngradedHandler(req: Request, res: Response): Promise<Response> {
@@ -251,6 +265,12 @@ export class ProjectionController {
       throw result.error;
     }
 
-    return res.status(200).json(result.data);
+    // Convert Decimal to number for JSON response
+    const response: any = {
+      ...result.data,
+      grade: result.data.grade ? result.data.grade.toNumber() : null,
+    };
+
+    return res.status(200).json(response);
   }
 }

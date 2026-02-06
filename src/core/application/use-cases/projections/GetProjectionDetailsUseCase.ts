@@ -45,7 +45,7 @@ export class GetProjectionDetailsUseCase {
           paceCatalogId: pace.paceCatalogId,
           quarter: pace.quarter,
           week: pace.week,
-          grade: pace.grade,
+          grade: pace.grade ? pace.grade.toNumber() : null,
           status: pace.status,
           originalQuarter: pace.originalQuarter,
           originalWeek: pace.originalWeek,
@@ -66,7 +66,7 @@ export class GetProjectionDetailsUseCase {
           },
           gradeHistory: pace.gradeHistory.map(history => ({
             id: history.id,
-            grade: history.grade,
+            grade: history.grade.toNumber(),
             date: history.date.toISOString(),
             note: history.note,
           })),

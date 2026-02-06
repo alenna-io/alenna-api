@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MarkUngradedUseCase } from '../../../../core/application/use-cases/projections/MarkUngradedUseCase';
 import { InvalidEntityError, ObjectNotFoundError } from '../../../../core/domain/errors';
 import { createMockProjectionRepository } from '../../utils/mockRepositories';
-import { ProjectionStatus, ProjectionPaceStatus } from '@prisma/client';
+import { ProjectionStatus, ProjectionPaceStatus, Prisma } from '@prisma/client';
 import { ProjectionWithDetails } from '../../../../core/infrastructure/repositories/types/projections.types';
 
 describe('MarkUngradedUseCase', () => {
@@ -81,7 +81,7 @@ describe('MarkUngradedUseCase', () => {
       paceCatalogId,
       quarter,
       week,
-      grade,
+      grade: grade !== null ? new Prisma.Decimal(grade) : null,
       status,
       deletedAt,
       createdAt: new Date(),
