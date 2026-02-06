@@ -304,8 +304,10 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
           if (remaining <= 0) break;
 
           const dist = pacesByQuarterBySubjectMap.get(subject.subjectId)!;
-          if (dist[q] > 1 && q < 3) { // Keep at least 1 pace per quarter, and only move forward
-            const canMove = Math.min(dist[q] - 1, remaining);
+          if (dist[q] > 1 && q < 3) {
+            const maxReceivable = WEEKS_PER_QUARTER - dist[q + 1];
+            const canMove = Math.min(dist[q] - 1, remaining, maxReceivable);
+            if (canMove <= 0) continue;
             dist[q] -= canMove;
             dist[q + 1] += canMove;
             remaining -= canMove;
@@ -323,8 +325,10 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
           if (remaining <= 0) break;
 
           const dist = pacesByQuarterBySubjectMap.get(subject.subjectId)!;
-          if (q > 0 && dist[q - 1] > 1) { // Pull from previous quarter if it has spare paces
-            const canMove = Math.min(dist[q - 1] - 1, remaining);
+          if (q > 0 && dist[q - 1] > 1) {
+            const maxReceivable = WEEKS_PER_QUARTER - dist[q];
+            const canMove = Math.min(dist[q - 1] - 1, remaining, maxReceivable);
+            if (canMove <= 0) continue;
             dist[q - 1] -= canMove;
             dist[q] += canMove;
             remaining -= canMove;
