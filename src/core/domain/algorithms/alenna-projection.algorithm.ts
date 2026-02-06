@@ -71,6 +71,25 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
     logger.debug("Returning generated projection...");
     const generatedPaces = weeks.flatMap(w => w.paces);
+
+    // Sort by quarter, subjectId, and then by pace code (numeric) to ensure correct order
+    // This ensures that within each subject/quarter, paces appear in ascending pace code order
+    // The frontend groups by subject and quarter, so this sorting ensures correct display order
+    generatedPaces.sort((a, b) => {
+      // First sort by quarter
+      if (a.quarter !== b.quarter) {
+        return a.quarter - b.quarter;
+      }
+      // Then by subjectId to group paces by subject within each quarter
+      if (a.subjectId !== b.subjectId) {
+        return a.subjectId.localeCompare(b.subjectId);
+      }
+      // Finally by pace code (numeric comparison for proper ordering within same subject/quarter)
+      const paceCodeA = parseInt(a.paceCode) || 0;
+      const paceCodeB = parseInt(b.paceCode) || 0;
+      return paceCodeA - paceCodeB;
+    });
+
     return generatedPaces;
   }
 
@@ -313,6 +332,12 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
         if (pacesInQuarter === 0 || frequency === 0) continue;
 
+        // Cap frequency so all paces fit within quarter bounds given the offset
+        if (pacesInQuarter > 1) {
+          const maxFreq = Math.floor((WEEKS_PER_QUARTER - 1 - offset) / (pacesInQuarter - 1));
+          frequency = Math.min(frequency, Math.max(1, maxFreq));
+        }
+
         const cursor = cursorsMap.get(subject.subjectId);
         if (!cursor) continue;
 
@@ -552,6 +577,13 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
         }
 
         if (pacesInQuarter === 0 || frequency === 0) continue;
+
+        // Cap frequency so all paces fit within quarter bounds given the effective offset
+        const effectiveOffset = startingOffset + offset;
+        if (pacesInQuarter > 1 && effectiveOffset < WEEKS_PER_QUARTER) {
+          const maxFreq = Math.floor((WEEKS_PER_QUARTER - 1 - effectiveOffset) / (pacesInQuarter - 1));
+          frequency = Math.min(frequency, Math.max(1, maxFreq));
+        }
 
         const cursor = cursorsMap.get(subject.subjectId);
         if (!cursor) continue;

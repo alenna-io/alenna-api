@@ -109,7 +109,8 @@ export class PrismaProjectionRepository implements IProjectionRepository {
           },
           orderBy: [
             { quarter: 'asc' },
-            { week: 'asc' },
+            { paceCatalog: { subjectId: 'asc' } },
+            { paceCatalog: { orderIndex: 'asc' } },
           ],
         },
         projectionSubjects: {
