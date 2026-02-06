@@ -140,7 +140,7 @@ describe('AddSubjectUseCase', () => {
       });
 
       expect(result.success).toBe(true);
-      expect(projectionRepo.addSubject).toHaveBeenCalledWith('clh1111111111111111111111', 'clh8888888888888888888888', undefined);
+      expect(projectionRepo.addSubject).toHaveBeenCalledWith('clh1111111111111111111111', 'clh8888888888888888888888');
     });
 
     it('adds a non-elective category representative successfully', async () => {
@@ -158,23 +158,23 @@ describe('AddSubjectUseCase', () => {
       });
 
       expect(result.success).toBe(true);
-      expect(projectionRepo.addSubject).toHaveBeenCalledWith('clh1111111111111111111111', 'clhaaaaaaaaaaaaaaaaaaaaaa', undefined);
+      expect(projectionRepo.addSubject).toHaveBeenCalledWith('clh1111111111111111111111', 'clhaaaaaaaaaaaaaaaaaaaaaa');
     });
 
     it('allows adding multiple electives (no limit)', async () => {
       const projection = createMockProjection({
         projectionSubjects: [
-          createMockProjectionSubject('clhps111111111111111111111', 'clhel111111111111111111111', 'clh9999999999999999999999'),
-          createMockProjectionSubject('clhps222222222222222222222', 'clhel222222222222222222222', 'clh9999999999999999999999'),
-          createMockProjectionSubject('clhps333333333333333333333', 'clhel333333333333333333333', 'clh9999999999999999999999'),
-          createMockProjectionSubject('clhps444444444444444444444', 'clhel444444444444444444444', 'clh9999999999999999999999'),
-          createMockProjectionSubject('clhps555555555555555555555', 'clhel555555555555555555555', 'clh9999999999999999999999'),
-          createMockProjectionSubject('clhps666666666666666666666', 'clhel666666666666666666666', 'clh9999999999999999999999'),
-          createMockProjectionSubject('clhps777777777777777777777', 'clhel777777777777777777777', 'clh9999999999999999999999'),
-          createMockProjectionSubject('clhps888888888888888888888', 'clhel888888888888888888888', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps111111111111111111111', 'clhel11111111111111111111', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps222222222222222222222', 'clhel22222222222222222222', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps333333333333333333333', 'clhel33333333333333333333', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps444444444444444444444', 'clhel44444444444444444444', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps555555555555555555555', 'clhel55555555555555555555', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps666666666666666666666', 'clhel66666666666666666666', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps777777777777777777777', 'clhel77777777777777777777', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps888888888888888888888', 'clhel88888888888888888888', 'clh9999999999999999999999'),
         ],
       });
-      const electiveSubject = createMockSubject('clhel999999999999999999999', 'Art', 'clh9999999999999999999999');
+      const electiveSubject = createMockSubject('clhel99999999999999999999', 'Art', 'clh9999999999999999999999');
       const electivesCategory = createMockCategory('clh9999999999999999999999', 'Electives');
 
       vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
@@ -183,20 +183,20 @@ describe('AddSubjectUseCase', () => {
       vi.mocked(projectionRepo.addSubject).mockResolvedValue({} as any);
 
       const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
-        subjectId: 'clhel999999999999999999999',
+        subjectId: 'clhel99999999999999999999',
       });
 
       expect(result.success).toBe(true);
-      expect(projectionRepo.addSubject).toHaveBeenCalledWith('clh1111111111111111111111', 'clhel999999999999999999999', undefined);
+      expect(projectionRepo.addSubject).toHaveBeenCalledWith('clh1111111111111111111111', 'clhel99999999999999999999');
     });
   });
 
   describe('Validation failures', () => {
     it('rejects when trying to add elective subject that already exists', async () => {
       const projection = createMockProjection({
-        projectionSubjects: [createMockProjectionSubject('clhps111111111111111111111', 'clhel111111111111111111111', 'clh9999999999999999999999')],
+        projectionSubjects: [createMockProjectionSubject('clhps111111111111111111111', 'clhel11111111111111111111', 'clh9999999999999999999999')],
       });
-      const electiveSubject = createMockSubject('clhel111111111111111111111', 'Art', 'clh9999999999999999999999');
+      const electiveSubject = createMockSubject('clhel11111111111111111111', 'Art', 'clh9999999999999999999999');
       const electivesCategory = createMockCategory('clh9999999999999999999999', 'Electives');
 
       vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
@@ -204,7 +204,7 @@ describe('AddSubjectUseCase', () => {
       vi.mocked(categoryRepo.findManyByIds).mockResolvedValue([electivesCategory]);
 
       const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
-        subjectId: 'clhel111111111111111111111',
+        subjectId: 'clhel11111111111111111111',
       });
 
       expect(result.success).toBe(false);
@@ -332,7 +332,7 @@ describe('AddSubjectUseCase', () => {
       vi.mocked(subjectRepo.findById).mockResolvedValue(null);
 
       const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
-        subjectId: 'clhnonexistent1111111111111',
+        subjectId: 'clhnonexistent11111111111',
       });
 
       expect(result.success).toBe(false);
@@ -360,7 +360,7 @@ describe('AddSubjectUseCase', () => {
 
     it('rejects when category does not exist', async () => {
       const projection = createMockProjection();
-      const subject = createMockSubject('clh8888888888888888888888', 'Test', 'clhnonexistent1111111111111');
+      const subject = createMockSubject('clh8888888888888888888888', 'Test', 'clhnonexistent111111111111');
 
       vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
       vi.mocked(subjectRepo.findById).mockResolvedValue(subject);
@@ -383,11 +383,11 @@ describe('AddSubjectUseCase', () => {
     it('handles projection with multiple electives', async () => {
       const projection = createMockProjection({
         projectionSubjects: [
-          createMockProjectionSubject('clhps111111111111111111111', 'clhel111111111111111111111', 'clh9999999999999999999999'),
-          createMockProjectionSubject('clhps222222222222222222222', 'clhel222222222222222222222', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps111111111111111111111', 'clhel11111111111111111111', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps222222222222222222222', 'clhel22222222222222222222', 'clh9999999999999999999999'),
         ],
       });
-      const electiveSubject = createMockSubject('clhel333333333333333333333', 'Music', 'clh9999999999999999999999');
+      const electiveSubject = createMockSubject('clhel33333333333333333333', 'Music', 'clh9999999999999999999999');
       const electivesCategory = createMockCategory('clh9999999999999999999999', 'Electives');
 
       vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
@@ -396,7 +396,7 @@ describe('AddSubjectUseCase', () => {
       vi.mocked(projectionRepo.addSubject).mockResolvedValue({} as any);
 
       const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
-        subjectId: 'clhel333333333333333333333',
+        subjectId: 'clhel33333333333333333333',
       });
 
       expect(result.success).toBe(true);
@@ -430,10 +430,10 @@ describe('AddSubjectUseCase', () => {
       const projection = createMockProjection({
         projectionSubjects: [
           createMockProjectionSubject('clhps111111111111111111111', 'clhaaaaaaaaaaaaaaaaaaaaaa', 'clhbbbbbbbbbbbbbbbbbbbbbb'),
-          createMockProjectionSubject('clhps222222222222222222222', 'clhel111111111111111111111', 'clh9999999999999999999999'),
+          createMockProjectionSubject('clhps222222222222222222222', 'clhel11111111111111111111', 'clh9999999999999999999999'),
         ],
       });
-      const electiveSubject = createMockSubject('clhel222222222222222222222', 'Art', 'clh9999999999999999999999');
+      const electiveSubject = createMockSubject('clhel22222222222222222222', 'Art', 'clh9999999999999999999999');
       const electivesCategory = createMockCategory('clh9999999999999999999999', 'Electives');
 
       vi.mocked(projectionRepo.findById).mockResolvedValue(projection);
@@ -442,7 +442,7 @@ describe('AddSubjectUseCase', () => {
       vi.mocked(projectionRepo.addSubject).mockResolvedValue({} as any);
 
       const result = await useCase.execute('clh1111111111111111111111', 'clh3333333333333333333333', {
-        subjectId: 'clhel222222222222222222222',
+        subjectId: 'clhel22222222222222222222',
       });
 
       expect(result.success).toBe(true);
