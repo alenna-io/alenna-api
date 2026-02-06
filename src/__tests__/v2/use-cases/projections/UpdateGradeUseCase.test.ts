@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UpdateGradeUseCase } from '../../../../core/application/use-cases/projections/UpdateGradeUseCase';
 import { InvalidEntityError, ObjectNotFoundError } from '../../../../core/domain/errors';
 import { createMockProjectionRepository } from '../../utils/mockRepositories';
-import { ProjectionStatus, ProjectionPaceStatus } from '@prisma/client';
+import { ProjectionStatus, ProjectionPaceStatus, Prisma } from '@prisma/client';
 import { ProjectionWithDetails } from '../../../../core/infrastructure/repositories/types/projections.types';
 
 describe('UpdateGradeUseCase', () => {
@@ -76,7 +76,7 @@ describe('UpdateGradeUseCase', () => {
       paceCatalogId,
       quarter,
       week,
-      grade,
+      grade: grade !== null ? new Prisma.Decimal(grade) : null,
       status,
       deletedAt,
       createdAt: new Date(),
@@ -124,7 +124,7 @@ describe('UpdateGradeUseCase', () => {
 
     const updatedPace = {
       ...pace1,
-      grade: 85,
+      grade: new Prisma.Decimal(85),
       status: ProjectionPaceStatus.COMPLETED,
     };
 
@@ -137,7 +137,8 @@ describe('UpdateGradeUseCase', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.grade).toBe(85);
+      expect(result.data.grade).not.toBeNull();
+      expect(result.data.grade!.toNumber()).toBe(85);
       expect(result.data.status).toBe(ProjectionPaceStatus.COMPLETED);
     }
     expect(projectionRepo.updateGrade).toHaveBeenCalledWith('clh1111111111111111111111', 'clh8888888888888888888888', 85);
@@ -153,7 +154,7 @@ describe('UpdateGradeUseCase', () => {
 
     const updatedPace = {
       ...pace1,
-      grade: 75,
+      grade: new Prisma.Decimal(75),
       status: ProjectionPaceStatus.FAILED,
     };
 
@@ -166,7 +167,8 @@ describe('UpdateGradeUseCase', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.grade).toBe(75);
+      expect(result.data.grade).not.toBeNull();
+      expect(result.data.grade!.toNumber()).toBe(75);
       expect(result.data.status).toBe(ProjectionPaceStatus.FAILED);
     }
     expect(projectionRepo.updateGrade).toHaveBeenCalledWith('clh1111111111111111111111', 'clh8888888888888888888888', 75);
@@ -182,7 +184,7 @@ describe('UpdateGradeUseCase', () => {
 
     const updatedPace = {
       ...pace1,
-      grade: 80,
+      grade: new Prisma.Decimal(80),
       status: ProjectionPaceStatus.COMPLETED,
     };
 
@@ -195,7 +197,8 @@ describe('UpdateGradeUseCase', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.grade).toBe(80);
+      expect(result.data.grade).not.toBeNull();
+      expect(result.data.grade!.toNumber()).toBe(80);
       expect(result.data.status).toBe(ProjectionPaceStatus.COMPLETED);
     }
   });
@@ -210,7 +213,7 @@ describe('UpdateGradeUseCase', () => {
 
     const updatedPace = {
       ...pace1,
-      grade: 79,
+      grade: new Prisma.Decimal(79),
       status: ProjectionPaceStatus.FAILED,
     };
 
@@ -223,7 +226,8 @@ describe('UpdateGradeUseCase', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.grade).toBe(79);
+      expect(result.data.grade).not.toBeNull();
+      expect(result.data.grade!.toNumber()).toBe(79);
       expect(result.data.status).toBe(ProjectionPaceStatus.FAILED);
     }
   });
@@ -308,7 +312,7 @@ describe('UpdateGradeUseCase', () => {
 
     const updatedPace = {
       ...pace1,
-      grade: 90,
+      grade: new Prisma.Decimal(90),
       status: ProjectionPaceStatus.COMPLETED,
     };
 
@@ -321,7 +325,8 @@ describe('UpdateGradeUseCase', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.grade).toBe(90);
+      expect(result.data.grade).not.toBeNull();
+      expect(result.data.grade!.toNumber()).toBe(90);
       expect(result.data.status).toBe(ProjectionPaceStatus.COMPLETED);
     }
   });
