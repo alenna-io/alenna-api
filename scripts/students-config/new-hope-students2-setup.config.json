@@ -1,0 +1,27 @@
+{
+  "students": [
+    {
+      "firstName": "Andreé",
+      "lastName": "Cruz",
+      "email": "andree.cruz@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    {
+      "firstName": "Dhara Naomi",
+      "lastName": "Cruz",
+      "email": "dhara.naomi@demo.alenna.io",
+      "phone": "1234567890",
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    }
+  ]
+}
+

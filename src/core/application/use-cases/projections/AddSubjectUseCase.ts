@@ -48,27 +48,58 @@ export class AddSubjectUseCase {
 
       const uniqueSubjects = new Set([...subjectsFromPaces, ...subjectsFromProjectionSubjects]);
 
-      if (uniqueSubjects.size >= 7) {
-        return Err(new InvalidEntityError('Projection', 'Maximum of 7 subjects allowed in a projection'));
-      }
-
       // Validate subject exists
       const subject = await this.subjectRepository.findById(input.subjectId);
       if (!subject) {
         return Err(new ObjectNotFoundError('Subject', `Subject with ID ${input.subjectId} not found`));
       }
 
-      // Check if subject is already in the projection
-      if (uniqueSubjects.has(input.subjectId)) {
-        return Err(new InvalidEntityError('Projection', 'This subject is already in the projection'));
-      }
-
-      // Get category to check if it's Electives
+      // Get category to determine validation logic
       const categories = await this.categoryRepository.findManyByIds([subject.categoryId]);
       const category = categories[0];
 
-      if (!category || category.name !== 'Electives') {
-        return Err(new InvalidEntityError('Subject', 'Only Elective subjects can be added this way'));
+      if (!category) {
+        return Err(new ObjectNotFoundError('Category', `Category with ID ${subject.categoryId} not found`));
+      }
+
+      const isElectivesCategory = category.name === 'Electives';
+
+      if (isElectivesCategory) {
+        // For Electives: Check if this specific subjectId already exists
+        if (uniqueSubjects.has(input.subjectId)) {
+          return Err(new InvalidEntityError('Projection', 'This elective subject is already in the projection'));
+        }
+      } else {
+        // For non-Electives: Check if ANY subject from this category already exists in ProjectionSubject
+        // Get all existing ProjectionSubjects and check their categories
+        const existingCategories = new Set<string>();
+
+        // Check categories from projectionSubjects
+        if ('projectionSubjects' in projectionWithSubjects && projectionWithSubjects.projectionSubjects) {
+          const projectionSubjectsArray = projectionWithSubjects.projectionSubjects as Array<{
+            deletedAt: Date | null;
+            subject: {
+              categoryId: string;
+            };
+          }>;
+          for (const ps of projectionSubjectsArray) {
+            if (!ps.deletedAt && ps.subject) {
+              existingCategories.add(ps.subject.categoryId);
+            }
+          }
+        }
+
+        // Check categories from paces
+        for (const pace of projection.projectionPaces) {
+          if (!pace.deletedAt && pace.paceCatalog?.subject?.categoryId) {
+            existingCategories.add(pace.paceCatalog.subject.categoryId);
+          }
+        }
+
+        // If this category already has a representative, reject
+        if (existingCategories.has(subject.categoryId)) {
+          return Err(new InvalidEntityError('Projection', 'This category already has a representative subject in the projection'));
+        }
       }
 
       // Add the subject to the projection (creates ProjectionSubject record)
