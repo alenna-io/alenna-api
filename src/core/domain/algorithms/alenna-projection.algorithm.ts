@@ -827,7 +827,20 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       const quarterStart = quarter * WEEKS_PER_QUARTER;
       const quarterEnd = quarterStart + WEEKS_PER_QUARTER;
 
-      // Find weeks with 0-1 paces and weeks with 3+ paces
+      // Compute dynamic thresholds based on actual pace density
+      let totalPacesInQuarter = 0;
+      for (let i = 0; i < WEEKS_PER_QUARTER; i++) {
+        totalPacesInQuarter += weeks[quarterStart + i].paces.length;
+      }
+      const idealPerWeek = totalPacesInQuarter / WEEKS_PER_QUARTER;
+      const floorIdeal = Math.floor(idealPerWeek);
+      const ceilIdeal = Math.ceil(idealPerWeek);
+
+      // For fractional ideals (e.g., 2.78), allow both floor and ceil as "normal"
+      // Only weeks below floor are sparse, only weeks above ceil are dense
+      const sparseThreshold = floorIdeal;
+      const denseThreshold = ceilIdeal;
+
       const sparseWeeks: { week: WeekSlot; weekIndex: number }[] = [];
       const denseWeeks: { week: WeekSlot; weekIndex: number }[] = [];
 
@@ -836,9 +849,13 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
         const week = weeks[weekIndex];
         const paceCount = week.paces.length;
 
-        if (paceCount <= 1) {
+        // Sparse: weeks below floorIdeal
+        if (paceCount < sparseThreshold) {
           sparseWeeks.push({ week, weekIndex });
-        } else if (paceCount >= 3) {
+        }
+        // Dense: weeks at or above ceilIdeal (if there's imbalance)
+        // For fractional ideals, weeks at ceilIdeal can donate to weeks below floorIdeal
+        else if (paceCount >= denseThreshold && floorIdeal < ceilIdeal) {
           denseWeeks.push({ week, weekIndex });
         }
       }
@@ -847,19 +864,27 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
       sparseWeeks.sort((a, b) => a.weekIndex - b.weekIndex);
       denseWeeks.sort((a, b) => b.weekIndex - a.weekIndex);
 
+      logger.debug(`[Q${quarter + 1}] Redistribution: ${totalPacesInQuarter} paces, ideal=${idealPerWeek.toFixed(2)}, threshold=${sparseThreshold}, sparse=${sparseWeeks.map(s => `w${s.weekIndex + 1}(${s.week.paces.length})`).join(',')}, dense=${denseWeeks.map(d => `w${d.weekIndex + 1}(${d.week.paces.length})`).join(',')}`);
+
       // Redistribute: move paces from dense weeks to sparse weeks
       // Continue until no more moves are possible
       let moved = true;
-      while (moved) {
+      let iterations = 0;
+      const MAX_ITERATIONS = totalPacesInQuarter * 2; // Reasonable upper bound
+      while (moved && iterations < MAX_ITERATIONS) {
         moved = false;
+        iterations++;
 
         for (const dense of denseWeeks) {
-          if (dense.week.paces.length < 3) continue;
+          // Drain weeks that are above ceilIdeal, or at ceilIdeal if balancing is needed
+          if (dense.week.paces.length < denseThreshold) continue;
 
           // Try to move paces to sparse weeks
           for (const sparse of sparseWeeks) {
-            if (dense.week.paces.length <= 2) break;
-            if (sparse.week.paces.length >= 2) continue;
+            // Stop draining when dense week reaches floorIdeal
+            if (dense.week.paces.length <= floorIdeal) break;
+            // Stop filling when sparse week reaches ceilIdeal
+            if (sparse.week.paces.length >= ceilIdeal) continue;
 
             // Find a pace we can move
             for (let i = dense.week.paces.length - 1; i >= 0; i--) {
@@ -871,7 +896,10 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
 
               const subject = subjects.find(s => s.subjectId === pace.subjectId);
 
-              if (!subject) continue;
+              if (!subject) {
+                logger.debug(`[Q${quarter + 1}] Redist: no subject found for pace ${pace.paceCode} (subjectId=${pace.subjectId})`);
+                continue;
+              }
 
               // Check if moving this pace to sparse week maintains sequential order
               // Get all paces of this subject in the quarter, sorted by pace code
@@ -908,19 +936,25 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 }
               }
 
-              if (!canMove) continue;
+              if (!canMove) {
+                logger.debug(`[Q${quarter + 1}] Redist: can't move ${pace.paceCode} from w${dense.weekIndex + 1}→w${sparse.weekIndex + 1} (sequential order)`);
+                continue;
+              }
 
               // Check if we can place this pace in the sparse week (constraints)
-              if (
-                sparse.week.subjects.size < MAX_SUBJECTS_PER_WEEK &&
-                !sparse.week.subjects.has(subject.trackingId) &&
-                !this.violatesNotPair(subject, sparse.week.subjects)
-              ) {
+              const subjectsFit = sparse.week.subjects.size < MAX_SUBJECTS_PER_WEEK;
+              const notDuplicate = !sparse.week.subjects.has(subject.trackingId);
+              const notPaired = !this.violatesNotPair(subject, sparse.week.subjects);
+              if (!subjectsFit || !notDuplicate || !notPaired) {
+                logger.debug(`[Q${quarter + 1}] Redist: can't move ${pace.paceCode} from w${dense.weekIndex + 1}→w${sparse.weekIndex + 1} (fit=${subjectsFit}, dup=${!notDuplicate}, pair=${!notPaired})`);
+              }
+              if (subjectsFit && notDuplicate && notPaired) {
                 // Move the pace (only if it has a valid paceCode)
                 if (!pace.paceCode || pace.paceCode.trim() === '') {
                   continue; // Skip this pace, it's invalid
                 }
 
+                logger.debug(`[Q${quarter + 1}] Redist: moving ${pace.paceCode} from w${dense.weekIndex + 1}(${dense.week.paces.length}) → w${sparse.weekIndex + 1}(${sparse.week.paces.length})`);
                 dense.week.paces.splice(i, 1);
 
                 // Remove subject from dense week only if no other paces from this subject remain
@@ -934,8 +968,10 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
                 moved = true;
 
                 // Update sparse/dense status
-                if (dense.week.paces.length < 3) break;
-                if (sparse.week.paces.length >= 2) break;
+                // Stop draining when dense week reaches floorIdeal
+                if (dense.week.paces.length <= floorIdeal) break;
+                // Stop filling when sparse week reaches ceilIdeal
+                if (sparse.week.paces.length >= ceilIdeal) break;
                 break;
               }
             }
@@ -948,20 +984,58 @@ export class AlennaProjectionAlgorithm implements ProjectionGenerator {
         if (moved) {
           sparseWeeks.length = 0;
           denseWeeks.length = 0;
+
+          // Find min and max week counts and count weeks in each category
+          let minCount = Infinity;
+          let maxCount = -Infinity;
+          let weeksBelowFloor = 0;
+          let weeksAboveCeil = 0;
+
+          for (let i = 0; i < WEEKS_PER_QUARTER; i++) {
+            const count = weeks[quarterStart + i].paces.length;
+            minCount = Math.min(minCount, count);
+            maxCount = Math.max(maxCount, count);
+            if (count < floorIdeal) weeksBelowFloor++;
+            if (count > ceilIdeal) weeksAboveCeil++;
+          }
+
+          // Only continue balancing if there are weeks outside the balanced range
+          // Don't swap between weeks already at floor/ceil
+          const hasWeeksBelowFloor = weeksBelowFloor > 0;
+          const hasWeeksAboveCeil = weeksAboveCeil > 0;
+
           for (let i = 0; i < WEEKS_PER_QUARTER; i++) {
             const weekIndex = quarterStart + i;
             const week = weeks[weekIndex];
             const paceCount = week.paces.length;
 
-            if (paceCount <= 1) {
+            // Add weeks significantly below ideal (strict sparse)
+            if (paceCount < sparseThreshold) {
               sparseWeeks.push({ week, weekIndex });
-            } else if (paceCount >= 3) {
+            }
+            // Add weeks significantly above ideal (strict dense)
+            else if (paceCount > denseThreshold) {
               denseWeeks.push({ week, weekIndex });
+            }
+            // Only allow floor/ceil redistribution if there are weeks outside the range
+            else if (floorIdeal < ceilIdeal) {
+              // Add weeks at floorIdeal as sparse ONLY if there are weeks above ceilIdeal
+              if (paceCount === floorIdeal && hasWeeksAboveCeil) {
+                sparseWeeks.push({ week, weekIndex });
+              }
+              // Add weeks at ceilIdeal as dense ONLY if there are weeks below floorIdeal
+              if (paceCount === ceilIdeal && hasWeeksBelowFloor) {
+                denseWeeks.push({ week, weekIndex });
+              }
             }
           }
           sparseWeeks.sort((a, b) => a.weekIndex - b.weekIndex);
           denseWeeks.sort((a, b) => b.weekIndex - a.weekIndex);
         }
+      }
+
+      if (iterations >= MAX_ITERATIONS) {
+        logger.warn(`[Q${quarter + 1}] Redistribution stopped after ${iterations} iterations to prevent infinite loop`);
       }
     }
   }
