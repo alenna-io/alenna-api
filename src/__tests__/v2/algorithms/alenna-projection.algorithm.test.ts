@@ -1431,6 +1431,537 @@ describe('AlennaProjectionAlgorithm', () => {
     });
   });
 
+  describe('Pace Distribution & Balance', () => {
+    const makeSubject = (
+      categoryId: string,
+      subjectId: string,
+      startPace: number,
+      endPace: number,
+      opts?: { skipPaces?: number[]; notPairWith?: string[]; difficulty?: number }
+    ): GenerateProjectionInput['subjects'][0] => ({
+      categoryId,
+      subjectId,
+      startPace,
+      endPace,
+      skipPaces: opts?.skipPaces ?? [],
+      notPairWith: opts?.notPairWith ?? [],
+      difficulty: opts?.difficulty,
+    });
+
+    const makeInput = (subjects: GenerateProjectionInput['subjects']): GenerateProjectionInput => ({
+      studentId: 'student-1',
+      schoolId: 'school-1',
+      schoolYear: 'sy-1',
+      subjects,
+    });
+
+    type PaceResult = ReturnType<AlennaProjectionAlgorithm['generate']>;
+
+    const groupByWeek = (result: PaceResult) => {
+      const map = new Map<number, PaceResult>();
+      for (const p of result) {
+        const key = (p.quarter - 1) * 9 + p.week - 1;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(p);
+      }
+      return map;
+    };
+
+    const groupByQuarter = (result: PaceResult) => {
+      const map = new Map<number, PaceResult>();
+      for (const p of result) {
+        if (!map.has(p.quarter)) map.set(p.quarter, []);
+        map.get(p.quarter)!.push(p);
+      }
+      return map;
+    };
+
+    it('should place ALL paces without dropping any (94 paces, 6 subjects)', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1035, 1042),
+        makeSubject('cat-science', 'sub-science', 1020, 1042),
+        makeSubject('cat-english', 'sub-english', 1024, 1042),
+        makeSubject('cat-ss', 'sub-ss', 1017, 1042),
+        makeSubject('cat-wb', 'sub-wb', 1033, 1042),
+        makeSubject('cat-spanish', 'sub-spanish', 1035, 1042),
+      ]);
+
+      const result = algorithm.generate(input);
+      const totalExpected = 8 + 23 + 19 + 26 + 10 + 8;
+      expect(result).toHaveLength(totalExpected);
+
+      expect(result.filter(p => p.subjectId === 'sub-math')).toHaveLength(8);
+      expect(result.filter(p => p.subjectId === 'sub-science')).toHaveLength(23);
+      expect(result.filter(p => p.subjectId === 'sub-english')).toHaveLength(19);
+      expect(result.filter(p => p.subjectId === 'sub-ss')).toHaveLength(26);
+      expect(result.filter(p => p.subjectId === 'sub-wb')).toHaveLength(10);
+      expect(result.filter(p => p.subjectId === 'sub-spanish')).toHaveLength(8);
+    });
+
+    it('should distribute quarter totals within ±1 of ideal (94 paces)', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1035, 1042),
+        makeSubject('cat-science', 'sub-science', 1020, 1042),
+        makeSubject('cat-english', 'sub-english', 1024, 1042),
+        makeSubject('cat-ss', 'sub-ss', 1017, 1042),
+        makeSubject('cat-wb', 'sub-wb', 1033, 1042),
+        makeSubject('cat-spanish', 'sub-spanish', 1035, 1042),
+      ]);
+
+      const result = algorithm.generate(input);
+      const byQ = groupByQuarter(result);
+      const total = result.length;
+      const idealPerQ = total / 4;
+      const floor = Math.floor(idealPerQ);
+      const ceil = Math.ceil(idealPerQ);
+
+      for (let q = 1; q <= 4; q++) {
+        const count = byQ.get(q)?.length ?? 0;
+        expect(count).toBeGreaterThanOrEqual(floor);
+        expect(count).toBeLessThanOrEqual(ceil);
+      }
+    });
+
+    it('should have no empty weeks (all 36 weeks populated)', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1035, 1042),
+        makeSubject('cat-science', 'sub-science', 1020, 1042),
+        makeSubject('cat-english', 'sub-english', 1024, 1042),
+        makeSubject('cat-ss', 'sub-ss', 1017, 1042),
+        makeSubject('cat-wb', 'sub-wb', 1033, 1042),
+        makeSubject('cat-spanish', 'sub-spanish', 1035, 1042),
+      ]);
+
+      const result = algorithm.generate(input);
+      const byWeek = groupByWeek(result);
+      expect(byWeek.size).toBe(36);
+
+      for (let w = 0; w < 36; w++) {
+        expect(byWeek.get(w)?.length ?? 0).toBeGreaterThanOrEqual(1);
+      }
+    });
+
+    it('should balance week counts within each quarter (no week drastically different)', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1035, 1042),
+        makeSubject('cat-science', 'sub-science', 1020, 1042),
+        makeSubject('cat-english', 'sub-english', 1024, 1042),
+        makeSubject('cat-ss', 'sub-ss', 1017, 1042),
+        makeSubject('cat-wb', 'sub-wb', 1033, 1042),
+        makeSubject('cat-spanish', 'sub-spanish', 1035, 1042),
+      ]);
+
+      const result = algorithm.generate(input);
+
+      for (let q = 0; q < 4; q++) {
+        const weekCounts: number[] = [];
+        for (let w = 0; w < 9; w++) {
+          const count = result.filter(
+            p => p.quarter === q + 1 && p.week === w + 1
+          ).length;
+          weekCounts.push(count);
+        }
+        const min = Math.min(...weekCounts);
+        const max = Math.max(...weekCounts);
+        // ±1 is ideal but sequential order + max-3-subjects constraints may prevent it
+        expect(max - min).toBeLessThanOrEqual(2);
+        // No week should be empty
+        expect(min).toBeGreaterThanOrEqual(1);
+      }
+    });
+
+    it('should never place the same subject twice in the same week', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1035, 1042),
+        makeSubject('cat-science', 'sub-science', 1020, 1042),
+        makeSubject('cat-english', 'sub-english', 1024, 1042),
+        makeSubject('cat-ss', 'sub-ss', 1017, 1042),
+        makeSubject('cat-wb', 'sub-wb', 1033, 1042),
+        makeSubject('cat-spanish', 'sub-spanish', 1035, 1042),
+      ]);
+
+      const result = algorithm.generate(input);
+      const byWeek = groupByWeek(result);
+
+      for (const [_, paces] of byWeek) {
+        const subjectIds = paces.map(p => p.subjectId);
+        expect(new Set(subjectIds).size).toBe(subjectIds.length);
+      }
+    });
+
+    it('should respect max 3 subjects per week', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1035, 1042),
+        makeSubject('cat-science', 'sub-science', 1020, 1042),
+        makeSubject('cat-english', 'sub-english', 1024, 1042),
+        makeSubject('cat-ss', 'sub-ss', 1017, 1042),
+        makeSubject('cat-wb', 'sub-wb', 1033, 1042),
+        makeSubject('cat-spanish', 'sub-spanish', 1035, 1042),
+      ]);
+
+      const result = algorithm.generate(input);
+      const byWeek = groupByWeek(result);
+
+      for (const [_, paces] of byWeek) {
+        const uniqueSubjects = new Set(paces.map(p => p.subjectId));
+        expect(uniqueSubjects.size).toBeLessThanOrEqual(3);
+      }
+    });
+
+    it('should maintain sequential pace order per subject across weeks within each quarter', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1035, 1042),
+        makeSubject('cat-science', 'sub-science', 1020, 1042),
+        makeSubject('cat-english', 'sub-english', 1024, 1042),
+        makeSubject('cat-ss', 'sub-ss', 1017, 1042),
+        makeSubject('cat-wb', 'sub-wb', 1033, 1042),
+        makeSubject('cat-spanish', 'sub-spanish', 1035, 1042),
+      ]);
+
+      const result = algorithm.generate(input);
+      const subjectIds = [...new Set(result.map(p => p.subjectId))];
+
+      for (const subjectId of subjectIds) {
+        for (let q = 1; q <= 4; q++) {
+          const paces = result
+            .filter(p => p.subjectId === subjectId && p.quarter === q)
+            .sort((a, b) => a.week - b.week);
+
+          for (let i = 0; i < paces.length - 1; i++) {
+            const curr = parseInt(paces[i].paceCode);
+            const next = parseInt(paces[i + 1].paceCode);
+            expect(next).toBeGreaterThanOrEqual(curr);
+          }
+        }
+      }
+    });
+
+    it('should keep subject distributions balanced (within ±2 per quarter of ideal)', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1035, 1042),
+        makeSubject('cat-science', 'sub-science', 1020, 1042),
+        makeSubject('cat-english', 'sub-english', 1024, 1042),
+        makeSubject('cat-ss', 'sub-ss', 1017, 1042),
+        makeSubject('cat-wb', 'sub-wb', 1033, 1042),
+        makeSubject('cat-spanish', 'sub-spanish', 1035, 1042),
+      ]);
+
+      const result = algorithm.generate(input);
+      const subjects = [
+        { id: 'sub-math', total: 8 },
+        { id: 'sub-science', total: 23 },
+        { id: 'sub-english', total: 19 },
+        { id: 'sub-ss', total: 26 },
+        { id: 'sub-wb', total: 10 },
+        { id: 'sub-spanish', total: 8 },
+      ];
+
+      for (const { id, total } of subjects) {
+        const idealPerQ = total / 4;
+        const floor = Math.floor(idealPerQ);
+        const ceil = Math.ceil(idealPerQ);
+
+        for (let q = 1; q <= 4; q++) {
+          const count = result.filter(p => p.subjectId === id && p.quarter === q).length;
+          // Allow ±1 from the natural floor/ceil range due to global rebalancing
+          expect(count).toBeGreaterThanOrEqual(Math.max(0, floor - 1));
+          expect(count).toBeLessThanOrEqual(ceil + 1);
+        }
+      }
+    });
+
+    it('should never exceed 9 paces per subject per quarter', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1, 36),
+        makeSubject('cat-electives', 'sub-elective-1', 1, 18),
+        makeSubject('cat-electives', 'sub-elective-2', 1, 18),
+      ]);
+
+      const result = algorithm.generate(input);
+      const subjectIds = [...new Set(result.map(p => p.subjectId))];
+
+      for (const subjectId of subjectIds) {
+        for (let q = 1; q <= 4; q++) {
+          const count = result.filter(
+            p => p.subjectId === subjectId && p.quarter === q
+          ).length;
+          expect(count).toBeLessThanOrEqual(9);
+        }
+      }
+    });
+
+    it('should place all paces when subjects have 36 paces each (high pace scenario)', () => {
+      const input = makeInput([
+        makeSubject('cat-1', 'sub-1', 1, 36),
+        makeSubject('cat-2', 'sub-2', 1, 36),
+        makeSubject('cat-3', 'sub-3', 1, 28),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(100);
+      expect(result.filter(p => p.subjectId === 'sub-1')).toHaveLength(36);
+      expect(result.filter(p => p.subjectId === 'sub-2')).toHaveLength(36);
+      expect(result.filter(p => p.subjectId === 'sub-3')).toHaveLength(28);
+
+      const byWeek = groupByWeek(result);
+      expect(byWeek.size).toBe(36);
+    });
+
+    it('should populate all 9 weeks per quarter even with few paces per subject', () => {
+      const input = makeInput([
+        makeSubject('cat-1', 'sub-1', 1, 36),
+        makeSubject('cat-2', 'sub-2', 1, 36),
+        makeSubject('cat-3', 'sub-3', 1, 8),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(80);
+
+      for (let q = 0; q < 4; q++) {
+        const weeksUsed = new Set<number>();
+        for (const p of result) {
+          if (p.quarter === q + 1) weeksUsed.add(p.week);
+        }
+        expect(weeksUsed.size).toBe(9);
+      }
+    });
+
+    it('should handle 80 paces (3 subjects: 36+36+8) with balanced distribution', () => {
+      const input = makeInput([
+        makeSubject('cat-1', 'sub-1', 1, 36),
+        makeSubject('cat-2', 'sub-2', 1, 36),
+        makeSubject('cat-3', 'sub-3', 1, 8),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(80);
+
+      const byQ = groupByQuarter(result);
+      for (let q = 1; q <= 4; q++) {
+        const count = byQ.get(q)?.length ?? 0;
+        expect(count).toBeGreaterThanOrEqual(19);
+        expect(count).toBeLessThanOrEqual(21);
+      }
+    });
+
+    it('should handle 90 paces (3 subjects: 36+36+18) with balanced distribution', () => {
+      const input = makeInput([
+        makeSubject('cat-1', 'sub-1', 1, 36),
+        makeSubject('cat-2', 'sub-2', 1, 36),
+        makeSubject('cat-3', 'sub-3', 1, 18),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(90);
+
+      const byQ = groupByQuarter(result);
+      const floor = Math.floor(90 / 4);
+      const ceil = Math.ceil(90 / 4);
+
+      for (let q = 1; q <= 4; q++) {
+        const count = byQ.get(q)?.length ?? 0;
+        expect(count).toBeGreaterThanOrEqual(floor);
+        expect(count).toBeLessThanOrEqual(ceil);
+      }
+
+      const byWeek = groupByWeek(result);
+      for (const [_, paces] of byWeek) {
+        const uniqueSubjects = new Set(paces.map(p => p.subjectId));
+        expect(uniqueSubjects.size).toBe(paces.length);
+      }
+    });
+
+    it('should produce deterministic output for 94 paces', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1035, 1042),
+        makeSubject('cat-science', 'sub-science', 1020, 1042),
+        makeSubject('cat-english', 'sub-english', 1024, 1042),
+        makeSubject('cat-ss', 'sub-ss', 1017, 1042),
+        makeSubject('cat-wb', 'sub-wb', 1033, 1042),
+        makeSubject('cat-spanish', 'sub-spanish', 1035, 1042),
+      ]);
+
+      const result1 = algorithm.generate(input);
+      const result2 = algorithm.generate(input);
+      expect(result1).toEqual(result2);
+    });
+
+    it('should handle subjects with exact multiples of 4 paces (no remainder)', () => {
+      const input = makeInput([
+        makeSubject('cat-1', 'sub-1', 1, 36),
+        makeSubject('cat-2', 'sub-2', 1, 24),
+        makeSubject('cat-3', 'sub-3', 1, 12),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(72);
+
+      // Each subject distributes evenly: 36→[9,9,9,9], 24→[6,6,6,6], 12→[3,3,3,3]
+      const byQ = groupByQuarter(result);
+      for (let q = 1; q <= 4; q++) {
+        expect(byQ.get(q)?.length).toBe(18);
+      }
+    });
+
+    it('should handle odd total paces (e.g., 73)', () => {
+      const input = makeInput([
+        makeSubject('cat-1', 'sub-1', 1, 36),
+        makeSubject('cat-2', 'sub-2', 1, 36),
+        makeSubject('cat-3', 'sub-3', 1, 1),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(73);
+
+      const byQ = groupByQuarter(result);
+      const counts = [1, 2, 3, 4].map(q => byQ.get(q)?.length ?? 0);
+      const total = counts.reduce((a, b) => a + b, 0);
+      expect(total).toBe(73);
+      expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
+    });
+
+    it('should maintain pace order globally (no pace appears in an earlier week than its predecessor)', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1035, 1042),
+        makeSubject('cat-science', 'sub-science', 1020, 1042),
+        makeSubject('cat-english', 'sub-english', 1024, 1042),
+        makeSubject('cat-ss', 'sub-ss', 1017, 1042),
+        makeSubject('cat-wb', 'sub-wb', 1033, 1042),
+        makeSubject('cat-spanish', 'sub-spanish', 1035, 1042),
+      ]);
+
+      const result = algorithm.generate(input);
+      const subjectIds = [...new Set(result.map(p => p.subjectId))];
+
+      for (const subjectId of subjectIds) {
+        const paces = result
+          .filter(p => p.subjectId === subjectId)
+          .sort((a, b) => {
+            const globalA = (a.quarter - 1) * 9 + a.week;
+            const globalB = (b.quarter - 1) * 9 + b.week;
+            return globalA - globalB;
+          });
+
+        for (let i = 0; i < paces.length - 1; i++) {
+          const currCode = parseInt(paces[i].paceCode);
+          const nextCode = parseInt(paces[i + 1].paceCode);
+          expect(nextCode).toBeGreaterThanOrEqual(currCode);
+        }
+      }
+    });
+
+    it('should handle 4 subjects with 18 paces each (72 total, different counts per subject)', () => {
+      const input = makeInput([
+        makeSubject('cat-1', 'sub-1', 1, 18),
+        makeSubject('cat-2', 'sub-2', 1, 18),
+        makeSubject('cat-3', 'sub-3', 1, 18),
+        makeSubject('cat-4', 'sub-4', 1, 18),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(72);
+
+      for (const subId of ['sub-1', 'sub-2', 'sub-3', 'sub-4']) {
+        expect(result.filter(p => p.subjectId === subId)).toHaveLength(18);
+      }
+
+      const byWeek = groupByWeek(result);
+      expect(byWeek.size).toBe(36);
+      for (const [_, paces] of byWeek) {
+        expect(paces.length).toBe(2);
+      }
+    });
+
+    it('should handle 5 subjects with varying pace counts summing to 108', () => {
+      const input = makeInput([
+        makeSubject('cat-1', 'sub-1', 1, 36),
+        makeSubject('cat-2', 'sub-2', 1, 36),
+        makeSubject('cat-3', 'sub-3', 1, 18),
+        makeSubject('cat-4', 'sub-4', 1, 10),
+        makeSubject('cat-5', 'sub-5', 1, 8),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(108);
+      expect(result.filter(p => p.subjectId === 'sub-1')).toHaveLength(36);
+      expect(result.filter(p => p.subjectId === 'sub-2')).toHaveLength(36);
+      expect(result.filter(p => p.subjectId === 'sub-3')).toHaveLength(18);
+      expect(result.filter(p => p.subjectId === 'sub-4')).toHaveLength(10);
+      expect(result.filter(p => p.subjectId === 'sub-5')).toHaveLength(8);
+
+      const byQ = groupByQuarter(result);
+      for (let q = 1; q <= 4; q++) {
+        const count = byQ.get(q)?.length ?? 0;
+        expect(count).toBeGreaterThanOrEqual(26);
+        expect(count).toBeLessThanOrEqual(28);
+      }
+    });
+
+    it('should not drop paces when electives + core totals are exactly 72', () => {
+      const input = makeInput([
+        makeSubject('cat-math', 'sub-math', 1, 36),
+        makeSubject('cat-electives', 'sub-elective-a', 1, 18),
+        makeSubject('cat-electives', 'sub-elective-b', 1, 18),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(72);
+      expect(result.filter(p => p.subjectId === 'sub-math')).toHaveLength(36);
+      expect(result.filter(p => p.subjectId === 'sub-elective-a')).toHaveLength(18);
+      expect(result.filter(p => p.subjectId === 'sub-elective-b')).toHaveLength(18);
+
+      // No subject should have > 9 paces in any quarter
+      for (const subjectId of ['sub-math', 'sub-elective-a', 'sub-elective-b']) {
+        for (let q = 1; q <= 4; q++) {
+          const count = result.filter(p => p.subjectId === subjectId && p.quarter === q).length;
+          expect(count).toBeLessThanOrEqual(9);
+        }
+      }
+    });
+
+    it('should handle skip paces without affecting distribution balance', () => {
+      const input = makeInput([
+        makeSubject('cat-1', 'sub-1', 1001, 1036, { skipPaces: [1005, 1010, 1015, 1020, 1025] }),
+        makeSubject('cat-2', 'sub-2', 2001, 2036),
+        makeSubject('cat-3', 'sub-3', 3001, 3008),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result.filter(p => p.subjectId === 'sub-1')).toHaveLength(31);
+      expect(result.filter(p => p.subjectId === 'sub-2')).toHaveLength(36);
+      expect(result.filter(p => p.subjectId === 'sub-3')).toHaveLength(8);
+      expect(result).toHaveLength(75);
+
+      const skippedCodes = ['1005', '1010', '1015', '1020', '1025'];
+      for (const code of skippedCodes) {
+        expect(result.find(p => p.paceCode === code)).toBeUndefined();
+      }
+    });
+
+    it('should produce balanced output for 2 subjects with 36 paces each (uniform path)', () => {
+      const input = makeInput([
+        makeSubject('cat-1', 'sub-1', 1, 36, { difficulty: 5 }),
+        makeSubject('cat-2', 'sub-2', 1, 36, { difficulty: 1 }),
+      ]);
+
+      const result = algorithm.generate(input);
+      expect(result).toHaveLength(72);
+
+      // Every week should have exactly 2 paces (one from each subject)
+      const byWeek = groupByWeek(result);
+      expect(byWeek.size).toBe(36);
+      for (const [_, paces] of byWeek) {
+        expect(paces.length).toBe(2);
+      }
+
+      // Each quarter should have exactly 18 paces
+      const byQ = groupByQuarter(result);
+      for (let q = 1; q <= 4; q++) {
+        expect(byQ.get(q)?.length).toBe(18);
+      }
+    });
+  });
+
   describe('Output Structure', () => {
     it('should return paces with correct structure', () => {
       const input: GenerateProjectionInput = {
